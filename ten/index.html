@@ -680,11 +680,11 @@ function initBoard(){
     const box=$("#teams");
     if(!list.length){box.innerHTML="";$(".bmain").classList.add("solo");return}
     const gm=new Map();for(const x of list){const k=x.g||"조 없음";const g=gm.get(k)||{k,n:0,s:0,bo:0};g.n++;g.s+=rankPts(x,list.length);if(x.rk<=3)g.bo+=BONUS[x.rk-1];gm.set(k,g)}
-    {const ta=Math.max(0,...[...gm.values()].map(g=>g.s/g.n));for(const g of gm.values()){g.t=(ta>0?Math.round(g.s/g.n/ta*100):0)+g.bo;g.avg=Math.round(g.s/g.n)}}   /* 조 점수 = 1인 평균을 1등 조 100점으로 환산 + 개인 1·2·3등 보너스 */
+    {const ta=Math.max(0,...[...gm.values()].map(g=>g.s/g.n));for(const g of gm.values()){g.t=(ta>0?Math.round(50+50*(g.s/g.n)/ta):50)+g.bo;g.avg=Math.round(g.s/g.n)}}   /* 조 점수 = 50 + 50 × (1인 평균 ÷ 1등 조 평균) + 개인 1·2·3등 보너스 */
     const gs=[...gm.values()].sort((a,b)=>b.t-a.t||a.k.localeCompare(b.k,"ko",{numeric:true}));
     const top=Math.max(1,gs[0].t);
     const fin=cur&&Date.now()>=cur.endAt;
-    box.innerHTML=`<h2>조별 순위${fin?" · 최종":""}</h2><ol class="tlist">${gs.map((g,i)=>`<li><span class="r">${i&&g.t===gs[i-1].t?"":i+1}</span><span class="t">${esc(g.k)}<small>${g.n}명 · 평균 ${g.avg}${g.bo?` · 보너스 +${g.bo}`:""}</small></span><span class="v">${g.t}</span><span class="bar2"><i style="width:${Math.max(3,g.t/top*100)}%"></i></span></li>`).join("")}</ol><p class="tnote">1인 평균을 1등 조 = 100점으로 환산 + 개인 1·2·3등 보너스 (+${BONUS.join(", +")})${fin?"":" · 실시간"}</p>`+
+    box.innerHTML=`<h2>조별 순위${fin?" · 최종":""}</h2><ol class="tlist">${gs.map((g,i)=>`<li><span class="r">${i&&g.t===gs[i-1].t?"":i+1}</span><span class="t">${esc(g.k)}<small>${g.n}명 · 평균 ${g.avg}${g.bo?` · 보너스 +${g.bo}`:""}</small></span><span class="v">${g.t}</span><span class="bar2"><i style="width:${Math.max(3,g.t/top*100)}%"></i></span></li>`).join("")}</ol><p class="tnote">1인 평균을 1등 조 100 ~ 최소 50으로 환산 + 개인 1·2·3등 보너스 (+${BONUS.join(", +")})${fin?"":" · 실시간"}</p>`+
       `<h2 style="margin-top:20px">개인 TOP 3${fin?" · 개인상":""}</h2><ol class="tlist">${list.filter(x=>x.rk<=3).slice(0,5).map(x=>`<li><span class="r">${["🥇","🥈","🥉"][x.rk-1]}</span><span class="t">${esc(x.n)}<small>${esc(x.g||"")} · 조에 +${BONUS[x.rk-1]}</small></span><span class="v">${x.s}</span></li>`).join("")}</ol>`;
     $(".bmain").classList.remove("solo");
   }
@@ -854,7 +854,7 @@ function initAdmin(){
       if(!L.length)html=`<p class="aempty">${p==="end"?"결과가 들어오는 중이에요. 잠시만요.":"게임가 끝나면 최종 결과가 여기 나와요."}</p>`;
       else{
         const gm=new Map();for(const x of L){const k=x.g||"조 없음";const g=gm.get(k)||{n:0,s:0,best:0,bo:0};g.n++;g.s+=rankPts(x,L.length);g.best=Math.max(g.best,x.s);if(x.rk<=3)g.bo+=BONUS[x.rk-1];gm.set(k,g)}
-        const ta=Math.max(0,...[...gm.values()].map(g=>g.s/g.n));const gs=[...gm.entries()].map(([k,g])=>({k,...g,avg:Math.round(g.s/g.n),t:(ta>0?Math.round(g.s/g.n/ta*100):0)+g.bo})).sort((a,b)=>b.t-a.t);teamRows=gs;
+        const ta=Math.max(0,...[...gm.values()].map(g=>g.s/g.n));const gs=[...gm.entries()].map(([k,g])=>({k,...g,avg:Math.round(g.s/g.n),t:(ta>0?Math.round(50+50*(g.s/g.n)/ta):50)+g.bo})).sort((a,b)=>b.t-a.t);teamRows=gs;
         html=`<button class="btn sub" id="aCopy" style="margin-bottom:10px">결과 복사 (엑셀에 붙여넣기)</button>`+
           `<p class="ttl">🏅 개인 순위 (개인상)</p><p class="edhint">✎ 이름을 누르면 이름·조 수정</p><ul class="alist">${L.map(x=>row(x)).join("")}${fin.sus.map(x=>row(x,"bad")).join("")}</ul>`+
           `<p class="ttl">👥 조별 합산 순위 (조별상)</p><table class="gs"><thead><tr><th>조</th><th>조 점수</th><th>1인 평균</th><th>보너스</th><th>인원</th><th>점수합</th></tr></thead><tbody>${gs.map((g,i)=>`<tr><td>${i+1}. ${esc(g.k)}</td><td><b>${g.t}</b></td><td>${g.avg}</td><td>${g.bo?"+"+g.bo:"–"}</td><td>${g.n}</td><td>${g.s}</td></tr>`).join("")}</tbody></table>`;

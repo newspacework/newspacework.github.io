@@ -98,23 +98,48 @@ h2 small{font:900 14px "Noto Sans KR",sans-serif;color:var(--mut);margin-left:au
 @media(max-width:640px){.podium{grid-template-columns:minmax(0,1fr)}.podium .txt{padding-bottom:4px}.stand{margin-top:56px}.stand .p1{height:130px}.stand .p2{height:96px}.stand .p3{height:74px}}
 @media(max-width:520px){.track a{width:44px;height:44px;font-size:21px;border-width:3px}.track .fin{width:50px;height:50px;font-size:24px}.track i{min-width:8px}}
 
-/* ---- 점수 계산 ---- */
-.calc{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:16px}
-.cbox{background:#fff;border:4px solid var(--ink);border-radius:20px;padding:18px;box-shadow:6px 6px 0 var(--ink)}
-.cbox>b{display:block;font:400 24px "Black Han Sans",sans-serif;margin-bottom:10px}
-.cbox p{margin:6px 0;font:700 15px/1.6 "Noto Sans KR",sans-serif}
-.cbox em{font-style:normal;color:var(--pink);font-weight:900}
-.cbox .big{font:400 clamp(18px,2.1vw,23px) "Black Han Sans",sans-serif;white-space:nowrap;background:var(--gold);border:3px solid var(--ink);border-radius:12px;padding:8px 10px;text-align:center}
-.cbox .sm{font-size:14px;color:var(--mut)}
-.cbox .bon{background:#fff0f6;border:2px dashed var(--pink);border-radius:10px;padding:8px 10px}
-.ptab{width:100%;border-collapse:collapse;font:700 14.5px/1.45 "Noto Sans KR",sans-serif}
-.ptab td{padding:7px 4px;border-bottom:1px dashed #d8cfb8;vertical-align:top}
-.ptab td:first-child{white-space:nowrap;font-weight:900;padding-right:10px}
-.ex{display:flex;flex-direction:column;gap:6px;margin:10px 0}
-.ex div{display:grid;grid-template-columns:5.6em minmax(0,1fr) 3.4em;gap:8px;align-items:center;font:900 14px "Noto Sans KR",sans-serif}
-.ex i{display:block;height:16px;border-radius:6px;background:var(--c4);border:2px solid var(--ink)}
-.ex div:first-child i{background:var(--gold)}
-.ex em{text-align:right}
+/* ---- 점수 계산 (4단계 흐름) ---- */
+.flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:34px 26px;align-items:stretch}
+.flow .arw{display:none}
+@media(max-width:620px){.flow{grid-template-columns:minmax(0,1fr)}}
+.arw{align-self:center;font:400 34px "Black Han Sans",sans-serif;color:var(--pink)}
+.st{position:relative;background:#fff;border:4px solid var(--ink);border-radius:22px;padding:30px 16px 16px;box-shadow:6px 6px 0 var(--ink);display:flex;flex-direction:column;gap:8px}
+.st2{background:#fffbe6}.st3{background:#f3efff}.st4{background:var(--ink);color:#fff}
+.sn{position:absolute;top:-18px;left:14px;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--pink);color:#fff;border:4px solid var(--ink);font:400 20px "Black Han Sans",sans-serif}
+.si{position:absolute;top:-20px;right:12px;font-size:34px;transform:rotate(8deg)}
+.st h3{font:400 clamp(21px,2vw,25px)/1.15 "Black Han Sans",sans-serif;margin:0 0 2px}
+.st4 h3{color:var(--gold)}
+.st em{font-style:normal;color:var(--pink);font-weight:900}
+.gl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.gl li{display:grid;grid-template-columns:30px minmax(0,1fr);column-gap:8px;align-items:start;background:var(--c);border:2px solid var(--ink);border-radius:12px;padding:6px 10px}
+.gl i{font-style:normal;font-size:22px;grid-row:span 2;align-self:center}
+.gl b{font:400 16px "Black Han Sans",sans-serif}
+.gl span{font:700 13px/1.4 "Noto Sans KR",sans-serif}
+.fx{margin:2px 0 4px;text-align:center;font:400 clamp(20px,2.6vw,28px)/1.4 "Black Han Sans",sans-serif;background:var(--gold);border:3px solid var(--ink);border-radius:14px;padding:8px 6px}
+.fx span{background:#fff;border-radius:8px;padding:0 8px;white-space:nowrap}
+.gauge{position:relative;height:96px;margin:6px 34px 0}
+.gbar{position:absolute;left:0;right:0;top:12px;height:18px;border:3px solid var(--ink);border-radius:10px;background:#e6dfcc;overflow:hidden}
+.gbar .zone{position:absolute;left:50%;right:0;top:0;bottom:0;background:linear-gradient(90deg,var(--c5),var(--c2),var(--gold))}
+.mk{position:absolute;left:var(--x);top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;padding-top:38px;white-space:nowrap}
+.mk::before{content:"";position:absolute;top:6px;left:50%;width:4px;height:30px;background:var(--ink);transform:translateX(-50%);border-radius:2px}
+.mk b{font:400 19px "Black Han Sans",sans-serif}
+.mk small{font:900 11px "Noto Sans KR",sans-serif;color:var(--mut)}
+
+.stk{align-self:center;margin:4px 0;background:var(--pink);color:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 16px;font:700 15px "Noto Sans KR",sans-serif;transform:rotate(-2deg);box-shadow:3px 3px 0 var(--ink)}
+.stk b{font-weight:900}
+.ex{margin:4px 0 0;font:700 13px/1.5 "Noto Sans KR",sans-serif;color:var(--mut);border-top:2px dashed #e0d6b8;padding-top:8px}
+.ex b{color:var(--ink);font-size:15px}
+.pl{margin:0;font:700 15px/1.5 "Noto Sans KR",sans-serif;background:#fff;border:2px solid var(--ink);border-radius:12px;padding:8px 10px}
+.pl small{color:var(--mut)}
+.medals{display:flex;justify-content:center;gap:8px;margin-top:4px}
+.medals span{display:flex;flex-direction:column;align-items:center;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:4px 12px;font-size:26px;box-shadow:3px 3px 0 var(--ink)}
+.medals b{font:400 18px "Black Han Sans",sans-serif;color:var(--pink)}
+.sm{margin:2px 0 0;font:700 13px/1.5 "Noto Sans KR",sans-serif;color:var(--mut);text-align:center}
+.st4 .sm{color:#d9dde6}.st4 .sm b{color:var(--gold)}
+.stack{display:flex;flex-direction:column-reverse;gap:3px;align-self:center;width:64%;margin:4px 0}
+.stack i{display:block;height:16px;border-radius:6px;background:var(--c);border:2px solid #fff}
+.tot{margin:2px 0 0;text-align:center;font:400 clamp(34px,3.4vw,44px)/1 "Black Han Sans",sans-serif;color:var(--gold)}
+.tot small{font-size:.6em;color:#fff}.tot span{font-size:.45em;color:#fff;margin-left:4px}
 /* ---- 규칙 ---- */
 .rules{margin-top:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}
 .rule{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:16px 18px;box-shadow:4px 4px 0 var(--ink)}
@@ -215,7 +240,7 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
   </div>
 
   <a class="podium" href="./total/">
-    <div class="txt"><h3>🏆 시상대</h3><p>종목마다 1등 = 100점으로 환산해<br>다섯 종목을 더한 조별·개인 순위 (최대 500점)</p><span class="go">종합 순위 보기 →</span></div>
+    <div class="txt"><h3>🏆 시상대</h3><p>종목마다 100점 만점(꼴찌도 50점)으로 환산해<br>다섯 종목을 더한 조별·개인 순위</p><span class="go">종합 순위 보기 →</span></div>
     <div class="stand" aria-hidden="true">
       <div class="p2"><span class="m">🥈</span>2</div>
       <div class="p1"><span class="m">🥇</span>1</div>
@@ -224,39 +249,54 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
   </a>
 
 
-  <h2>🧮 점수는 이렇게 계산해요</h2>
-  <div class="calc">
-    <div class="cbox">
-      <b>① 종목마다 점수 모으기</b>
-      <table class="ptab">
-        <tr><td>🏎️ 레이스</td><td>맞히면 <em>+5</em> · 숫자 순서 <em>+10</em> · 틀리면 −2 (맞든 틀리든 바로 다음 문제)</td></tr>
-        <tr><td>🔨 두더지</td><td>두더지 <em>+5</em> · 황금 <em>+10</em> · 폭탄·가짜 −5</td></tr>
-        <tr><td>📖 성경 퀴즈</td><td>3초 안 <em>+10</em> · 그 뒤 <em>+5</em> · 넌센스 <em>+15</em> · 틀리면 −2 · 패스 0점(3번) · ⏰ 10초 지나면 0점으로 다음 문제</td></tr>
-        <tr><td>🔥 불나는 30초</td><td>한 번 두드릴 때마다 <em>+1</em></td></tr>
-        <tr><td>🎯 10초 맞히기</td><td>3번 중 가장 가까운 1번으로 <em>오차 작은 순</em> 순위 → 1등 <em>100</em> ~ 꼴찌 <em>50</em> 순위대로 고르게 · 20초 지나면 자동 멈춤</td></tr>
-      </table>
-    </div>
-    <div class="cbox">
-      <b>② 1등을 100점으로 바꾸기</b>
-      <p class="big">내 점수 ÷ 1등 점수 × 100</p>
-      <p>종목마다 점수 크기가 달라서, <b>1등 점수를 100점 만점</b>으로 놓고 다시 채점해요.</p>
-      <div class="ex">
-        <div><span>1등 130점</span><i style="width:100%"></i><em>100점</em></div>
-        <div><span>나 117점</span><i style="width:90%"></i><em>90점</em></div>
-        <div><span>친구 65점</span><i style="width:50%"></i><em>50점</em></div>
+  <h2>🧮 점수 계산, 한눈에! <small>4단계면 끝</small></h2>
+  <div class="flow">
+    <section class="st st1">
+      <span class="sn">1</span><span class="si">🎮</span>
+      <h3>종목에서 점수 모으기</h3>
+      <ul class="gl">
+        <li style="--c:var(--c2)"><i>🏎️</i><b>레이스</b><span>맞히면 <em>+5</em> · 숫자 순서 <em>+10</em> · 틀리면 −2</span></li>
+        <li style="--c:var(--c3)"><i>🔨</i><b>두더지</b><span>두더지 <em>+5</em> · 황금 <em>+10</em> · 폭탄·가짜 −5</span></li>
+        <li style="--c:var(--c4)"><i>📖</i><b>성경 퀴즈</b><span>3초 안 <em>+10</em> · 그 뒤 <em>+5</em> · 넌센스 <em>+15</em> · ⏰ 문제당 10초</span></li>
+        <li style="--c:var(--c5)"><i>🔥</i><b>불나는 30초</b><span>두드릴 때마다 <em>+1</em></span></li>
+        <li style="--c:var(--c1)"><i>🎯</i><b>10초 맞히기</b><span>3번 중 가장 가까운 1번 · <em>오차 작은 순</em></span></li>
+      </ul>
+    </section>
+    <span class="arw" aria-hidden="true">➜</span>
+    <section class="st st2">
+      <span class="sn">2</span><span class="si">⚖️</span>
+      <h3>100점 만점으로 바꾸기</h3>
+      <p class="fx">50 + 50 × <span>내 점수 ÷ 1등 점수</span></p>
+      <div class="gauge" aria-label="환산 점수 예시">
+        <div class="gbar"><i class="zone"></i></div>
+        <div class="mk" style="--x:100%"><b>🥇 100</b><small>1등</small></div>
+        <div class="mk" style="--x:75%"><b>🙂 75</b><small>1등의 절반</small></div>
+        <div class="mk" style="--x:50%"><b>🙌 50</b><small>꼴찌도!</small></div>
       </div>
-      <p class="sm">→ 어느 종목이든 1등은 똑같이 100점! 다섯 종목을 공평하게 더해요.</p>
-    </div>
-    <div class="cbox">
-      <b>③ 조 점수 = 우리 조 평균</b>
-      <p>조원 점수를 더해 <b>인원수로 나눈 평균</b>으로 겨뤄요. 인원이 달라도 공평!</p>
-      <p>평균이 가장 높은 조 = <b>100점</b>, 나머지 조는 비율로 바꿔요.</p>
-      <p class="bon">🥇 개인 1등이 있는 조 <em>+5</em> · 🥈 2등 <em>+3</em> · 🥉 3등 <em>+2</em></p>
-      <p class="sm">→ 다섯 종목을 더한 점수로 시상대에서 우승 조를 가려요!</p>
-    </div>
+      <p class="stk">꼴찌도 <b>최소 50점</b> 보장! 🙌</p>
+      <p class="ex">예) 두더지 1등 300점, 나 240점 → 50 + 50 × 240 ÷ 300 = <b>90점</b></p>
+    </section>
+    <span class="arw" aria-hidden="true">➜</span>
+    <section class="st st3">
+      <span class="sn">3</span><span class="si">👥</span>
+      <h3>우리 조 점수</h3>
+      <p class="pl"><b>조원 1인당 평균</b>으로 겨뤄요<br><small>인원이 달라도 공평!</small></p>
+      <p class="pl">1등 조 <b>100</b> ~ 최소 <b>50</b>으로 환산</p>
+      <div class="medals"><span>🥇<b>+5</b></span><span>🥈<b>+3</b></span><span>🥉<b>+2</b></span></div>
+      <p class="sm">종목마다 개인 1·2·3등이 나온 조에 보너스!</p>
+    </section>
+    <span class="arw" aria-hidden="true">➜</span>
+    <section class="st st4">
+      <span class="sn">4</span><span class="si">🏆</span>
+      <h3>다섯 종목 더하기</h3>
+      <div class="stack" aria-hidden="true"><i style="--c:var(--c2)"></i><i style="--c:var(--c3)"></i><i style="--c:var(--c4)"></i><i style="--c:var(--c5)"></i><i style="--c:var(--c1)"></i></div>
+      <p class="tot">250 <small>~</small> 500<span>점</span></p>
+      <p class="sm">+ 조는 개인상 보너스까지!<br>가장 높은 조가 <b>우승</b> 🎉</p>
+    </section>
   </div>
+
   <div class="rules">
-    <div class="rule"><b>👥 조별 점수</b><span>종목마다 <em>조원 1인당 평균</em>으로 겨뤄요. 인원이 달라도 공평! 시상대에서는 종목마다 <em>1등 = 100점</em>으로 환산해 더해요.</span></div>
+    <div class="rule"><b>👥 조별 점수</b><span>종목마다 <em>조원 1인당 평균</em>으로 겨뤄요. 인원이 달라도 공평! 1등 조 <em>100</em> ~ 최소 <em>50</em>점으로 환산해 더해요.</span></div>
     <div class="rule"><b>🥇 개인 보너스</b><span>종목마다 개인 1·2·3등은 우리 조에 <em>+5 / +3 / +2점</em>을 더 가져다줘요.</span></div>
     <div class="rule"><b>📱 같은 폰으로</b><span>모든 종목을 <em>같은 폰</em>으로 해야 점수가 한 사람으로 합쳐져요. 조는 <em>숫자</em>로!</span></div>
   </div>
