@@ -216,10 +216,13 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 .pulse{animation:pl 1.4s ease-in-out infinite}
 @keyframes pl{50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+.ptoast{position:fixed;left:50%;top:14px;transform:translate(-50%,-150%);max-width:92vw;background:#141414;color:#fff;font:900 16px/1.4 "Noto Sans KR",sans-serif;padding:12px 16px;border-radius:12px;box-shadow:0 6px 0 rgba(0,0,0,.25);z-index:70;transition:transform .3s;text-align:center}
+.ptoast.on{transform:translate(-50%,0)}
 </style>
 </head>
 <body>
 
+<div class="ptoast" id="ptoast"></div>
 <section class="scr on" id="start">
   <div class="tape"></div>
   <h1>두더지<br><em>잡기</em> 대작전</h1>
@@ -414,13 +417,32 @@ const st={name:"",grp:"",score:0,ok:0,no:0,streak:0,best:0,endAt:0,frozen:false,
 let phase="form",race=null,cdTimer=null;
 
 /* ---------------- 학생 화면 ---------------- */
+const MEU=d=>"https://ntfy.sh/hdk-retreat-r7k2m9-u-"+d;   /* 기기별 이름·조 채널 (세 게임 공통) */
+function setMe(n,g){st.name=n;st.grp=g;store.set("nsw-me",{n,g});
+  if(phase==="waiting"||phase==="countdown")$("#waitWho").textContent=g?`${n} · ${g}`:n;
+  if(phase==="form"){$("#nm").value=n;$("#grp").value=g}}
+let ptT=null;function ptoast(t){const el=$("#ptoast");el.textContent=t;el.classList.add("on");clearTimeout(ptT);ptT=setTimeout(()=>el.classList.remove("on"),4500)}
+function listenMe(){
+  let since=Date.now();
+  const es=new EventSource(MEU(deviceId())+"/sse?since=all");
+  es.onmessage=e=>{let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
+    if(!x||typeof x.n!=="string")return;const n=x.n.slice(0,10),g=normG(x.g),t=(m.time||0)*1000;
+    if(n===st.name&&g===st.grp)return;
+    const cur=store.get("nsw-me");if(!st.name&&cur&&cur.n===n&&cur.g===g)return;
+    if(!st.name){$("#nm").value=n;$("#grp").value=g;store.set("nsw-me",{n,g});return}   /* 아직 입장 전: 입력칸만 최신으로 */
+    setMe(n,g);
+    if(x.by==="admin"&&t>=since-60000)ptoast(`📢 진행자가 「${g?n+" · "+g:n}」(으)로 바꿨어요`);
+  };
+}
 function initPlayer(){
+  {const me=store.get("nsw-me");if(me&&me.n){$("#nm").value=me.n;$("#grp").value=me.g||""}}   /* 다른 게임에서 쓴 이름·조 미리 채우기 */
   {const u=location.origin+location.pathname;$("#jqUrl").textContent=u.replace(/^https?:\/\//,"").replace(/\/$/,"");
    let made=false;const make=()=>{if(made)return;made=true;try{new QRCode($("#jqBox"),{text:u,width:480,height:480,correctLevel:QRCode.CorrectLevel.M})}catch(e){$("#jqBox").textContent="QR"}};
    if(matchMedia("(min-width:1000px)").matches)make();
    $("#qrToggle").addEventListener("click",()=>{make();const on=$("#joinQr").classList.toggle("on");$("#qrToggle").textContent=on?"접속 QR 닫기":"접속 QR 보기"})}
   store.del("mole1-name");
   if(practice){$("#modeNote").textContent="연습 모드 · 30초 · 기록 안 남음";return}
+  listenMe();
   $("#modeNote").textContent="입장하기를 누르고 시작 신호를 기다려요";
   listenCtl(onRace,ok=>{$("#waitConn").textContent=ok?"● 시작 신호 연결됨":"○ 연결 다시 시도 중…"},onReset);
 }
@@ -449,6 +471,7 @@ $("#goBtn").addEventListener("click",()=>{
   const bad=!n?$("#nm"):(!g&&!practice?$("#grp"):null);
   if(bad){bad.focus();bad.classList.add("shake");setTimeout(()=>bad.classList.remove("shake"),300);return}
   const changed=!!st.name&&(st.name!==n||st.grp!==g);
+  if(!practice){store.set("nsw-me",{n,g});if(changed)post(MEU(deviceId()),{n,g,by:"self"}).catch(()=>{})}
   st.name=n;st.grp=g;
   try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}
   if(practice){waitScreen();countdown(Date.now()+3000,()=>Date.now()+DUR*1000);return}
@@ -888,6 +911,7 @@ function initAdmin(){
   const allGroups=()=>{const s=new Set();for(const j of joins.values())if(j.g)s.add(j.g);for(const x of rowsNow().values())if(x.g)s.add(x.g);return [...s].sort((a,b)=>a.localeCompare(b,"ko",{numeric:true}))};
   const save=(d,n,g)=>{
     ED.apply(d,n,g);render();
+    post(MEU(d),{n,g,by:"admin"}).catch(()=>{});
     post(RES,{t:"e",d,n,g}).then(r=>{if(!r.ok)throw 0;$("#aMsg").textContent=`✓ ${n}${g?" · "+g:""} 로 수정됨`;setTimeout(()=>$("#aMsg").textContent="",2500)})
       .catch(()=>{$("#aMsg").textContent="수정 전송 실패 — 다시 해 주세요"});
   };
