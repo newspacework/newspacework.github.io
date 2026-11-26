@@ -216,7 +216,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
       <li><b>시작</b>을 누르고, 마음속으로 세다가 <b>정확히 10초</b>에 <b>멈춰!</b>를 누르세요</li>
       <li>시계는 <b>보이지 않아요</b> — 오직 마음속으로 세기! 🤫</li>
       <li>오차 0.1초 이내 <b>+50점</b> 🎯, 0.3초 <b>+30</b>, 0.5초 <b>+20</b>, 1초 <b>+10</b>, 1.5초 <b>+5</b>, 그 이상도 참가 점수 <b>+1</b></li>
-      <li>한 사람당 <b>3번 도전</b>해서 점수를 모두 더해요 (제한 시간 1분)</li>
+      <li>한 사람당 <b>3번 도전</b> — <b>가장 가까운 1번</b>이 최종 기록! 점수가 같으면 오차가 더 작은 사람이 위예요 (제한 시간 1분)</li>
       <li>진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
@@ -265,7 +265,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <p class="name" id="rName"></p>
     <p class="big" id="rScore">0</p>
     <div class="stats">
-      <div><b id="rOk">0</b><span>정확(±0.3초)</span></div>
+      <div><b id="rOk">0</b><span>최고 기록</span></div>
       <div><b id="rNo">0</b><span>최소 오차</span></div>
       <div><b id="rRate">0</b><span>내 기록</span></div>
     </div>
@@ -531,9 +531,9 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 .tatt{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .tatt span{border:2px solid var(--line);border-radius:999px;padding:3px 12px;font:900 15px "Noto Sans KR",sans-serif;background:var(--card)}
 </style>`);
-const COLS="정확횟수\t최소오차(초)";
-const colVals=x=>[x.ok,x.no>=999?"":(x.no/100).toFixed(2)];
-const rowInfo=x=>`정확 ${x.ok}번 · 최소 오차 ${x.no>=999?"–":(x.no/100).toFixed(2)+"초"}`;
+const COLS="최고기록 오차(초)";
+const colVals=x=>[x.no>=999?"":(x.no/100).toFixed(2)];
+const rowInfo=x=>`최고 기록 오차 ${x.no>=999?"–":(x.no/100).toFixed(2)+"초"}`;
 const TRIES=3,SHOW_MS=0,TARGET=10;   /* SHOW_MS: 처음 몇 ms 동안 시계를 보여 줄지 (0 = 처음부터 안 보임) */
 /* [오차(초) 이내, 점수, 한마디] */
 const PTS=[[0.1,50,"🎯 완벽!"],[0.3,30,"😲 와, 거의!"],[0.5,20,"👍 좋아요"],[1.0,10,"😅 아깝다"],[1.5,5,"🤔 음…"],[Infinity,1,"🙈 많이 빗나갔어요 (참가 점수)"]];   /* 1.5초 넘게 틀려도 참가 점수 1점 */
@@ -559,12 +559,14 @@ function press(){
   }
   const e=(performance.now()-t0)/1000;tRun=false;cancelAnimationFrame(raf);$("#play").classList.remove("counting");
   const err=Math.abs(e-TARGET),hit=PTS.find(p=>err<=p[0]),pts=hit?hit[1]:0;
-  st.att.push(e);st.score+=pts;if(pts>=30)st.ok++;st.no=Math.min(st.no,Math.round(err*100));st.best=Math.max(st.best,pts);
+  const prevBest=st.best;
+  st.att.push(e);st.no=Math.min(st.no,Math.round(err*100));st.best=Math.max(st.best,pts);
+  st.score=st.best;st.ok=Math.max(0,300-st.no);   /* 최종 점수 = 최고 기록 점수, ok = 정확도(동점 정렬용) */
   const c=$("#tClock");c.textContent=e.toFixed(2);c.classList.remove("hide");
-  $("#tRes").innerHTML=`${hit?hit[2]:"🙈 많이 빗나갔어요"} <b>${pts?"+"+pts:"0"}점</b><small>오차 ${err.toFixed(2)}초</small>`;
+  $("#tRes").innerHTML=`${hit?hit[2]:"🙈 많이 빗나갔어요"} <b>${pts}점</b><small>오차 ${err.toFixed(2)}초${st.att.length>1?(pts>prevBest||Math.round(err*100)===st.no?" · ✨ 최고 기록 갱신!":` · 최고 기록 ${st.best}점 유지`):""}</small>`;
   $("#tAtt").innerHTML=st.att.map((t,i)=>`<span>${i+1}차 ${t.toFixed(2)}초</span>`).join("");
   st.streak=`${Math.min(st.att.length+1,TRIES)}/${TRIES}`;hud();
-  buzz(pts>=30?[80,40,80]:30);if(pts)pop("+"+pts);
+  buzz(pts>=30?[80,40,80]:30);
   b.classList.remove("stop");
   if(st.att.length>=TRIES){b.textContent="끝! 결과 보는 중…";b.disabled=true;setTimeout(finish,1800);return}
   cool=true;b.textContent="잠깐…";
@@ -572,6 +574,8 @@ function press(){
 }
 function playStop(){cancelAnimationFrame(raf);tRun=false;$("#play").classList.remove("counting")}
 function resultExtra(r){
+  const best=(r.att||[]).slice().sort((a,b)=>Math.abs(a-10)-Math.abs(b-10))[0];
+  $("#rOk").textContent=best?best.toFixed(2)+"초":"–";$("#rOk").style.fontSize="21px";$("#rNo").style.fontSize="21px";
   $("#rNo").textContent=r.no>=999?"–":(r.no/100).toFixed(2)+"초";
   const el=$("#rRate");el.textContent=(r.att||[]).map(t=>t.toFixed(2)).join(" · ")||"–";el.style.fontSize="15px";
 }
