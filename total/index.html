@@ -9,10 +9,10 @@
 <style>
 /* 단합대회 종합 순위 — 레이스·두더지·성경 퀴즈·손가락 불나는 30초·10초 맞히기 점수를 모아 조별·개인별 합산 */
 :root{--bg:#1d1f24;--panel:#2a2d34;--line:#4a4d55;--ink:#fff;--mut:#9aa0ad;--gold:#ffd23f;--pink:#ff2e88;
-  --race:#e9ff3b;--mole:#ffb547;--quiz:#b9a4ff;--tug:#6ee7b7;--ten:#7dd3fc}
+  --race:#e9ff3b;--mole:#ffb547;--quiz:#b9a4ff;--tug:#6ee7b7;--ten:#7dd3fc;--beat:#ff8fd8}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:16px/1.45 "Noto Sans KR",system-ui,sans-serif}
-header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:clamp(12px,1.6vw,22px) clamp(16px,2.4vw,36px);background:linear-gradient(90deg,var(--race),var(--mole),var(--quiz),var(--tug),var(--ten));color:#141414;border-bottom:6px solid #000}
+header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:clamp(12px,1.6vw,22px) clamp(16px,2.4vw,36px);background:linear-gradient(90deg,var(--race),var(--mole),var(--quiz),var(--tug),var(--ten),var(--beat));color:#141414;border-bottom:6px solid #000}
 h1{font:400 clamp(30px,3.6vw,56px)/1.05 "Black Han Sans",sans-serif;margin:0}
 h1 em{font-style:normal;color:var(--pink)}
 .games{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
@@ -35,14 +35,14 @@ td:last-child{border-radius:0 12px 12px 0}
 td.nm{text-align:left;font:900 clamp(17px,1.6vw,26px) "Noto Sans KR",sans-serif;white-space:normal;overflow-wrap:anywhere}
 td.nm small{display:block;font:700 clamp(11px,.9vw,14px) "Noto Sans KR",sans-serif;color:var(--mut)}
 td.g{font-size:clamp(15px,1.3vw,21px);color:#d9dde6}
-td.g.race{color:var(--race)}td.g.mole{color:var(--mole)}td.g.quiz{color:var(--quiz)}td.g.tug{color:var(--tug)}td.g.ten{color:var(--ten)}
+td.g.race{color:var(--race)}td.g.mole{color:var(--mole)}td.g.quiz{color:var(--quiz)}td.g.tug{color:var(--tug)}td.g.ten{color:var(--ten)}td.g.beat{color:var(--beat)}
 td.g small{display:block;font:700 11px "Noto Sans KR",sans-serif;color:var(--mut)}
 td.tot{font-size:clamp(24px,2.4vw,40px);color:#fff}
 tr.r1 td{background:#4a4530}tr.r1 td:first-child{color:var(--gold);font-size:clamp(24px,2.2vw,36px)}
 tr.r2 td:first-child{color:#d9dde6}tr.r3 td:first-child{color:#e8a26a}
 .bar{height:8px;background:#3a3d45;border-radius:6px;overflow:hidden;margin-top:6px;display:flex}
 .bar i{display:block;height:100%}
-.bar .race{background:var(--race)}.bar .mole{background:var(--mole)}.bar .quiz{background:var(--quiz)}.bar .tug{background:var(--tug)}.bar .ten{background:var(--ten)}.bar .bo{background:var(--pink)}
+.bar .race{background:var(--race)}.bar .mole{background:var(--mole)}.bar .quiz{background:var(--quiz)}.bar .tug{background:var(--tug)}.bar .ten{background:var(--ten)}.bar .beat{background:var(--beat)}.bar .bo{background:var(--pink)}
 .legend{display:flex;flex-wrap:wrap;gap:12px;font:700 13px "Noto Sans KR",sans-serif;color:var(--mut);margin-top:6px}
 .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--c)}
 .empty{color:var(--mut);font:900 clamp(16px,1.4vw,22px) "Noto Sans KR",sans-serif;text-align:center;padding:40px 10px}
@@ -82,7 +82,8 @@ footer button:hover{border-color:#d9dde6}
     <li><b>종목 점수</b>: 게임에서 받은 점수 그대로 (레이스 맞히면 +5, 두더지 +5, 성경 3초 안 +10, 불나는 30초 1번에 +1, 10초는 오차가 작은 순)</li>
     <li><b>환산</b>: <span class="f">50 + 50 × (내 점수 ÷ 1등 점수)</span> — 1등 100점, 1등의 절반 75점, 참가만 해도 최소 50점!</li>
     <li><b>조 점수</b>: 종목마다 <b>조원 1인당 평균</b>을 같은 방식으로 환산(1등 조 100 ~ 최소 50) + 개인 🥇+5 🥈+3 🥉+2</li>
-    <li><b>종합</b>: 다섯 종목 환산 점수를 모두 더해요 (개인 250~500점)</li>
+    <li><b>리듬 맞춰 말하기</b>: 조 대항 · 성공한 판 수를 1등 조 100 ~ 최소 50으로 환산 (조 점수에만)</li>
+    <li><b>종합</b>: 조는 여섯 종목, 개인은 휴대폰 다섯 종목 환산 점수를 더해요 (개인 250~500점)</li>
   </ol></details>
 <div id="allBox"><section><h2 id="aH">📋 개인 종합 전체 순위</h2><div id="allList"></div></section></div>
 <footer>
@@ -100,8 +101,11 @@ const GAMES=[
   {id:"mole",name:"두더지",base:ROOT+"-mole",salt:"RETREAT-2026-MOLE",sec:60},
   {id:"quiz",name:"성경퀴즈",base:ROOT+"-quiz",salt:"RETREAT-2026-QUIZ",sec:180},
   {id:"tug",name:"불나는 30초",base:ROOT+"-tug",salt:"RETREAT-2026-TUG",sec:30},
-  {id:"ten",name:"10초",base:ROOT+"-ten",salt:"RETREAT-2026-TEN",sec:60}
+  {id:"ten",name:"10초",base:ROOT+"-ten",salt:"RETREAT-2026-TEN",sec:60},
+  /* 리듬: 큰 화면에서 진행자가 조별로 진행 → 조 점수에만 들어감 (개인 순위 없음) */
+  {id:"beat",name:"리듬",base:ROOT+"-beat",salt:"RETREAT-2026-BEAT",team:true}
 ];
+const PGAMES=GAMES.filter(g=>!g.team);   /* 개인 순위에 들어가는 종목 */
 const COUNT=5,BONUS=[5,3,2];   /* 개인 1·2·3등 → 그 조의 종목 환산 점수에 더함 */
 const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36).toUpperCase().padStart(6,"0").slice(-4)};
 const normG=v=>{let g=String(v||"").replace(/\s+/g,"").slice(0,8);if(/^\d+$/.test(g))g+="조";return g};
@@ -110,7 +114,7 @@ const byG=(a,b)=>a.localeCompare(b,"ko",{numeric:true});
 
 let view="all";                     /* "all" = 종합, 아니면 게임 id */
 const ov=new Map();                 /* 관리자가 고친 이름·조: d -> {n,g,t} (가장 최근 것) */
-for(const g of GAMES){g.cur=null;g.resetAt=0;g.rows=new Map();g.ok=[false,false]}
+for(const g of GAMES){g.cur=null;g.resetAt=0;g.rows=new Map();g.ok=[false,false];g.snap=null}
 
 function listen(url,onMsg,g,i){
   const es=new EventSource(url+"/sse?since=all");
@@ -118,7 +122,17 @@ function listen(url,onMsg,g,i){
   es.onerror=()=>{g.ok[i]=false;later()};
   es.onmessage=e=>{let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}if(x)onMsg(x,(m.time||0)*1000)};
 }
-for(const g of GAMES){
+/* 리듬: 큰 화면이 보내는 조별 기록 전체(가장 최근 것이 정답) */
+for(const g of GAMES.filter(g=>g.team)){
+  const es=new EventSource(g.base+"-res/sse?since=all");
+  es.onopen=()=>{g.ok=[true,true];later()};es.onerror=()=>{g.ok=[false,false];later()};
+  es.onmessage=e=>{let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
+    if(!x||x.t!=="s"||!Array.isArray(x.teams))return;
+    const t=(m.time||0)*1000,body=JSON.stringify(x.teams);
+    if(x.c!==hashCode(`${body}|${g.salt}`))return;
+    if(!g.snap||t>=g.snap.t){g.snap={t,teams:x.teams.filter(T=>T&&typeof T.n==="string").map(T=>({n:normG(T.n),best:Math.max(0,+T.best||0),tries:+T.tries||0}))};later()}};
+}
+for(const g of PGAMES){
   listen(g.base+"-ctl",(x,t)=>{
     if(x.type==="reset"){if(t>g.resetAt){g.resetAt=t;if(g.cur&&g.cur.sent<=t)g.cur=null}later();return}
     if(x.type==="start"&&typeof x.rid==="string"&&t>=g.resetAt&&(!g.cur||t>=g.cur.sent)){g.cur={rid:x.rid.slice(0,16),sent:t,endAt:t+(COUNT+g.sec)*1000};later()}
@@ -146,10 +160,17 @@ function gameResult(g){
 /* ===== 점수 환산 (마지막 순위도 최소 50점) =====
    개인: 종목마다 50 + 50 × (내 점수 ÷ 1등 점수)  — 10초는 오차 순위로 1등 100 → 마지막 순위 50
    조:   종목마다 50 + 50 × (1인 평균 ÷ 1등 조 평균) + 개인 1·2·3등 보너스(+5/+3/+2)
-   종합 = 다섯 종목 환산 점수의 합 */
+   리듬: 조만, 성공한 판 수로 50~100 환산
+   종합 = 조는 여섯 종목, 개인은 다섯 종목 환산 점수의 합 */
 /* 마지막 순위도 최소 50점: 50 + 50 × (내 점수 ÷ 1등 점수) */
 const pct=(v,top)=>top>0?Math.round(50+50*Math.max(0,v)/top):50;
 function computeGame(g){
+  if(g.team){   /* 리듬: 성공한 판 수 → 1등 조 100 ~ 최소 50, 보너스 없음 */
+    const ts=(g.snap?g.snap.teams:[]).filter(T=>T.tries>0).map(T=>({k:T.n||"조 없음",n:0,s:T.best,bo:0,avg:T.best,raw:T.best}));
+    const top=Math.max(0,...ts.map(T=>T.raw));for(const T of ts)T.pts=pct(T.raw,top);
+    ts.sort((a,b)=>b.pts-a.pts||b.raw-a.raw||byG(a.k,b.k));let r=0;ts.forEach((x,i)=>{r=i&&x.pts===ts[i-1].pts?r:i+1;x.rk=r});
+    return {kind:"game",g,ts,ps:[]};
+  }
   const list=gameResult(g),tm=new Map();
   /* 10초 맞히기: 점수 대신 오차 순위 점수 = 1등 100 → 마지막 순위 50 고르게 */
   const N=list.length;for(const x of list)x.v=g.id==="ten"?(N<=1?100:Math.round(50+50*(N-x.rk)/(N-1))):x.s;
@@ -183,10 +204,10 @@ function compute(){
 }
 const cell=(v,id,sub)=>`<td class="g ${id}">${v==null?"–":v}${sub?`<small>${sub}</small>`:""}</td>`;
 const rc=rk=>rk<=3?` class="r${rk}"`:"";
-const MAXT=GAMES.length*100;
+const MAXT=GAMES.length*100,PMAX=PGAMES.length*100;
 function peopleTable(list){
-  return `<table><thead><tr><th>#</th><th>이름</th>${GAMES.map(g=>`<th>${g.name}</th>`).join("")}<th>합계</th></tr></thead><tbody>${
-    list.map(p=>`<tr${rc(p.rk)}><td>${p.rk}</td><td class="nm">${esc(p.n)}<small>${esc(p.g||"조 없음")}</small></td>${GAMES.map(g=>cell(p.per[g.id],g.id,p.raw[g.id]!=null?`${p.raw[g.id]}점`:"")).join("")}<td class="tot">${p.tot}</td></tr>`).join("")}</tbody></table>`;
+  return `<table><thead><tr><th>#</th><th>이름</th>${PGAMES.map(g=>`<th>${g.name}</th>`).join("")}<th>합계</th></tr></thead><tbody>${
+    list.map(p=>`<tr${rc(p.rk)}><td>${p.rk}</td><td class="nm">${esc(p.n)}<small>${esc(p.g||"조 없음")}</small></td>${PGAMES.map(g=>cell(p.per[g.id],g.id,p.raw[g.id]!=null?`${p.raw[g.id]}점`:"")).join("")}<td class="tot">${p.tot}</td></tr>`).join("")}</tbody></table>`;
 }
 let last={kind:"all",ts:[],ps:[]};
 const gname=id=>(GAMES.find(g=>g.id===id)||{}).name;
@@ -196,23 +217,23 @@ function gamePeople(list){
 }
 function render(){
   const now=Date.now();
-  $("#games").innerHTML=`<button class="gchip all${view==="all"?" sel":""}" data-v="all">🏆 종합</button>`+GAMES.map(g=>{const c=g.cur,st=!c?"idle":now<c.endAt?"run":"end";
+  $("#games").innerHTML=`<button class="gchip all${view==="all"?" sel":""}" data-v="all">🏆 종합</button>`+GAMES.map(g=>{const c=g.cur,st=g.team?(g.snap&&g.snap.teams.some(T=>T.tries)?"end":"idle"):!c?"idle":now<c.endAt?"run":"end";
     return `<button class="gchip ${st}${view===g.id?" sel":""}" data-v="${g.id}"><i></i>${g.name} · ${st==="idle"?"대기":st==="run"?"진행 중":"완료"}</button>`}).join("");
   const okN=GAMES.filter(g=>g.ok[0]&&g.ok[1]).length;
   $("#conn").textContent=(okN===GAMES.length?"● 모든 게임 실시간 연결됨":`○ 연결 중… (${okN}/${GAMES.length})`)+" · 각 게임의 가장 최근 판 기준 · 위 버튼으로 게임별 성적 보기";
   const bonusTxt=`개인 1·2·3등 보너스 (+${BONUS.join(" / +")})`;
   if(view==="all"){
     $("#mainH").innerHTML="단합대회 <em>종합</em> 순위";
-    $("#tH").textContent="👥 조별 종합";$("#tSub").textContent=`종목마다 조원 1인당 평균을 1등 조 100 ~ 최소 50으로 환산 + ${bonusTxt} → 다섯 종목을 더한 값`;
-    $("#pH").textContent="🏅 개인 종합 TOP 10";$("#pSub").textContent=`종목마다 1등 100 ~ 최소 50으로 환산해 더한 값 · 최대 ${MAXT}점 · 같은 폰으로 참가해야 한 사람으로 합산`;
+    $("#tH").textContent="👥 조별 종합";$("#tSub").textContent=`종목마다 조원 1인당 평균을 1등 조 100 ~ 최소 50으로 환산 + ${bonusTxt}, 리듬은 성공한 판 수로 환산 → 여섯 종목을 더한 값`;
+    $("#pH").textContent="🏅 개인 종합 TOP 10";$("#pSub").textContent=`종목마다 1등 100 ~ 최소 50으로 환산해 더한 값 · 최대 ${PMAX}점 (리듬은 조 대항이라 개인 합계에 없음) · 같은 폰으로 참가해야 한 사람으로 합산`;
     $("#aH").textContent="📋 개인 종합 전체 순위";
     const {ts,ps}=compute();last={kind:"all",ts,ps};
     if(!ts.length)$("#teams").innerHTML=`<p class="empty">아직 점수가 없어요.<br>게임을 하면 여기에 조별 점수가 쌓여요.</p>`;
     else{
       $("#teams").innerHTML=`<table><thead><tr><th>#</th><th>조</th>${GAMES.map(g=>`<th>${g.name}</th>`).join("")}<th>종합</th></tr></thead><tbody>${
-        ts.map(T=>`<tr${rc(T.rk)}><td>${T.rk}</td><td class="nm">${esc(T.k)}<small>${T.mem.size}명 참가</small><div class="bar">${
+        ts.map(T=>`<tr${rc(T.rk)}><td>${T.rk}</td><td class="nm">${esc(T.k)}<small>${T.mem.size?`${T.mem.size}명 참가`:"리듬만 참가"}</small><div class="bar">${
           GAMES.map(g=>{const p=T.per[g.id];return p?`<i class="${g.id}" style="width:${p.pts/MAXT*100}%"></i>`:""}).join("")}</div></td>${
-          GAMES.map(g=>{const p=T.per[g.id];return cell(p?p.pts:null,g.id,p?`평균 ${p.avg}${p.bo?` +${p.bo}`:""}`:"")}).join("")}<td class="tot">${T.tot}</td></tr>`).join("")}</tbody></table>`;
+          GAMES.map(g=>{const p=T.per[g.id];return cell(p?p.pts:null,g.id,p?(g.team?`${p.s}판`:`평균 ${p.avg}${p.bo?` +${p.bo}`:""}`):"")}).join("")}<td class="tot">${T.tot}</td></tr>`).join("")}</tbody></table>`;
     }
     $("#legend").innerHTML=GAMES.map(g=>`<span style="--c:var(--${g.id})">${g.name}</span>`).join("")+`<span style="--c:#555">작은 글씨 = 1인 평균 (+보너스)</span>`;
     $("#people").innerHTML=ps.length?peopleTable(ps.slice(0,10))+(ps.length>10?`<p class="more">그 외 ${ps.length-10}명 · 아래 '개인 전체 순위 보기'</p>`:""):`<p class="empty">아직 기록이 없어요.</p>`;
@@ -227,6 +248,16 @@ function render(){
   $("#pH").textContent=`🏅 개인 순위 · ${g.name} TOP 10`;$("#pSub").textContent="이 게임의 가장 최근 판 기록 · 환산 = 1등 100 ~ 최소 50";
   $("#aH").textContent=`📋 ${g.name} 개인 전체 순위`;
   const ts=R.ts,ps=R.ps;
+  if(g.team){
+    $("#tSub").textContent="성공한 판 수를 1등 조 100 ~ 최소 50으로 환산 (종합에 들어가는 점수) · 큰 화면 리듬 게임에서 자동으로 들어와요";
+    $("#pH").textContent="🏅 개인 순위";$("#pSub").textContent="조 대항 경기라 개인 순위는 없어요";$("#aH").textContent="📋 개인 순위";
+    $("#teams").innerHTML=ts.length?`<table><thead><tr><th>#</th><th>조</th><th>성공한 판</th><th>환산</th></tr></thead><tbody>${
+      ts.map(T=>`<tr${rc(T.rk)}><td>${T.rk}</td><td class="nm">${esc(T.k)}<div class="bar"><i class="beat" style="width:${T.pts}%"></i></div></td><td class="g beat">${T.s}판</td><td class="tot">${T.pts}</td></tr>`).join("")}</tbody></table>`
+      :`<p class="empty">아직 리듬 게임 기록이 없어요.<br>큰 화면 리듬 게임에서 조별로 도전하면 여기에 들어와요.</p>`;
+    $("#legend").innerHTML=`<span style="--c:var(--beat)">리듬</span><span style="--c:#555">1등 조 100 ~ 최소 50</span>`;
+    $("#people").innerHTML=`<p class="empty">조 대항 경기라 개인 순위는 없어요.</p>`;$("#allList").innerHTML=$("#people").innerHTML;
+    return;
+  }
   if(!ts.length)$("#teams").innerHTML=`<p class="empty">${g.cur?"아직 기록이 들어오지 않았어요.":"아직 이 게임을 하지 않았어요."}</p>`;
   else{
     $("#teams").innerHTML=`<table><thead><tr><th>#</th><th>조</th><th>1인 평균</th><th>보너스</th><th>환산</th></tr></thead><tbody>${
@@ -246,8 +277,8 @@ $("#copy").addEventListener("click",()=>{
     const {ts,ps}=last;
     tsv=[["조별 종합 순위","조",...GAMES.map(g=>g.name+"(환산)"),"종합"].join("\t")]
       .concat(ts.map(T=>[T.rk,T.k,...GAMES.map(g=>T.per[g.id]?T.per[g.id].pts:""),T.tot].join("\t")))
-      .concat(["",["개인 종합 순위","이름","조",...GAMES.map(g=>g.name+"(환산)"),"합계"].join("\t")])
-      .concat(ps.map(p=>[p.rk,p.n,p.g,...GAMES.map(g=>p.per[g.id]??""),p.tot].join("\t"))).join("\n");
+      .concat(["",["개인 종합 순위","이름","조",...PGAMES.map(g=>g.name+"(환산)"),"합계"].join("\t")])
+      .concat(ps.map(p=>[p.rk,p.n,p.g,...PGAMES.map(g=>p.per[g.id]??""),p.tot].join("\t"))).join("\n");
   }else{
     const {g,ts,ps}=last;
     tsv=[[`${g.name} 조별 순위`,"조","인원","점수합","1인 평균","보너스","환산"].join("\t")]

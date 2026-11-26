@@ -56,7 +56,10 @@ footer label{font:900 14px "Noto Sans KR",sans-serif;color:#cfc8e8;display:flex;
 .tlist .x{grid-column:3;justify-self:end;font:900 11px "Noto Sans KR",sans-serif;color:#999;background:none;border:0;cursor:pointer;padding:0}
 .tadd{display:flex;gap:6px}.tadd input{flex:1;min-width:0;border:3px solid #000;border-radius:10px;padding:6px 8px;font:900 14px "Noto Sans KR",sans-serif}
 .tadd button,.board .clr{border:3px solid #000;border-radius:10px;background:var(--mint);font:900 14px "Noto Sans KR",sans-serif;padding:6px 10px;cursor:pointer}
-.board .clr{background:transparent;color:#cfc8e8;border-color:#555;margin-top:auto}
+.net{margin:0;font:900 12px "Noto Sans KR",sans-serif}.net.ok{color:#6ee7b7}.net.bad{color:#ff8a8a}
+.board .links{display:flex;gap:6px;margin-top:auto}.board .links a{flex:1}.board a.tot.intro{background:#fff}
+.board a.tot{display:block;text-align:center;background:var(--gold);color:var(--ink);border:3px solid #000;border-radius:10px;padding:6px;font:900 14px "Noto Sans KR",sans-serif;text-decoration:none}
+.board .clr{background:transparent;color:#cfc8e8;border-color:#555}
 footer button.fail{background:#e8253b;color:#fff}
 .pick{position:fixed;inset:0;background:rgba(10,6,25,.82);display:none;place-items:center;z-index:30}.pick.on{display:grid}
 .pbox{background:#2a2245;border:5px solid #000;border-radius:26px;padding:28px 34px;text-align:center;max-width:min(900px,92vw)}
@@ -84,10 +87,12 @@ footer button.fail{background:#e8253b;color:#fff}
 
   <aside class="board" id="board">
     <h2>🏆 조별 도전</h2>
-    <p class="rule">1판 성공할 때마다 <b>+10</b> · 판마다 비트가 빨라져요 · 실패할 때까지!</p>
+    <p class="rule">1판 성공할 때마다 <b>+10</b> · 판마다 비트가 빨라져요 · 실패할 때까지!<br>조 이름은 휴대폰 게임에서 쓴 것과 같게 (예: 1조)</p>
     <div class="now">지금 도전: <b id="nowTeam">조를 고르세요</b></div>
     <ol class="tlist" id="tlist"></ol>
     <div class="tadd"><input id="tName" placeholder="조 이름 (예: 5조)" maxlength="8"><button id="tAddBtn">추가</button></div>
+    <p class="net" id="net"></p>
+    <div class="links"><a class="tot" href="../total/" target="_blank" rel="noopener">🏆 종합 순위</a><a class="tot intro" href="../">📱 소개 페이지</a></div>
     <button class="clr" id="tClear">기록 모두 지우기</button>
   </aside>
   <div class="stage" id="stage">
@@ -169,7 +174,18 @@ const PTS_ROUND=10,PTS_FINISH=20,KEY="beat1-teams";
 let teams=[],cur=null,cleared=0;
 try{teams=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){}
 if(!teams.length)teams=["1조","2조","3조","4조"].map(n=>({n,best:0,pts:0,tries:0,done:false}));
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(teams))}catch(e){}};
+/* 종합 점수판으로 조별 기록 전체를 보냄 (가장 최근 것이 반영됨) */
+const RES="https://ntfy.sh/hdk-retreat-r7k2m9-beat-res",SALT="RETREAT-2026-BEAT";
+const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36).toUpperCase().padStart(6,"0").slice(-4)};
+const normG=v=>{let g=String(v||"").replace(/\s+/g,"").slice(0,8);if(/^\d+$/.test(g))g+="조";return g};
+let sendT=null,sendOk=null;
+function send(){clearTimeout(sendT);sendT=setTimeout(()=>{
+  const arr=teams.map(t=>({n:t.n,best:t.best,tries:t.tries})),body=JSON.stringify(arr);
+  fetch(RES,{method:"POST",body:JSON.stringify({t:"s",teams:arr,c:hashCode(body+"|"+SALT)})})
+    .then(r=>{sendOk=r.ok;netMark()},()=>{sendOk=false;netMark()});
+},300)}
+function netMark(){const el=$("#net");if(el)el.textContent=sendOk==null?"":sendOk?"● 종합 점수판에 반영됨":"○ 종합 점수판 전송 실패 — 인터넷 확인 (다음 기록 때 다시 보냄)";if(el)el.className="net "+(sendOk?"ok":"bad")}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(teams))}catch(e){};send()};
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function toast(t,ms=1800){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),ms)}
 function paint(){
@@ -209,7 +225,7 @@ function openPick(){
 $("#pgrid").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;$("#pick").classList.remove("on");cur=b.dataset.n;reset();paint();start()});
 $("#pCancel").addEventListener("click",()=>$("#pick").classList.remove("on"));
 function confirmDel(n){const t=teams.find(x=>x.n===n);return !t||!t.tries||window.confirm(`${n} 기록을 지울까요?`)}
-$("#tAddBtn").addEventListener("click",()=>{const n=$("#tName").value.trim();if(!n||teams.some(t=>t.n===n))return;teams.push({n,best:0,pts:0,tries:0,done:false});$("#tName").value="";save();paint()});
+$("#tAddBtn").addEventListener("click",()=>{const n=normG($("#tName").value);if(!n||teams.some(t=>t.n===n))return;teams.push({n,best:0,pts:0,tries:0,done:false});$("#tName").value="";save();paint()});
 $("#tName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#tAddBtn").click();e.stopPropagation()});
 $("#tClear").addEventListener("click",()=>{if(!window.confirm("모든 조 기록을 지울까요?"))return;teams.forEach(t=>Object.assign(t,{best:0,pts:0,tries:0,done:false}));save();paint()});
 
