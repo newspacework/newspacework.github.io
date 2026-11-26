@@ -214,7 +214,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <div class="card">
     <ol class="rules">
       <li><b>시작</b>을 누르고, 마음속으로 세다가 <b>정확히 10초</b>에 <b>멈춰!</b>를 누르세요</li>
-      <li>시계는 <b>3초 뒤에 사라져요</b> — 그다음은 감으로!</li>
+      <li>시계는 <b>보이지 않아요</b> — 오직 마음속으로 세기! 🤫</li>
       <li>오차 0.05초 이내 <b>+50점</b> 🎯, 0.15초 <b>+30</b>, 0.3초 <b>+20</b>, 0.6초 <b>+10</b>, 1초 <b>+5</b></li>
       <li>한 사람당 <b>3번 도전</b>해서 점수를 모두 더해요 (제한 시간 1분)</li>
       <li>진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
@@ -526,6 +526,7 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 .tres b{color:var(--pink);font-size:26px}.tres small{display:block;font-size:14px;color:var(--mut)}
 .tbig{min-height:110px!important;font:400 40px "Black Han Sans",sans-serif!important;background:var(--pink)!important;color:#fff!important;touch-action:none}
 .tbig.stop{background:#141414!important}
+#play.counting #tLeft,#play.counting .bar{visibility:hidden}   /* 세는 동안엔 남은 시간도 숨김 (커닝 방지) */
 .tbig:disabled{opacity:.6}
 .tatt{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .tatt span{border:2px solid var(--line);border-radius:999px;padding:3px 12px;font:900 15px "Noto Sans KR",sans-serif;background:var(--card)}
@@ -533,7 +534,7 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 const COLS="정확횟수\t최소오차(초)";
 const colVals=x=>[x.ok,x.no>=999?"":(x.no/100).toFixed(2)];
 const rowInfo=x=>`정확 ${x.ok}번 · 최소 오차 ${x.no>=999?"–":(x.no/100).toFixed(2)+"초"}`;
-const TRIES=3,SHOW_MS=3000,TARGET=10;
+const TRIES=3,SHOW_MS=0,TARGET=10;   /* SHOW_MS: 처음 몇 ms 동안 시계를 보여 줄지 (0 = 처음부터 안 보임) */
 /* [오차(초) 이내, 점수, 한마디] */
 const PTS=[[0.05,50,"🎯 완벽!"],[0.15,30,"😲 와, 거의!"],[0.3,20,"👍 좋아요"],[0.6,10,"😅 아깝다"],[1.0,5,"🤔 음…"]];
 let tRun=false,t0=0,raf=0,cool=false;
@@ -545,7 +546,7 @@ function playStart(){
 function loop(){
   const ms=performance.now()-t0,c=$("#tClock");
   if(ms<SHOW_MS){c.textContent=(ms/1000).toFixed(2);c.classList.remove("hide")}
-  else if(!c.classList.contains("hide")){c.textContent="?.??";c.classList.add("hide");$("#tMsg").textContent="이제부터는 감으로! 🤫"}
+  else if(!c.classList.contains("hide")){c.textContent="?.??";c.classList.add("hide")}
   raf=requestAnimationFrame(loop);
 }
 function press(){
@@ -553,10 +554,10 @@ function press(){
   const b=$("#tBtn");
   if(!tRun){
     if(st.att.length>=TRIES)return;
-    tRun=true;t0=performance.now();b.textContent="멈춰!";b.classList.add("stop");
-    $("#tRes").innerHTML="";$("#tMsg").textContent="3초 뒤 시계가 사라져요…";buzz(20);loop();return;
+    tRun=true;t0=performance.now();$("#play").classList.add("counting");b.textContent="멈춰!";b.classList.add("stop");
+    $("#tRes").innerHTML="";$("#tMsg").textContent="마음속으로 세는 중… 🤫";$("#tClock").textContent="?.??";$("#tClock").classList.add("hide");buzz(20);loop();return;
   }
-  const e=(performance.now()-t0)/1000;tRun=false;cancelAnimationFrame(raf);
+  const e=(performance.now()-t0)/1000;tRun=false;cancelAnimationFrame(raf);$("#play").classList.remove("counting");
   const err=Math.abs(e-TARGET),hit=PTS.find(p=>err<=p[0]),pts=hit?hit[1]:0;
   st.att.push(e);st.score+=pts;if(pts>=30)st.ok++;st.no=Math.min(st.no,Math.round(err*100));st.best=Math.max(st.best,pts);
   const c=$("#tClock");c.textContent=e.toFixed(2);c.classList.remove("hide");
@@ -569,7 +570,7 @@ function press(){
   cool=true;b.textContent="잠깐…";
   setTimeout(()=>{cool=false;if(!st.tick)return;b.textContent=`${st.att.length+1}번째 시작`;$("#tMsg").textContent="다시! 시작 누르고 마음속으로 10초"},1500);
 }
-function playStop(){cancelAnimationFrame(raf);tRun=false}
+function playStop(){cancelAnimationFrame(raf);tRun=false;$("#play").classList.remove("counting")}
 function resultExtra(r){
   $("#rNo").textContent=r.no>=999?"–":(r.no/100).toFixed(2)+"초";
   const el=$("#rRate");el.textContent=(r.att||[]).map(t=>t.toFixed(2)).join(" · ")||"–";el.style.fontSize="15px";
