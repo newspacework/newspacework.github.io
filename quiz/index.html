@@ -65,6 +65,7 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 #stage.ns{background:#fff3b0}
 #stage.ns .qcat{color:#c2410c;font-size:18px}
 #stage.ns .qtimer{visibility:hidden}
+.qpass:disabled{opacity:.45;cursor:default}
 .qpass{appearance:none;border:2px solid var(--line);background:transparent;color:var(--mut);font:900 16px "Noto Sans KR",sans-serif;border-radius:12px;padding:10px;cursor:pointer}
 .qopt:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--line)}
 .qopt.ok{background:#2bd46b;color:#fff}.qopt.ng{background:var(--pink);color:#fff}
@@ -236,7 +237,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <ol class="rules">
       <li>성경 인물·지명·단어·책 문제가 나오고, <b>4개 보기</b> 중 정답을 고르세요</li>
       <li><b>3초 안에</b> 맞히면 <b>+10점</b>, 그 뒤에 맞히면 <b>+5점</b></li>
-      <li>틀리면 <b>−2점</b>. 모르면 <b>패스</b>(0점)하고 다음 문제로!</li>
+      <li>틀리면 <b>−2점</b>. 모르면 <b>패스</b>(0점) — 게임당 <b>3번</b>까지!</li>
       <li>중간중간 <b>😆 넌센스 보너스</b>! 맞히면 <b>+15점</b>, 틀려도 감점 없음</li>
       <li>시간은 <b>2분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
@@ -479,7 +480,7 @@ $("#nextBtn").addEventListener("click",()=>{$("#nextBtn").style.display="none";w
 
 function begin(endAt){
   phase="play";
-  Object.assign(st,{score:0,ok:0,no:0,cs:0,streak:0,best:0,endAt,frozen:false});
+  Object.assign(st,{score:0,ok:0,no:0,cs:0,pl:PASS_MAX,streak:0,best:0,endAt,frozen:false});
   show("play");hud();next();
   st.tick=setInterval(tick,200);tick();
   if(!practice){progOff=false;setTimeout(sendProgress,3000+rnd(4000));st.prog=setInterval(sendProgress,15000)}
@@ -617,7 +618,8 @@ const NS=[
 ["시험지","진짜 문제투성이인 것은?"],
 ["당기소","'미소'의 반대말은?"]
 ];
-const NS_EVERY=5,NS_PTS=15;
+const NS_EVERY=5,NS_PTS=15,PASS_MAX=3;   /* 패스는 게임당 3번까지 */
+const passLabel=()=>{const b=$("#qPass");if(!b)return;b.disabled=st.pl<=0;b.textContent=st.pl>0?`모르겠어요 · 패스 (0점) · 남은 ${st.pl}번`:"패스 기회를 다 썼어요"};
 let nsDeck=[],nsI=0,qn=0,isNS=false;
 const FAST_MS=3000;
 let deck=[],qi=0,qcur=null,qStart=0,lock=false,hintT=null;
@@ -626,8 +628,8 @@ function buildQuiz(){
   $("#stage").innerHTML=`<p class="qcat" id="qCat"></p><p class="qtext" id="qText"></p><div class="qtimer" id="qTm"><i></i></div><p class="qpts" id="qPts"></p><div class="qopts" id="qOpts"></div><button class="qpass" id="qPass">모르겠어요 · 패스 (0점)</button><p class="reveal" id="qRev"></p>`;
   $("#qOpts").addEventListener("click",e=>{const b=e.target.closest(".qopt");if(b)pick(b)});
   $("#qPass").addEventListener("click",()=>{
-    if(lock||!qlive()||!qcur)return;lock=true;clearTimeout(hintT);
-    st.streak=0;hud();
+    if(lock||!qlive()||!qcur||st.pl<=0)return;lock=true;clearTimeout(hintT);
+    st.pl--;passLabel();st.streak=0;hud();
     $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
     $("#qRev").textContent=`패스 · 정답은 「${qcur[0]}」`;
     setTimeout(()=>next(true),700);
@@ -642,7 +644,7 @@ function next(keep){
   if(isNS){if(nsI>=nsDeck.length){nsDeck=shuffle(NS.slice());nsI=0}const n=nsDeck[nsI++];qcur=[n[0],n[1],"😆 넌센스 보너스"];qi--}
   else qcur=deck[qi];
   lock=false;clearTimeout(hintT);
-  $("#stage").classList.toggle("ns",isNS);
+  $("#stage").classList.toggle("ns",isNS);passLabel();
   const pool=isNS?NS.map(n=>[n[0],n[1],qcur[2]]):QZ;
   const others=shuffle(pool.filter(q=>q[2]===qcur[2]&&q[0]!==qcur[0])).slice(0,3).map(q=>q[0]);
   const opts=shuffle([qcur[0],...others]);
