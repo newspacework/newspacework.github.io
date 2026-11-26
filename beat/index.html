@@ -22,9 +22,9 @@ h1 em{font-style:normal;color:var(--pink)}
 footer .flink{cursor:pointer;background:#2a2245;color:#fff;border:3px solid #fff;border-radius:12px;padding:8px 12px;font:900 15px "Noto Sans KR",sans-serif;text-decoration:none;white-space:nowrap}footer #bVoice{margin-left:auto}
 .chip.team{background:var(--pink);color:#fff}.chip.ok{background:#fff}.chip.round{background:var(--gold)}.chip.bpm{background:var(--mint)}
 .stage{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:clamp(10px,1.6vw,24px)}
-.cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--c);color:var(--ink);border:6px solid #000;border-radius:28px;box-shadow:8px 8px 0 #000;transition:transform .08s,box-shadow .08s,filter .15s;filter:saturate(.75) brightness(.78)}
+.cell{container-type:inline-size;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--c);color:var(--ink);border:6px solid #000;border-radius:28px;box-shadow:8px 8px 0 #000;transition:transform .08s,box-shadow .08s,filter .15s;filter:saturate(.75) brightness(.78)}
 .cell .emo{font-size:clamp(40px,6vh,80px);line-height:1}
-.cell .nm{font:400 clamp(34px,5.6vw,92px)/1 "Black Han Sans",sans-serif;white-space:nowrap}
+.cell .nm{font:400 clamp(34px,5.6vw,92px)/1 "Black Han Sans",sans-serif;white-space:nowrap;font-size:min(clamp(34px,5.6vw,92px),calc(86cqi / var(--n,3)))}
 .cell .no{position:absolute;top:10px;left:14px;font:900 clamp(13px,1.2vw,18px) "Noto Sans KR",sans-serif;opacity:.55}
 .cell.on{filter:none;transform:translate(-4px,-6px) scale(1.06);box-shadow:14px 16px 0 #000;outline:8px solid #fff;outline-offset:4px;z-index:2}
 .cell.done{filter:saturate(.35) brightness(.55)}
@@ -116,9 +116,9 @@ footer button.fail{background:#e8253b;color:#fff}
     <button class="fail" id="bFail">❌ 실패 (X)</button>
     <button id="bNext">다음 판 ⏭</button>
     <button id="bReset">처음부터 ⟲</button>
-    <label>세트 <select id="selSet"><option value="team">👥 조원 이름 (조마다)</option><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option></select></label>
+    <label>세트 <select id="selSet"><option value="team">👥 조원 이름 (조마다)</option><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option><option value="confuse">🌀 헷갈리는 이름 쌍</option><option value="twelve">예수님의 12제자</option><option value="place">성경 지명</option><option value="fruit">성령의 열매</option><option value="church">교회 단어</option></select></label>
     <label>시작 속도 <select id="selBpm"><option value="80">느리게 80</option><option value="90" selected>보통 90</option><option value="100">빠르게 100</option></select></label>
-    <button class="flink" id="bVoice">🗣 안내 음성 켬</button><a class="flink" href="../">📱 소개 페이지</a><a class="flink" href="../total/" target="_blank" rel="noopener">🏆 종합 순위</a><span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
+    <button class="flink" id="bVoice">🗣 음성 켬</button><a class="flink" href="../">📱 소개</a><a class="flink" href="../total/" target="_blank" rel="noopener">🏆 종합</a><span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
   </footer>
 </div>
 <div class="toast" id="toast"></div>
@@ -157,6 +157,53 @@ const SETS={
     [["마태복음","1️⃣"],["마가복음","2️⃣"],["누가복음","3️⃣"],["요한복음","4️⃣"]],
     [["로마서","🏛️"],["갈라디아서","🕊️"],["에베소서","🛡️"]],
     [["요한일서","1️⃣"],["요한이서","2️⃣"],["요한삼서","3️⃣"],["요한계시록","✨"]]
+  ],
+  /* 헷갈리는 이름 쌍: 비슷한 이름끼리 붙여서 꼬이게 */
+  confuse:[
+    [["사울","⚔️"],["바울","✉️"]],
+    [["엘리야","🔥"],["엘리사","💧"]],
+    [["아론","🔥"],["아벨","🐑"],["아담","🍎"]],
+    [["마리아","🌸"],["마르다","🍲"],["마태","💰"]],
+    [["요셉","🧥"],["요나","🐋"],["요한","🕊️"],["유다","🪙"]],
+    [["사울","⚔️"],["바울","✉️"],["사라","👵"],["바락","⚡"]],
+    [["엘리","🧓"],["엘리야","🔥"],["엘리사","💧"],["엘리압","🛡️"]],
+    [["삼손","💪"],["사무엘","📜"],["솔로몬","👑"],["스데반","🪨"]]
+  ],
+  /* 예수님의 12제자 */
+  twelve:[
+    [["베드로","🎣"],["안드레","🐟"]],
+    [["야고보","⛵"],["요한","🕊️"],["베드로","🎣"]],
+    [["빌립","🛞"],["바돌로매","🌿"],["도마","🤔"]],
+    [["마태","💰"],["야고보","⛵"],["다대오","🙏"],["시몬","🔥"]],
+    [["안드레","🐟"],["빌립","🛞"],["바돌로매","🌿"],["도마","🤔"]],
+    [["가룟 유다","🪙"],["맛디아","🎲"],["마태","💰"],["시몬","🔥"]]
+  ],
+  /* 성경 지명 */
+  place:[
+    [["예루살렘","🏙️"],["베들레헴","⭐"]],
+    [["나사렛","🪚"],["갈릴리","🌊"],["여리고","🧱"]],
+    [["애굽","🐫"],["바벨론","🗼"],["가나안","🍇"]],
+    [["시내산","⛰️"],["감람산","🫒"],["갈멜산","🔥"],["골고다","✝️"]],
+    [["베다니","🏠"],["벳새다","🐟"],["베들레헴","⭐"],["벧엘","🪜"]],
+    [["다메섹","🛣️"],["안디옥","⛪"],["에베소","🛡️"],["고린도","🏛️"]]
+  ],
+  /* 성령의 아홉 열매 (갈 5:22-23) */
+  fruit:[
+    [["사랑","❤️"],["희락","😊"]],
+    [["화평","🕊️"],["오래참음","⏳"],["사랑","❤️"]],
+    [["자비","🤲"],["양선","🌱"],["충성","💪"]],
+    [["온유","🐑"],["절제","🛑"],["희락","😊"],["화평","🕊️"]],
+    [["오래참음","⏳"],["양선","🌱"],["온유","🐑"],["자비","🤲"]],
+    [["사랑","❤️"],["충성","💪"],["절제","🛑"],["희락","😊"]]
+  ],
+  /* 교회 단어 */
+  church:[
+    [["할렐루야","🙌"],["아멘","🙏"]],
+    [["호산나","🌿"],["임마누엘","✨"],["아멘","🙏"]],
+    [["샬롬","🕊️"],["마라나타","⏰"],["할렐루야","🙌"]],
+    [["찬양","🎶"],["예배","⛪"],["기도","🙏"],["말씀","📖"]],
+    [["임마누엘","✨"],["호산나","🌿"],["할렐루야","🙌"],["마라나타","⏰"]],
+    [["은혜","💧"],["감사","💐"],["사랑","❤️"],["소망","🌅"]]
   ]
 };
 SETS.mix=[SETS.ot[0],SETS.nt[0],SETS.ot[2],SETS.nt[2],SETS.ot[4],SETS.nt[3],SETS.ot[3],SETS.nt[4],SETS.ot[6]];
@@ -296,7 +343,7 @@ function makeRound(){
   else{for(let i=0;i<8;i++)arr.push(pool[rnd(pool.length)]);if(new Set(arr.map(a=>a[0])).size<2)arr[7]=pool.find(p=>p[0]!==arr[0][0])||arr[7]}
   cells=arr;
   const st=$("#stage");st.querySelectorAll(".cell").forEach(c=>c.remove());
-  arr.forEach(([n,e],i)=>{const d=document.createElement("div");d.className="cell";d.style.setProperty("--c",COLORS[i]);d.innerHTML=`<span class="no">${i+1}</span><span class="emo">${e}</span><span class="nm">${esc(n)}</span>`;st.appendChild(d)});
+  arr.forEach(([n,e],i)=>{const d=document.createElement("div");d.className="cell";d.style.setProperty("--c",COLORS[i]);d.style.setProperty("--n",Math.max(3,[...n.replace(/\s/g,"")].length));d.innerHTML=`<span class="no">${i+1}</span><span class="emo">${e}</span><span class="nm">${esc(n)}</span>`;st.appendChild(d)});
   $("#cRound").textContent=`${round+1}판`;$("#cBpm").textContent=`${bpm} BPM`;
 }
 /* 한 판 = 준비 4박(쿵짝쿵짝) + 이름 8박 + 쉼 2박 */
@@ -368,7 +415,7 @@ $("#bGo").addEventListener("click",()=>running?pause():start());
 $("#bNext").addEventListener("click",()=>{unlock();nextRound()});
 $("#bReset").addEventListener("click",reset);
 $("#bFail").addEventListener("click",()=>{unlock();fail()});
-const vLabel=()=>$("#bVoice").textContent=voiceOn()?"🗣 안내 음성 켬":"🔇 안내 음성 끔";vLabel();
+const vLabel=()=>$("#bVoice").textContent=voiceOn()?"🗣 음성 켬":"🔇 음성 끔";vLabel();
 $("#bVoice").addEventListener("click",()=>{try{localStorage.setItem("beat1-voice",voiceOn()?"0":"1")}catch(e){}vLabel()});
 $("#selSet").addEventListener("change",()=>{reset();paint()});$("#selBpm").addEventListener("change",reset);
 document.addEventListener("keydown",e=>{
