@@ -123,11 +123,14 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .gname{display:inline-block;align-self:flex-start;margin:0;background:var(--line);color:var(--bg);font:900 15px "Noto Sans KR",sans-serif;padding:5px 14px;border-radius:999px}
 .plinks{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .plinks .btn{display:block;text-align:center;text-decoration:none;font-size:17px;padding:12px 6px}
+.rightx{position:absolute;inset:-3px;z-index:6;border-radius:16px;background:rgba(15,157,74,.92);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;animation:wx .4s ease-out}
+.rightx b{font:400 clamp(110px,36vw,170px)/1 "Black Han Sans",sans-serif}
+.rightx span{font:400 clamp(30px,9vw,44px) "Black Han Sans",sans-serif}
 .wrongx{position:absolute;inset:-3px;z-index:6;border-radius:16px;background:rgba(232,37,59,.93);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;animation:wx .65s ease-out}
 .wrongx b{font:400 clamp(110px,36vw,170px)/1 "Black Han Sans",sans-serif}
 .wrongx span{font:400 clamp(30px,9vw,44px) "Black Han Sans",sans-serif}
 @keyframes wx{0%{opacity:0;transform:scale(1.15)}15%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:.85}}
-@media (prefers-reduced-motion:reduce){.wrongx{animation:none}}
+@media (prefers-reduced-motion:reduce){.wrongx,.rightx{animation:none}}
 .gonav{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:900 14px "Noto Sans KR",sans-serif}
 .gonav span{color:var(--mut);margin-right:4px}
 .gonav a{color:var(--ink);text-decoration:none;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
@@ -536,6 +539,12 @@ function bad(){
   pop("−2");
 }
 const guard=fn=>(...a)=>{if(st.frozen||Date.now()>=st.endAt)return;fn(...a)};
+/* 맞히면 초록 "O 딩동댕!" 0.4초 보여 주고 다음 문제로 */
+function right(p){
+  good(p);st.frozen=true;
+  const o=document.createElement("div");o.className="rightx";o.innerHTML=`<b>O</b><span>딩동댕! +${p}점</span>`;$("#stage").appendChild(o);
+  setTimeout(()=>{st.frozen=false;if(st.tick&&Date.now()<st.endAt)next();else o.remove()},400);
+}
 /* 틀리면 화면 가득 "✗ 땡!" 보여 주고 0.65초 뒤 다음 문제로 */
 function wrong(){
   bad();st.frozen=true;
@@ -549,28 +558,28 @@ function qStroop(sg){
   const askInk=Math.random()<.65,ans=askInk?c:w;
   const pool=shuffle([...Array(COLORS.length).keys()].filter(i=>i!==ans)).slice(0,3);pool.push(ans);shuffle(pool);
   sg.innerHTML=`<p class="q">${askInk?"글자의 <u>색깔</u>은?":"적혀 있는 <u>글자</u>는?"}</p><p class="word" style="color:${COLORS[c][1]}">${COLORS[w][0]}</p><div class="opts">${pool.map(i=>`<button class="opt" data-i="${i}">${COLORS[i][0]}</button>`).join("")}</div>`;
-  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===ans){good(5);next()}else wrong()})));
+  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===ans){right(5)}else wrong()})));
 }
 function qMath(sg){
   const op=["+","−","×"][rnd(3)];let a,b,r;
   if(op==="+"){a=rnd(40)+5;b=rnd(40)+5;r=a+b}else if(op==="−"){a=rnd(50)+20;b=rnd(a-5)+3;r=a-b}else{a=rnd(8)+2;b=rnd(8)+2;r=a*b}
   const truth=Math.random()<.5;const shown=truth?r:r+[-10,-2,-1,1,2,10][rnd(6)];
   sg.innerHTML=`<p class="q">맞으면 O, 틀리면 X</p><p class="word" style="color:#141414;font-size:clamp(44px,14vw,64px)">${a} ${op} ${b} = ${shown}</p><div class="opts"><button class="opt ox" data-v="1">O</button><button class="opt ox" data-v="0">X</button></div>`;
-  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if((b.dataset.v==="1")===truth){good(5);next()}else wrong()})));
+  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if((b.dataset.v==="1")===truth){right(5)}else wrong()})));
 }
 function qOrder(sg){
   const n=6,cells=shuffle([...Array(9)].map((_,i)=>i<n?i+1:0));let want=1;
   sg.innerHTML=`<p class="q">1부터 ${n}까지 순서대로 빠르게!</p><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${cells.map(v=>`<button class="cell${v?"":" blank"}" data-v="${v}">${v||""}</button>`).join("")}</div>`;
   sg.querySelectorAll(".cell:not(.blank)").forEach(b=>b.addEventListener("click",guard(()=>{
     const v=+b.dataset.v;if(b.classList.contains("done"))return;
-    if(v===want){b.classList.add("done");want++;buzz(8);if(want>n){good(10);next()}}else wrong();
+    if(v===want){b.classList.add("done");want++;buzz(8);if(want>n){right(10)}}else wrong();
   })));
 }
 const PAIRS=[["뭉","뭄"],["O","Q"],["갈","걀"],["E","F"],["밤","범"],["6","9"],["M","N"],["곰","공"],["d","b"],["8","B"],["W","V"]];
 function qOdd(sg){
   const [s,o]=shuffle(PAIRS[rnd(PAIRS.length)].slice());const k=16,at=rnd(k);
   sg.innerHTML=`<p class="q">하나만 다른 글자를 찾아라!</p><div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">${[...Array(k)].map((_,i)=>`<button class="cell" data-i="${i}" style="font-size:clamp(22px,7vw,34px)">${i===at?o:s}</button>`).join("")}</div>`;
-  sg.querySelectorAll(".cell").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===at){good(5);next()}else wrong()})));
+  sg.querySelectorAll(".cell").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===at){right(5)}else wrong()})));
 }
 const QS=[qStroop,qMath,qOrder,qOdd];let last=-1;
 function next(){let i=rnd(QS.length);if(i===last)i=(i+1)%QS.length;last=i;QS[i]($("#stage"))}
