@@ -26,6 +26,7 @@ h1 em{font-style:normal;color:var(--pink)}
 .hint{margin:0 0 10px;color:var(--mut);font:700 13px "Noto Sans KR",sans-serif}
 .hint b{color:var(--pink)}
 textarea{width:100%;min-height:300px;border:3px solid var(--ink);border-radius:14px;padding:10px 12px;font:700 17px/1.6 "Noto Sans KR",sans-serif;resize:vertical}
+.cnt .clear{float:right;border:3px solid var(--ink);border-radius:10px;background:#fff;padding:3px 12px;font:900 14px "Noto Sans KR",sans-serif;cursor:pointer;box-shadow:2px 2px 0 var(--ink)}
 .cnt{margin:8px 0 14px;font:900 15px "Noto Sans KR",sans-serif}.cnt b{color:var(--pink);font:400 22px "Black Han Sans",sans-serif}
 .opt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:900 16px "Noto Sans KR",sans-serif;margin-bottom:8px}
 .opt input[type=number]{width:74px;border:3px solid var(--ink);border-radius:10px;padding:6px 8px;font:400 22px "Black Han Sans",sans-serif;text-align:center}
@@ -81,7 +82,7 @@ body.big .team h3{font-size:46px}body.big .team li{font-size:28px}
       <h2>1. 이름 등록</h2>
       <p class="hint">한 줄에 한 명 (쉼표·띄어쓰기로 구분해도 돼요)<br>이름 앞에 <b>*</b>을 붙이면 조마다 고르게 나눠요 (예: <b>*김선생</b> — 교사·조장·리더)</p>
       <textarea id="names" placeholder="*김선생&#10;*이선생&#10;김민준&#10;이서연&#10;박지호&#10;최하은&#10;..."></textarea>
-      <p class="cnt">총 <b id="nTotal">0</b>명 <span id="nLead"></span></p>
+      <p class="cnt">총 <b id="nTotal">0</b>명 <span id="nLead"></span><button class="clear" id="clear">🧹 비우기</button></p>
       <h2>2. 몇 개 조?</h2>
       <div class="opt">
         <label><input type="radio" name="mode" value="teams" checked> 조 개수</label>
@@ -213,6 +214,11 @@ function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("on");c
 $("#names").addEventListener("input",update);$("#num").addEventListener("input",update);
 document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener("change",update));
 $("#go").addEventListener("click",roll);
+/* 비우기: 이름과 지금 편성만 지움 (저장한 편성은 그대로) */
+$("#clear").addEventListener("click",()=>{
+  if(($("#names").value.trim()||teams.length)&&!confirm("이름과 지금 편성을 모두 지울까요?\n(저장한 편성은 그대로 남아요)"))return;
+  $("#names").value="";teams=[];sel=null;curSave=null;update();render();renderSaves();$("#names").focus();toast("🧹 비웠어요");
+});
 $("#again").addEventListener("click",roll);
 $("#big").addEventListener("click",()=>{const on=document.body.classList.toggle("big");$("#big").textContent=on?"↩ 돌아가기":"📺 큰 화면"});
 $("#copy").addEventListener("click",()=>{
