@@ -344,6 +344,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <p class="conn" id="conn"><i></i><span id="connT">순위판 연결 중…</span><span id="bSus"></span> · <a href="#admin" style="color:#c9ccd4">관리자 화면</a> · <a href="#" id="bOut" style="color:#c9ccd4">나가기</a></p>
     <div class="adm">
       <span id="pinBox"><input id="pin" type="password" inputmode="numeric" placeholder="관리자 PIN" autocomplete="off"><button id="pinOk">확인</button><span class="pinmsg" id="pinMsg"></span></span>
+      <button class="resetbtn" id="bSnd">🔇 효과음 켜기</button>
       <button class="resetbtn" id="bResetAll">리셋</button>
       <button class="startbtn" id="bStart">시작!</button>
     </div>
@@ -765,6 +766,19 @@ function carSvg(col){
   return `<svg viewBox="0 0 120 50" aria-hidden="true"><path d="M6 34 L10 24 Q14 20 24 19 L46 18 L60 8 Q64 6 70 6 L86 6 Q92 6 96 12 L102 20 Q114 22 116 30 L116 36 Q116 40 112 40 L8 40 Q4 40 6 34Z" fill="${col}" stroke="#141414" stroke-width="3"/><path d="M63 11 L84 10 Q89 10 91 14 L95 20 L56 20Z" fill="#bfe9ff" stroke="#141414" stroke-width="2.5"/><rect x="2" y="16" width="10" height="6" rx="2" fill="#141414"/><circle cx="28" cy="40" r="9" fill="#141414"/><circle cx="28" cy="40" r="3.5" fill="#ddd"/><circle cx="94" cy="40" r="9" fill="#141414"/><circle cx="94" cy="40" r="3.5" fill="#ddd"/><path d="M30 28 H52" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/></svg>`;
 }
 const CAR_COLORS=["#ff2e88","#2f7bff","#ffd23f","#2bd46b","#ff7a1a","#9b5cff","#19d3e6","#ff4d4d","#c6ff3b","#ffffff"];
+/* ---- 큰 화면 효과음 (파일 없이 소리 합성) ---- */
+const SND={ctx:null,on:false,
+  unlock(){try{if(!this.ctx)this.ctx=new (window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==="suspended")this.ctx.resume()}catch(e){}},
+  tone(f,d,type,vol,when,slide){if(!this.on||!this.ctx)return;const t=this.ctx.currentTime+(when||0),o=this.ctx.createOscillator(),g=this.ctx.createGain();
+    o.type=type||"square";o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+    g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(this.ctx.destination);o.start(t);o.stop(t+d+.03)},
+  count(){this.tone(660,.16,"square",.18)},                                   /* 카운트다운 삐 */
+  go(){this.tone(1046,.6,"square",.2);this.tone(523,.6,"square",.12)},     /* 출발 삐-익 */
+  tick(hard){this.tone(hard?1250:880,.07,"square",hard?.2:.1)},             /* 마지막 10초 째깍 */
+  lead(){this.tone(784,.1,"triangle",.22);this.tone(1175,.22,"triangle",.22,.1)},   /* 1등 바뀜 */
+  pop(){this.tone(420,.09,"sine",.25,0,1100)},                              /* 새 참가자 뿅 */
+  fanfare(){const N=[[392,0,.12],[392,.14,.12],[392,.28,.12],[523,.44,.9],[659,.44,.9],[784,.44,.9],[1046,.44,.9]];for(const [f,w,d] of N)this.tone(f,d,"square",.11,w)}  /* 빰빠밤 */
+};
 function initBoard(){
   show("board");
   const gameUrl=location.origin+location.pathname;
@@ -811,6 +825,7 @@ function initBoard(){
     const list=all.filter(okc),sus=all.filter(x=>!okc(x));
     let rk=0;list.forEach((x,i)=>{rk=(i&&x.s===list[i-1].s&&x.ok===list[i-1].ok)?rk:i+1;x.rk=rk});
     const order=list.filter(x=>x.rk<=10),rest=list.length-order.length;
+    {const L=order[0]&&order[0].d,run=cur&&Date.now()>=cur.startAt&&Date.now()<cur.endAt;if(run&&L&&leaderD&&L!==leaderD)SND.lead();leaderD=run?L:null}
     $("#bRest").textContent=rest?`그 외 ${rest}명도 함께 푸는 중!`:"";
     $("#bSus").textContent=sus.length?` · 코드 불일치 ${sus.length}건 (순위 제외)`:"";
     const n=order.length,H=Math.max(window.innerHeight-330,300);
@@ -857,6 +872,20 @@ function initBoard(){
   }
   setInterval(status,250);
   let rt=null;const later=()=>{clearTimeout(rt);rt=setTimeout(render,300)};
+  /* 효과음: 카운트다운·출발·마지막 10초·종료 빰빠밤·1등 교체·새 참가자 */
+  let leaderD=null,sPk="",sSec=-1;
+  const sBtn=$("#bSnd"),sPaint=()=>{sBtn.textContent=SND.on?"🔊 효과음 켜짐":"🔇 효과음 켜기"};
+  SND.on=store.get("nsw-snd")===true;sPaint();
+  document.addEventListener("pointerdown",()=>SND.unlock());
+  sBtn.addEventListener("click",()=>{SND.unlock();SND.on=!SND.on;store.set("nsw-snd",SND.on);sPaint();if(SND.on)SND.pop()});
+  setInterval(()=>{
+    const now=Date.now(),pk=!cur?"idle":now<cur.startAt?"cd":now<cur.endAt?"run":"end";
+    let sec=-1;
+    if(pk==="cd"){sec=Math.ceil((cur.startAt-now)/1000);if(sec!==sSec&&sec>=1&&sec<=5&&sPk)SND.count()}
+    if(pk==="run"){sec=Math.ceil((cur.endAt-now)/1000);if(sPk==="cd")SND.go();else if(sec!==sSec&&sec>=1&&sec<=10&&sPk==="run")SND.tick(sec<=3)}
+    if(pk==="end"&&sPk==="run")SND.fanfare();
+    sPk=pk;sSec=sec;
+  },100);
   window.addEventListener("resize",later);
   /* 결과·대기 신호 */
   const es=new EventSource(RES+"/sse?since=all");
@@ -866,7 +895,7 @@ function initBoard(){
     let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
     if(!x||typeof x.d!=="string"||typeof x.n!=="string")return;
     if(x.t==="e"){ED.apply(x.d,x.n.slice(0,10),normG(x.g));later();return}
-    if(x.t==="j"){const p=joins.get(x.d);joins.set(x.d,ED.fix(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)}));if(!p)freshJ.add(x.d);later();return}
+    if(x.t==="j"){const p=joins.get(x.d);joins.set(x.d,ED.fix(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)}));if(!p){freshJ.add(x.d);if(Date.now()-(m.time||0)*1000<8000)SND.pop()}later();return}
     if(typeof x.rid!=="string")return;
     let rows=results.get(x.rid);if(!rows){rows=new Map();results.set(x.rid,rows)}
     const prev=rows.get(x.d);
