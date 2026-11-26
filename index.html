@@ -139,6 +139,19 @@ table.gs{width:100%;border-collapse:collapse;background:var(--card);border:2px s
 table.gs th,table.gs td{padding:8px 10px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap}
 table.gs th:first-child,table.gs td:first-child{text-align:left}
 .aempty{text-align:center;color:var(--mut);font-weight:700;padding:30px 10px}
+.joinqr{display:none;flex-direction:column;align-items:center;gap:6px;background:var(--card);border:3px solid var(--line);border-radius:18px;padding:18px;box-shadow:6px 6px 0 var(--line)}
+.joinqr.on{display:flex}
+.jq{background:#fff;padding:10px;border-radius:10px;width:min(240px,70vw);aspect-ratio:1;display:grid;place-items:center}
+.jq img,.jq canvas{width:100%!important;height:auto!important;image-rendering:pixelated}
+.jt{font:400 26px "Black Han Sans",sans-serif;margin:6px 0 0}
+.ju{font:700 15px "Noto Sans KR",sans-serif;margin:0;color:var(--mut);word-break:break-all;text-align:center}
+@media(min-width:1000px){
+  #start.on{display:grid;grid-template-columns:minmax(0,520px) minmax(0,360px);column-gap:56px;max-width:940px;align-content:start}
+  #start>*{grid-column:1}
+  #start .joinqr{display:flex;grid-column:2;grid-row:2 / span 6;align-self:start;position:sticky;top:24px}
+  #start .jq{width:100%}
+  #qrToggle{display:none}
+}
 .bempty{color:#c9ccd4;font:900 clamp(18px,1.8vw,26px) "Noto Sans KR",sans-serif;text-align:center;padding:12vh 20px}
 .bfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px clamp(16px,2.4vw,36px);font-size:13px;color:#9aa0ad}
 .conn{font-size:13px;font-weight:700;margin:0}.conn i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#aaa;margin-right:6px;vertical-align:1px}
@@ -185,6 +198,12 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   </div>
   <button class="btn" id="goBtn">준비 완료!</button>
   <p class="note" id="modeNote"></p>
+  <button class="btn sub" id="qrToggle">접속 QR 보기</button>
+  <div class="joinqr" id="joinQr">
+    <div class="jq" id="jqBox"></div>
+    <p class="jt">폰 카메라로 찍고 입장!</p>
+    <p class="ju" id="jqUrl"></p>
+  </div>
   <p class="note" style="text-align:center;margin-top:18px"><a href="#admin" style="color:var(--mut)">진행자 메뉴</a></p>
 </section>
 
@@ -326,6 +345,10 @@ let phase="form",race=null,cdTimer=null;
 
 /* ---------------- 학생 화면 ---------------- */
 function initPlayer(){
+  {const u=location.origin+location.pathname;$("#jqUrl").textContent=u.replace(/^https?:\/\//,"").replace(/\/$/,"");
+   let made=false;const make=()=>{if(made)return;made=true;try{new QRCode($("#jqBox"),{text:u,width:480,height:480,correctLevel:QRCode.CorrectLevel.M})}catch(e){$("#jqBox").textContent="QR"}};
+   if(matchMedia("(min-width:1000px)").matches)make();
+   $("#qrToggle").addEventListener("click",()=>{make();const on=$("#joinQr").classList.toggle("on");$("#qrToggle").textContent=on?"접속 QR 닫기":"접속 QR 보기"})}
   store.del("race3-name");
   if(practice){$("#modeNote").textContent="연습 모드 · 30초 · 기록 안 남음";return}
   $("#modeNote").textContent="준비 완료를 누르고 출발 신호를 기다려요";
