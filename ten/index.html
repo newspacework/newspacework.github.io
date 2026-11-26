@@ -215,7 +215,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <ol class="rules">
       <li><b>시작</b>을 누르고, 마음속으로 세다가 <b>정확히 10초</b>에 <b>멈춰!</b>를 누르세요</li>
       <li>시계는 <b>보이지 않아요</b> — 오직 마음속으로 세기! 🤫</li>
-      <li>오차 0.05초 이내 <b>+50점</b> 🎯, 0.15초 <b>+30</b>, 0.3초 <b>+20</b>, 0.6초 <b>+10</b>, 1초 <b>+5</b></li>
+      <li>오차 0.1초 이내 <b>+50점</b> 🎯, 0.3초 <b>+30</b>, 0.5초 <b>+20</b>, 1초 <b>+10</b>, 1.5초 <b>+5</b>, 그 이상도 참가 점수 <b>+1</b></li>
       <li>한 사람당 <b>3번 도전</b>해서 점수를 모두 더해요 (제한 시간 1분)</li>
       <li>진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
@@ -265,7 +265,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <p class="name" id="rName"></p>
     <p class="big" id="rScore">0</p>
     <div class="stats">
-      <div><b id="rOk">0</b><span>정확(±0.15초)</span></div>
+      <div><b id="rOk">0</b><span>정확(±0.3초)</span></div>
       <div><b id="rNo">0</b><span>최소 오차</span></div>
       <div><b id="rRate">0</b><span>내 기록</span></div>
     </div>
@@ -536,7 +536,7 @@ const colVals=x=>[x.ok,x.no>=999?"":(x.no/100).toFixed(2)];
 const rowInfo=x=>`정확 ${x.ok}번 · 최소 오차 ${x.no>=999?"–":(x.no/100).toFixed(2)+"초"}`;
 const TRIES=3,SHOW_MS=0,TARGET=10;   /* SHOW_MS: 처음 몇 ms 동안 시계를 보여 줄지 (0 = 처음부터 안 보임) */
 /* [오차(초) 이내, 점수, 한마디] */
-const PTS=[[0.05,50,"🎯 완벽!"],[0.15,30,"😲 와, 거의!"],[0.3,20,"👍 좋아요"],[0.6,10,"😅 아깝다"],[1.0,5,"🤔 음…"]];
+const PTS=[[0.1,50,"🎯 완벽!"],[0.3,30,"😲 와, 거의!"],[0.5,20,"👍 좋아요"],[1.0,10,"😅 아깝다"],[1.5,5,"🤔 음…"],[Infinity,1,"🙈 많이 빗나갔어요 (참가 점수)"]];   /* 1.5초 넘게 틀려도 참가 점수 1점 */
 let tRun=false,t0=0,raf=0,cool=false;
 function playStart(){
   st.att=[];st.no=999;st.streak=`1/${TRIES}`;tRun=false;cool=false;
