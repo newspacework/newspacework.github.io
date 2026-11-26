@@ -476,10 +476,10 @@ function spawn(){
   if(act.size<maxUp){
     const free=[...Array(HOLES).keys()].filter(i=>!act.has(i)&&!holeEl(i).classList.contains("hit"));
     if(free.length){
-      const i=free[rnd(free.length)],r=Math.random(),early=f<.08;
+      const i=free[rnd(free.length)],r=Math.random();
       /* 시간이 갈수록 가짜 두더지·변신 두더지가 늘어남 */
-      const fakeP=.10+.15*f,flipP=.08+.12*f;
-      let k=early?"mole":r<.08?"gold":r<.20?"bomb":r<.20+fakeP?"fake":r<.20+fakeP+flipP?"flip":"mole";
+      const fakeP=.18+.08*f,flipP=.15+.07*f;   /* 처음부터 가짜·변신 두더지 등장 */
+      let k=r<.08?"gold":r<.20?"bomb":r<.20+fakeP?"fake":r<.20+fakeP+flipP?"flip":"mole";
       const life=(fast?(k==="gold"?480:780-280*g):(k==="gold"?700:1200-250*g))+rnd(180)+(k==="flip"?(fast?180:250):0);
       const h=holeEl(i),m=h.querySelector(".m");
       const a={k};
