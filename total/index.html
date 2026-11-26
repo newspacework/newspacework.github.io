@@ -80,7 +80,7 @@ footer button:hover{border-color:#d9dde6}
 <details class="how"><summary>❓ 점수는 어떻게 계산하나요?</summary>
   <ol>
     <li><b>종목 점수</b>: 게임에서 받은 점수 그대로 (레이스 맞히면 +5, 두더지 +5, 성경 3초 안 +10, 불나는 30초 1번에 +1, 10초는 오차가 작은 순)</li>
-    <li><b>환산</b>: <span class="f">50 + 50 × (내 점수 ÷ 1등 점수)</span> — 1등 100점, 1등의 절반 75점, 꼴찌도 최소 50점!</li>
+    <li><b>환산</b>: <span class="f">50 + 50 × (내 점수 ÷ 1등 점수)</span> — 1등 100점, 1등의 절반 75점, 참가만 해도 최소 50점!</li>
     <li><b>조 점수</b>: 종목마다 <b>조원 1인당 평균</b>을 같은 방식으로 환산(1등 조 100 ~ 최소 50) + 개인 🥇+5 🥈+3 🥉+2</li>
     <li><b>종합</b>: 다섯 종목 환산 점수를 모두 더해요 (개인 250~500점)</li>
   </ol></details>
@@ -143,15 +143,15 @@ function gameResult(g){
   let rk=0;list.forEach((x,i)=>{rk=(i&&x.s===list[i-1].s&&x.ok===list[i-1].ok)?rk:i+1;x.rk=rk;x.bo=rk<=3?BONUS[rk-1]:0});
   return list;
 }
-/* ===== 점수 환산 (꼴찌도 최소 50점) =====
-   개인: 종목마다 50 + 50 × (내 점수 ÷ 1등 점수)  — 10초는 오차 순위로 1등 100 → 꼴찌 50
+/* ===== 점수 환산 (마지막 순위도 최소 50점) =====
+   개인: 종목마다 50 + 50 × (내 점수 ÷ 1등 점수)  — 10초는 오차 순위로 1등 100 → 마지막 순위 50
    조:   종목마다 50 + 50 × (1인 평균 ÷ 1등 조 평균) + 개인 1·2·3등 보너스(+5/+3/+2)
    종합 = 다섯 종목 환산 점수의 합 */
-/* 꼴찌도 최소 50점: 50 + 50 × (내 점수 ÷ 1등 점수) */
+/* 마지막 순위도 최소 50점: 50 + 50 × (내 점수 ÷ 1등 점수) */
 const pct=(v,top)=>top>0?Math.round(50+50*Math.max(0,v)/top):50;
 function computeGame(g){
   const list=gameResult(g),tm=new Map();
-  /* 10초 맞히기: 점수 대신 오차 순위 점수 = 1등 100 → 꼴찌 50 고르게 */
+  /* 10초 맞히기: 점수 대신 오차 순위 점수 = 1등 100 → 마지막 순위 50 고르게 */
   const N=list.length;for(const x of list)x.v=g.id==="ten"?(N<=1?100:Math.round(50+50*(N-x.rk)/(N-1))):x.s;
   for(const x of list){const k=x.g||"조 없음";const T=tm.get(k)||{k,n:0,s:0,bo:0};T.n++;T.s+=x.v;T.bo+=x.bo;tm.set(k,T)}
   const ts=[...tm.values()].map(T=>{const avg=T.s/T.n;return {...T,avg:Math.round(avg),raw:avg}});
