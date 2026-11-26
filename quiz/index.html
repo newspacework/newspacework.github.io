@@ -260,7 +260,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <label for="grp">조 이름</label>
     <input id="grp" maxlength="8" placeholder="예: 3조" autocomplete="off">
   </div>
-  <button class="btn" id="goBtn">준비 완료!</button>
+  <button class="btn" id="goBtn">입장하기!</button>
   <p class="note" id="modeNote"></p>
   <button class="btn sub" id="qrToggle">접속 QR 보기</button>
   <div class="joinqr" id="joinQr">
@@ -439,7 +439,7 @@ function initPlayer(){
    $("#qrToggle").addEventListener("click",()=>{make();const on=$("#joinQr").classList.toggle("on");$("#qrToggle").textContent=on?"접속 QR 닫기":"접속 QR 보기"})}
   store.del("quiz1-name");
   if(practice){$("#modeNote").textContent="연습 모드 · 30초 · 기록 안 남음";return}
-  $("#modeNote").textContent="준비 완료를 누르고 시작 신호를 기다려요";
+  $("#modeNote").textContent="입장하기를 누르고 시작 신호를 기다려요";
   listenCtl(onRace,ok=>{$("#waitConn").textContent=ok?"● 시작 신호 연결됨":"○ 연결 다시 시도 중…"},onReset);
 }
 let lastReset=0;
@@ -447,7 +447,7 @@ function onReset(sent){
   if(sent<=lastReset)return;lastReset=sent;
   if(race&&race.sent>sent)return;                 /* 리셋 뒤에 이미 새 시작이 있었으면 무시 */
   race=null;
-  if(phase==="result"||phase==="form"){phase="form";show("start");$("#modeNote").textContent="준비 완료를 누르고 시작 신호를 기다려요";$("#nextBtn").style.display="none"}
+  if(phase==="result"||phase==="form"){phase="form";show("start");$("#modeNote").textContent="입장하기를 누르고 시작 신호를 기다려요";$("#nextBtn").style.display="none"}
   else if(phase==="waiting")post(RES,{t:"j",d:deviceId(),n:st.name,g:st.grp}).catch(()=>{});   /* 대기 인원 다시 알림 */
   else if(phase==="countdown"){clearInterval(cdTimer);waitScreen();post(RES,{t:"j",d:deviceId(),n:st.name,g:st.grp}).catch(()=>{})}
 }
@@ -459,7 +459,7 @@ function onRace(r){
   const live=Date.now()<r.endAt;
   if(!live)return;
   if(phase==="waiting")joinRace();
-  else if(phase==="form")$("#modeNote").textContent="퀴즈 진행 중! 준비 완료를 누르면 바로 합류해요";
+  else if(phase==="form")$("#modeNote").textContent="퀴즈 진행 중! 입장하기를 누르면 바로 합류해요";
   else if(phase==="result")$("#nextBtn").style.display="block";
 }
 $("#goBtn").addEventListener("click",()=>{
@@ -479,11 +479,11 @@ $("#reEdit").addEventListener("click",()=>{
   if(phase!=="waiting")return;              /* 시작(카운트다운) 후에는 못 고침 */
   phase="form";show("start");
   $("#nm").value=st.name;$("#grp").value=st.grp;
-  $("#modeNote").textContent="고친 다음 '준비 완료!'를 다시 눌러 주세요";
-  $("#goBtn").textContent="고친 이름으로 준비 완료!";$("#nm").focus();
+  $("#modeNote").textContent="고친 다음 '입장하기!'를 다시 눌러 주세요";
+  $("#goBtn").textContent="고친 이름으로 입장하기!";$("#nm").focus();
 });
 function waitScreen(){
-  phase="waiting";show("wait");$("#goBtn").textContent="준비 완료!";
+  phase="waiting";show("wait");$("#goBtn").textContent="입장하기!";
   $("#waitTitle").textContent="퀴즈 대기 중!";$("#waitNum").textContent="READY";$("#waitNum").classList.add("pulse");
   $("#waitWho").textContent=st.grp?`${st.name} · ${st.grp}`:st.name;
   $("#reEdit").style.display=practice?"none":"block";
@@ -973,7 +973,7 @@ function initAdmin(){
     $("#tW").textContent=w.length;$("#tL").textContent=list.length+sus.length;$("#tR").textContent=fin.list.length;
     let html="",teamRows=[];
     if(tab==="wait"){
-      if(!w.length)html=`<p class="aempty">${p==="run"?"퀴즈 진행 중이에요. 지금 들어오는 학생은 남은 시간만큼 합류해요.":"아직 대기자가 없어요. 학생들이 QR로 들어와 준비 완료를 누르면 여기 나와요."}</p>`;
+      if(!w.length)html=`<p class="aempty">${p==="run"?"퀴즈 진행 중이에요. 지금 들어오는 학생은 남은 시간만큼 합류해요.":"아직 대기자가 없어요. 학생들이 QR로 들어와 입장하기를 누르면 여기 나와요."}</p>`;
       else{
         const by=new Map();for(const x of w){const k=x.g||"조 없음";if(!by.has(k))by.set(k,[]);by.get(k).push(x)}
         const keys=[...by.keys()].sort((a,b)=>a.localeCompare(b,"ko",{numeric:true}));
