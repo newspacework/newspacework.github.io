@@ -19,7 +19,7 @@ h1 em{font-style:normal;color:var(--pink)}
 .chips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
 .chip{background:#fff;color:var(--ink);border-radius:999px;padding:6px 16px;font:400 clamp(18px,1.8vw,26px) "Black Han Sans",sans-serif;border:3px solid #000}
 .chip.home{background:#2a2245;color:#fff;border-color:#fff;text-decoration:none;font-size:clamp(15px,1.3vw,20px);display:flex;align-items:center}.chip.home:hover{background:#3b3160}
-footer a.flink{background:#2a2245;color:#fff;border:3px solid #fff;border-radius:12px;padding:8px 12px;font:900 15px "Noto Sans KR",sans-serif;text-decoration:none;white-space:nowrap}footer a.flink:first-of-type{margin-left:auto}
+footer .flink{cursor:pointer;background:#2a2245;color:#fff;border:3px solid #fff;border-radius:12px;padding:8px 12px;font:900 15px "Noto Sans KR",sans-serif;text-decoration:none;white-space:nowrap}footer #bVoice{margin-left:auto}
 .chip.team{background:var(--pink);color:#fff}.chip.ok{background:#fff}.chip.round{background:var(--gold)}.chip.bpm{background:var(--mint)}
 .stage{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:clamp(10px,1.6vw,24px)}
 .cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--c);color:var(--ink);border:6px solid #000;border-radius:28px;box-shadow:8px 8px 0 #000;transition:transform .08s,box-shadow .08s,filter .15s;filter:saturate(.75) brightness(.78)}
@@ -113,7 +113,7 @@ footer button.fail{background:#e8253b;color:#fff}
     <button id="bReset">처음부터 ⟲</button>
     <label>세트 <select id="selSet"><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option></select></label>
     <label>시작 속도 <select id="selBpm"><option value="80">느리게 80</option><option value="90" selected>보통 90</option><option value="100">빠르게 100</option></select></label>
-    <a class="flink" href="../">📱 소개 페이지</a><a class="flink" href="../total/" target="_blank" rel="noopener">🏆 종합 순위</a><span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
+    <button class="flink" id="bVoice">🗣 안내 음성 켬</button><a class="flink" href="../">📱 소개 페이지</a><a class="flink" href="../total/" target="_blank" rel="noopener">🏆 종합 순위</a><span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
   </footer>
 </div>
 <div class="toast" id="toast"></div>
@@ -276,18 +276,33 @@ function tick(){
 function start(){unlock();if(running)return;if(!cur){openPick();return}running=true;$("#bGo").textContent="⏸ 멈춤";if(!cells.length)makeRound();
   /* 소리 장치가 완전히 켜진 뒤 첫 박 시작 (처음 한 번만 조금 기다림) */
   const go=()=>{if(running){paint();tick()}};
+  const fresh=round===0&&step===0&&cleared===0;   /* 멈췄다 계속할 땐 안 부름 */
   const p=ctx&&ctx.state!=="running"&&ctx.resume?ctx.resume():null;
   const wait=start.warm?60:350;start.warm=true;
-  (p?p.then(()=>setTimeout(go,wait),()=>setTimeout(go,wait)):setTimeout(go,wait))}
-function pause(){running=false;clearTimeout(timer);$("#bGo").textContent="▶ 계속";$("#ov").classList.add("on");$("#ovBig").textContent="⏸";$("#ovSub").textContent="스페이스바로 계속";}
+  const after=()=>fresh&&voiceOn()?announce(cur,go):setTimeout(go,wait);
+  (p?p.then(after,after):after())}
+/* ---- 시작 안내 음성 (재미용, 브라우저 내장 한국어 음성) ---- */
+const voiceOn=()=>{try{return localStorage.getItem("beat1-voice")!=="0"}catch(e){return true}};
+function koVoice(){const v=(window.speechSynthesis&&speechSynthesis.getVoices())||[];return v.find(x=>/^ko/i.test(x.lang)&&/google/i.test(x.name))||v.find(x=>/^ko/i.test(x.lang))}
+if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>koVoice();
+const LINES=["{t}, 도전! 준비됐나요? 박자에 맞춰 다 같이 외쳐 주세요!","자~ {t} 차례입니다! 끝까지 가 봅시다!","{t}, 출발합니다! 틀리지 말고, 크게 외쳐요!"];
+function announce(t,done){
+  $("#ov").classList.add("on");$("#ovBig").textContent="🎤";$("#ovSub").textContent=`${t} 도전!`;
+  const say=LINES[Math.floor(Math.random()*LINES.length)].replace("{t}",t);
+  if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){setTimeout(done,1200);return}
+  let fin=false;const end=()=>{if(fin)return;fin=true;clearTimeout(guard);setTimeout(done,250)};
+  const guard=setTimeout(end,6000);   /* 음성이 안 나와도 6초 뒤엔 시작 */
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(say);u.lang="ko-KR";u.rate=1.05;u.pitch=1.1;const v=koVoice();if(v)u.voice=v;u.onend=end;u.onerror=end;speechSynthesis.speak(u)}catch(e){end()}
+}
+function pause(){running=false;clearTimeout(timer);try{speechSynthesis.cancel()}catch(e){}$("#bGo").textContent="▶ 계속";$("#ov").classList.add("on");$("#ovBig").textContent="⏸";$("#ovSub").textContent="스페이스바로 계속";}
 function finish(){running=false;clearTimeout(timer);record(cleared,true);if(cur)toast(`🎉 ${cur} 완주! ${cleared}판 + 보너스 ${PTS_FINISH} = ${cleared*PTS_ROUND+PTS_FINISH}점`,3500);cleared=0;$("#bGo").textContent="▶ 다시";$("#ov").classList.add("on");$("#ovBig").textContent="🎉";
   $("#ovSub").textContent=`끝까지 성공! 최고 속도 ${bpm} BPM`;[0,.15,.3].forEach((d,i)=>blip(ctx.currentTime+d,[784,988,1318][i]));round=0;bpm=+$("#selBpm").value;cells=[];step=0}
-function reset(){running=false;clearTimeout(timer);round=0;cleared=0;step=0;bpm=+$("#selBpm").value;cells=[];makeRound();paint();
+function reset(){running=false;clearTimeout(timer);try{speechSynthesis.cancel()}catch(e){}round=0;cleared=0;step=0;bpm=+$("#selBpm").value;cells=[];makeRound();paint();
   $("#bGo").textContent=cur?`▶ ${cur} 시작`:"▶ 조 선택·시작";$("#ov").classList.add("on");$("#ovBig").textContent="🎵";$("#dots").querySelectorAll("i").forEach(d=>d.classList.remove("on"));
   $("#ovSub").textContent="스페이스바 또는 아래 ▶ 시작을 누르세요 · 판마다 점점 빨라져요! 실패할 때까지 계속"}
 function fail(){
   if(!running&&!cleared&&round===0)return;
-  running=false;clearTimeout(timer);
+  running=false;clearTimeout(timer);try{speechSynthesis.cancel()}catch(e){}
   const c=cleared;record(c,false);
   $("#bGo").textContent=cur?`▶ ${cur} 시작`:"▶ 조 선택·시작";$("#ov").classList.add("on");$("#ovBig").textContent="❌";
   $("#ovSub").textContent=cur?`${cur} · ${c}판 성공 → ${c*PTS_ROUND}점 기록! (스페이스바 → 다음 조 선택)`:`${c}판 성공!`;
@@ -300,6 +315,8 @@ $("#bGo").addEventListener("click",()=>running?pause():start());
 $("#bNext").addEventListener("click",()=>{unlock();nextRound()});
 $("#bReset").addEventListener("click",reset);
 $("#bFail").addEventListener("click",()=>{unlock();fail()});
+const vLabel=()=>$("#bVoice").textContent=voiceOn()?"🗣 안내 음성 켬":"🔇 안내 음성 끔";vLabel();
+$("#bVoice").addEventListener("click",()=>{try{localStorage.setItem("beat1-voice",voiceOn()?"0":"1")}catch(e){}vLabel()});
 $("#selSet").addEventListener("change",reset);$("#selBpm").addEventListener("change",reset);
 document.addEventListener("keydown",e=>{
   if(e.target.tagName==="SELECT"||e.target.tagName==="INPUT")return;
