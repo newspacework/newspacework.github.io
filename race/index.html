@@ -373,7 +373,7 @@ function edits(results,joins){
     fix(d,o){const v=ov.get(d);if(v){o.n=v.n;o.g=v.g}return o}};
 }
 /* 개인 1·2·3등 보너스 — 그 학생의 조 합산에 더해짐 */
-const BONUS=[20,10,5];
+const BONUS=[5,3,2];   /* 개인 1·2·3등 → 조 점수(100점 환산)에 더함 */
 function deviceId(){let d=store.get("nsw-did");if(!d){d=store.get("race3-did")||Math.random().toString(36).slice(2,10);store.set("nsw-did",d)}return d}   /* 세 게임 공통 기기 번호 → 종합 순위에서 같은 학생으로 묶임 */
 const KEYR=rid=>"race3-r-"+rid;
 
@@ -629,11 +629,11 @@ function initBoard(){
     const box=$("#teams");
     if(!list.length){box.innerHTML="";$(".bmain").classList.add("solo");return}
     const gm=new Map();for(const x of list){const k=x.g||"조 없음";const g=gm.get(k)||{k,n:0,s:0,bo:0};g.n++;g.s+=x.s;if(x.rk<=3)g.bo+=BONUS[x.rk-1];gm.set(k,g)}
-    for(const g of gm.values()){g.avg=Math.round(g.s/g.n);g.t=g.avg+g.bo}   /* 조 점수 = 조원 1인당 평균 + 개인 보너스 */
+    {const ta=Math.max(0,...[...gm.values()].map(g=>g.s/g.n));for(const g of gm.values()){g.t=(ta>0?Math.round(g.s/g.n/ta*100):0)+g.bo;g.avg=Math.round(g.s/g.n)}}   /* 조 점수 = 1인 평균을 1등 조 100점으로 환산 + 개인 1·2·3등 보너스 */
     const gs=[...gm.values()].sort((a,b)=>b.t-a.t||a.k.localeCompare(b.k,"ko",{numeric:true}));
     const top=Math.max(1,gs[0].t);
     const fin=cur&&Date.now()>=cur.endAt;
-    box.innerHTML=`<h2>조별 순위${fin?" · 최종":""}</h2><ol class="tlist">${gs.map((g,i)=>`<li><span class="r">${i&&g.t===gs[i-1].t?"":i+1}</span><span class="t">${esc(g.k)}<small>${g.n}명 · 평균 ${g.avg}${g.bo?` · 보너스 +${g.bo}`:""}</small></span><span class="v">${g.t}</span><span class="bar2"><i style="width:${Math.max(3,g.t/top*100)}%"></i></span></li>`).join("")}</ol><p class="tnote">조원 1인당 평균 + 개인 1·2·3등 보너스 (+${BONUS.join(", +")})${fin?"":" · 실시간"}</p>`+
+    box.innerHTML=`<h2>조별 순위${fin?" · 최종":""}</h2><ol class="tlist">${gs.map((g,i)=>`<li><span class="r">${i&&g.t===gs[i-1].t?"":i+1}</span><span class="t">${esc(g.k)}<small>${g.n}명 · 평균 ${g.avg}${g.bo?` · 보너스 +${g.bo}`:""}</small></span><span class="v">${g.t}</span><span class="bar2"><i style="width:${Math.max(3,g.t/top*100)}%"></i></span></li>`).join("")}</ol><p class="tnote">1인 평균을 1등 조 = 100점으로 환산 + 개인 1·2·3등 보너스 (+${BONUS.join(", +")})${fin?"":" · 실시간"}</p>`+
       `<h2 style="margin-top:20px">개인 TOP 3${fin?" · 개인상":""}</h2><ol class="tlist">${list.filter(x=>x.rk<=3).slice(0,5).map(x=>`<li><span class="r">${["🥇","🥈","🥉"][x.rk-1]}</span><span class="t">${esc(x.n)}<small>${esc(x.g||"")} · 조에 +${BONUS[x.rk-1]}</small></span><span class="v">${x.s}</span></li>`).join("")}</ol>`;
     $(".bmain").classList.remove("solo");
   }
@@ -804,17 +804,17 @@ function initAdmin(){
       if(!L.length)html=`<p class="aempty">${p==="end"?"결과가 들어오는 중이에요. 잠시만요.":"레이스가 끝나면 최종 결과가 여기 나와요."}</p>`;
       else{
         const gm=new Map();for(const x of L){const k=x.g||"조 없음";const g=gm.get(k)||{n:0,s:0,best:0,bo:0};g.n++;g.s+=x.s;g.best=Math.max(g.best,x.s);if(x.rk<=3)g.bo+=BONUS[x.rk-1];gm.set(k,g)}
-        const gs=[...gm.entries()].map(([k,g])=>({k,...g,avg:Math.round(g.s/g.n),t:Math.round(g.s/g.n)+g.bo})).sort((a,b)=>b.t-a.t);teamRows=gs;
+        const ta=Math.max(0,...[...gm.values()].map(g=>g.s/g.n));const gs=[...gm.entries()].map(([k,g])=>({k,...g,avg:Math.round(g.s/g.n),t:(ta>0?Math.round(g.s/g.n/ta*100):0)+g.bo})).sort((a,b)=>b.t-a.t);teamRows=gs;
         html=`<button class="btn sub" id="aCopy" style="margin-bottom:10px">결과 복사 (엑셀에 붙여넣기)</button>`+
           `<p class="ttl">🏅 개인 순위 (개인상)</p><p class="edhint">✎ 이름을 누르면 이름·조 수정</p><ul class="alist">${L.map(x=>row(x)).join("")}${fin.sus.map(x=>row(x,"bad")).join("")}</ul>`+
-          `<p class="ttl">👥 조별 합산 순위 (조별상)</p><table class="gs"><thead><tr><th>조</th><th>총점</th><th>1인 평균</th><th>보너스</th><th>인원</th><th>점수합</th></tr></thead><tbody>${gs.map((g,i)=>`<tr><td>${i+1}. ${esc(g.k)}</td><td><b>${g.t}</b></td><td>${g.avg}</td><td>${g.bo?"+"+g.bo:"–"}</td><td>${g.n}</td><td>${g.s}</td></tr>`).join("")}</tbody></table>`;
+          `<p class="ttl">👥 조별 합산 순위 (조별상)</p><table class="gs"><thead><tr><th>조</th><th>조 점수</th><th>1인 평균</th><th>보너스</th><th>인원</th><th>점수합</th></tr></thead><tbody>${gs.map((g,i)=>`<tr><td>${i+1}. ${esc(g.k)}</td><td><b>${g.t}</b></td><td>${g.avg}</td><td>${g.bo?"+"+g.bo:"–"}</td><td>${g.n}</td><td>${g.s}</td></tr>`).join("")}</tbody></table>`;
         const unfinished=list.filter(x=>!x.f).length;
         if(unfinished)html+=`<p class="note" style="margin-top:8px">아직 최종 기록이 안 들어온 학생 ${unfinished}명 (실시간 탭에서 확인)</p>`;
       }
     }
     $("#aPanel").innerHTML=html;
     const cp=$("#aCopy");if(cp)cp.addEventListener("click",()=>{
-      const tsv=["순위\t이름\t조\t점수\t조보너스\t정답\t오답\t최대연속"].concat(fin.list.map(x=>[x.rk,x.n,x.g,x.s,x.rk<=3?BONUS[x.rk-1]:0,x.ok,x.no,x.b].join("\t"))).concat(["","조별 순위\t조\t총점(평균+보너스)\t1인 평균\t보너스\t인원\t점수합"]).concat(teamRows.map((g,i)=>[i+1,g.k,g.t,g.avg,g.bo,g.n,g.s].join("\t"))).join("\n");
+      const tsv=["순위\t이름\t조\t점수\t조보너스\t정답\t오답\t최대연속"].concat(fin.list.map(x=>[x.rk,x.n,x.g,x.s,x.rk<=3?BONUS[x.rk-1]:0,x.ok,x.no,x.b].join("\t"))).concat(["","조별 순위\t조\t조점수(환산+보너스)\t1인 평균\t보너스\t인원\t점수합"]).concat(teamRows.map((g,i)=>[i+1,g.k,g.t,g.avg,g.bo,g.n,g.s].join("\t"))).join("\n");
       navigator.clipboard.writeText(tsv).then(()=>{cp.textContent="✓ 복사됨 — 엑셀에 붙여넣으세요"},()=>{cp.textContent="복사 실패"});
     });
     status();

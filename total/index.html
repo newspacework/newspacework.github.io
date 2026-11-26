@@ -91,7 +91,7 @@ const GAMES=[
   {id:"tug",name:"불나는 30초",base:ROOT+"-tug",salt:"RETREAT-2026-TUG",sec:30},
   {id:"ten",name:"10초",base:ROOT+"-ten",salt:"RETREAT-2026-TEN",sec:60}
 ];
-const COUNT=5,BONUS=[20,10,5];
+const COUNT=5,BONUS=[5,3,2];   /* 개인 1·2·3등 → 그 조의 종목 환산 점수에 더함 */
 const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36).toUpperCase().padStart(6,"0").slice(-4)};
 const normG=v=>{let g=String(v||"").replace(/\s+/g,"").slice(0,8);if(/^\d+$/.test(g))g+="조";return g};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -133,16 +133,16 @@ function gameResult(g){
   return list;
 }
 /* ===== 점수 환산 =====
-   조: 종목마다 조 점수 = 조원 1인당 평균 + 개인 1·2·3등 보너스 → 1등 조 = 100점으로 환산
+   조: 종목마다 조원 1인당 평균을 1등 조 = 100점으로 환산한 뒤 개인 1·2·3등 보너스(+5/+3/+2) 더함
    개인: 종목마다 1등 = 100점으로 환산
    종합 = 다섯 종목 환산 점수의 합 (최대 500) */
 const pct=(v,top)=>top>0?Math.max(0,Math.round(v/top*100)):0;
 function computeGame(g){
   const list=gameResult(g),tm=new Map();
   for(const x of list){const k=x.g||"조 없음";const T=tm.get(k)||{k,n:0,s:0,bo:0};T.n++;T.s+=x.s;T.bo+=x.bo;tm.set(k,T)}
-  const ts=[...tm.values()].map(T=>{const avg=T.s/T.n;return {...T,avg:Math.round(avg),raw:avg+T.bo}});
+  const ts=[...tm.values()].map(T=>{const avg=T.s/T.n;return {...T,avg:Math.round(avg),raw:avg}});
   const tTop=Math.max(0,...ts.map(T=>T.raw)),pTop=Math.max(0,...list.map(x=>x.s));
-  for(const T of ts)T.pts=pct(T.raw,tTop);
+  for(const T of ts)T.pts=pct(T.raw,tTop)+T.bo;   /* 1인 평균 환산 + 보너스 */
   for(const x of list)x.pts=pct(x.s,pTop);
   ts.sort((a,b)=>b.pts-a.pts||b.raw-a.raw||byG(a.k,b.k));
   let r=0;ts.forEach((x,i)=>{r=i&&x.pts===ts[i-1].pts?r:i+1;x.rk=r});
@@ -189,7 +189,7 @@ function render(){
   const bonusTxt=`개인 1·2·3등 보너스 (+${BONUS.join(" / +")})`;
   if(view==="all"){
     $("#mainH").innerHTML="단합대회 <em>종합</em> 순위";
-    $("#tH").textContent="👥 조별 종합";$("#tSub").textContent=`종목마다 조 점수(조원 1인당 평균 + ${bonusTxt})를 1등 조 = 100점으로 환산해 더한 값 · 최대 ${MAXT}점`;
+    $("#tH").textContent="👥 조별 종합";$("#tSub").textContent=`종목마다 조원 1인당 평균을 1등 조 = 100점으로 환산 + ${bonusTxt} → 다섯 종목을 더한 값`;
     $("#pH").textContent="🏅 개인 종합 TOP 10";$("#pSub").textContent=`종목마다 1등 = 100점으로 환산해 더한 값 · 최대 ${MAXT}점 · 같은 폰으로 참가해야 한 사람으로 합산`;
     $("#aH").textContent="📋 개인 종합 전체 순위";
     const {ts,ps}=compute();last={kind:"all",ts,ps};
@@ -200,7 +200,7 @@ function render(){
           GAMES.map(g=>{const p=T.per[g.id];return p?`<i class="${g.id}" style="width:${p.pts/MAXT*100}%"></i>`:""}).join("")}</div></td>${
           GAMES.map(g=>{const p=T.per[g.id];return cell(p?p.pts:null,g.id,p?`평균 ${p.avg}${p.bo?` +${p.bo}`:""}`:"")}).join("")}<td class="tot">${T.tot}</td></tr>`).join("")}</tbody></table>`;
     }
-    $("#legend").innerHTML=GAMES.map(g=>`<span style="--c:var(--${g.id})">${g.name}</span>`).join("")+`<span style="--c:#555">작은 글씨 = 1인 평균 + 보너스 (환산 전)</span>`;
+    $("#legend").innerHTML=GAMES.map(g=>`<span style="--c:var(--${g.id})">${g.name}</span>`).join("")+`<span style="--c:#555">작은 글씨 = 1인 평균 (+보너스)</span>`;
     $("#people").innerHTML=ps.length?peopleTable(ps.slice(0,10))+(ps.length>10?`<p class="more">그 외 ${ps.length-10}명 · 아래 '개인 전체 순위 보기'</p>`:""):`<p class="empty">아직 기록이 없어요.</p>`;
     if($("#allBox").classList.contains("on"))$("#allList").innerHTML=ps.length?peopleTable(ps):`<p class="empty">아직 기록이 없어요.</p>`;
     return;
@@ -209,7 +209,7 @@ function render(){
   const g=GAMES.find(x=>x.id===view),R=computeGame(g);last=R;
   $("#mainH").innerHTML=`<em>${esc(g.name)}</em> 성적`;
   $("#tH").textContent=`👥 조별 순위 · ${g.name}`;
-  $("#tSub").textContent=`조 점수 = 조원 1인당 평균 + ${bonusTxt} → 1등 조 = 100점으로 환산 (종합에 들어가는 점수)`;
+  $("#tSub").textContent=`조 점수 = 1인 평균을 1등 조 = 100점으로 환산 + ${bonusTxt} (종합에 들어가는 점수)`;
   $("#pH").textContent=`🏅 개인 순위 · ${g.name} TOP 10`;$("#pSub").textContent="이 게임의 가장 최근 판 기록 · 환산 = 1등 대비 100점 기준";
   $("#aH").textContent=`📋 ${g.name} 개인 전체 순위`;
   const ts=R.ts,ps=R.ps;
