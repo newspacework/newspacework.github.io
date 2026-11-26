@@ -12,8 +12,8 @@
 :root{--ink:#141414;--bg:#1b1530;--pink:#ff2e88;--gold:#ffd23f;--mint:#6ee7b7;--sky:#7dd3fc;--lav:#b9a4ff;--org:#ffb547;--lime:#e9ff3b}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0;height:100%;background:var(--bg);color:#fff;font:16px/1.4 "Noto Sans KR",system-ui,sans-serif;overflow:hidden}
-.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:clamp(10px,1.6vh,20px);padding:clamp(12px,2vh,24px) clamp(14px,2.4vw,40px)}
-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr) clamp(230px,20vw,320px);gap:clamp(10px,1.6vh,20px);padding:clamp(12px,2vh,24px) clamp(14px,2.4vw,40px)}
+header{grid-column:1/-1;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 h1{font:400 clamp(26px,3.2vw,48px)/1 "Black Han Sans",sans-serif;margin:0}
 h1 em{font-style:normal;color:var(--pink)}
 .chips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
@@ -34,13 +34,32 @@ h1 em{font-style:normal;color:var(--pink)}
 .beatdots{display:flex;gap:10px;justify-content:center}
 .beatdots i{width:22px;height:22px;border-radius:50%;background:#3a3158;border:3px solid #000}
 .beatdots i.on{background:var(--pink)}
-footer{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+footer{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 footer button,footer select{appearance:none;border:3px solid #000;background:#fff;color:var(--ink);border-radius:14px;padding:10px 16px;font:900 16px "Noto Sans KR",sans-serif;cursor:pointer;box-shadow:4px 4px 0 #000}
 footer button.go{background:var(--pink);color:#fff;font:400 22px "Black Han Sans",sans-serif;padding:8px 26px}
 footer button:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
 footer .keys{margin-left:auto;font:700 13px "Noto Sans KR",sans-serif;color:#cfc8e8}
 footer .keys b{background:#fff;color:var(--ink);border-radius:6px;padding:1px 7px;margin:0 2px}
 footer label{font:900 14px "Noto Sans KR",sans-serif;color:#cfc8e8;display:flex;align-items:center;gap:6px}
+.board{grid-row:2;grid-column:2;background:#2a2245;border:4px solid #000;border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.board h2{font:400 clamp(22px,2vw,30px) "Black Han Sans",sans-serif;margin:0;color:var(--gold)}
+.board .rule{margin:0;font:700 13px "Noto Sans KR",sans-serif;color:#cfc8e8}.board .rule b{color:var(--pink)}
+.board .now{font:900 14px "Noto Sans KR",sans-serif;color:#cfc8e8;background:#1b1530;border-radius:10px;padding:6px 10px}.board .now b{color:#fff;font:400 18px "Black Han Sans",sans-serif}
+.tlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tlist li{display:grid;grid-template-columns:1.6em minmax(0,1fr) auto;gap:2px 8px;align-items:center;background:#fff;color:var(--ink);border:3px solid #000;border-radius:14px;padding:8px 10px;cursor:pointer}
+.tlist li.sel{outline:4px solid var(--pink);outline-offset:2px}
+.tlist .r{font:400 22px "Black Han Sans",sans-serif;text-align:center}
+.tlist .t{font:400 20px "Black Han Sans",sans-serif}
+.tlist .t small{display:block;font:900 12px "Noto Sans KR",sans-serif;color:#555}
+.tlist .v{font:400 28px "Black Han Sans",sans-serif;color:var(--pink)}
+.tlist .x{grid-column:3;justify-self:end;font:900 11px "Noto Sans KR",sans-serif;color:#999;background:none;border:0;cursor:pointer;padding:0}
+.tadd{display:flex;gap:6px}.tadd input{flex:1;min-width:0;border:3px solid #000;border-radius:10px;padding:6px 8px;font:900 14px "Noto Sans KR",sans-serif}
+.tadd button,.board .clr{border:3px solid #000;border-radius:10px;background:var(--mint);font:900 14px "Noto Sans KR",sans-serif;padding:6px 10px;cursor:pointer}
+.board .clr{background:transparent;color:#cfc8e8;border-color:#555;margin-top:auto}
+footer button.fail{background:#e8253b;color:#fff}
+.toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#fff;color:var(--ink);border:4px solid #000;border-radius:16px;padding:10px 22px;font:400 clamp(22px,2.6vw,36px) "Black Han Sans",sans-serif;z-index:20;box-shadow:6px 6px 0 #000;display:none}
+.toast.on{display:block}
+@media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.board{grid-column:1;grid-row:auto;max-height:40vh}}
 @media (prefers-reduced-motion:reduce){.cell{transition:none}}
 </style>
 </head>
@@ -51,24 +70,34 @@ footer label{font:900 14px "Noto Sans KR",sans-serif;color:#cfc8e8;display:flex;
     <div class="chips"><span class="chip round" id="cRound">1판</span><span class="chip bpm" id="cBpm">90 BPM</span></div>
   </header>
 
+  <aside class="board" id="board">
+    <h2>🏆 조별 도전</h2>
+    <p class="rule">1판 성공할 때마다 <b>+10</b> · 판마다 비트가 빨라져요 · 실패할 때까지!</p>
+    <div class="now">지금 도전: <b id="nowTeam">조를 고르세요</b></div>
+    <ol class="tlist" id="tlist"></ol>
+    <div class="tadd"><input id="tName" placeholder="조 이름 (예: 5조)" maxlength="8"><button id="tAddBtn">추가</button></div>
+    <button class="clr" id="tClear">기록 모두 지우기</button>
+  </aside>
   <div class="stage" id="stage">
     <div class="overlay on" id="ov">
       <div class="msg">강조된 이름을 <span style="color:var(--pink)">박자에 맞춰</span> 외치세요!</div>
       <div class="big" id="ovBig">🎵</div>
       <div class="beatdots" id="dots"><i></i><i></i><i></i><i></i></div>
-      <div class="sub" id="ovSub">스페이스바 또는 아래 ▶ 시작을 누르세요 · 판마다 점점 빨라져요!</div>
+      <div class="sub" id="ovSub">스페이스바 또는 아래 ▶ 시작을 누르세요 · 판마다 점점 빨라져요! 실패할 때까지 계속</div>
     </div>
   </div>
 
   <footer>
     <button class="go" id="bGo">▶ 시작</button>
+    <button class="fail" id="bFail">❌ 실패 (X)</button>
     <button id="bNext">다음 판 ⏭</button>
     <button id="bReset">처음부터 ⟲</button>
     <label>세트 <select id="selSet"><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option></select></label>
     <label>시작 속도 <select id="selBpm"><option value="80">느리게 80</option><option value="90" selected>보통 90</option><option value="100">빠르게 100</option></select></label>
-    <span class="keys"><b>Space</b> 시작·멈춤 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
+    <span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
   </footer>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 {
@@ -104,7 +133,7 @@ const SETS={
 };
 SETS.mix=[SETS.ot[0],SETS.nt[0],SETS.ot[2],SETS.nt[2],SETS.ot[4],SETS.nt[3],SETS.ot[3],SETS.nt[4],SETS.ot[6]];
 const COLORS=["var(--lime)","var(--sky)","var(--org)","var(--lav)","var(--mint)","var(--gold)","#ff9ac6","#a7f3d0"];
-const BPM_STEP=10,BPM_MAX=170;
+const BPM_STEP=10,BPM_MAX=300;   /* 판마다 +10 BPM, 실패할 때까지 계속 */
 
 /* ---- 소리 (파일 없이 합성) ---- */
 let ctx=null;
@@ -114,11 +143,46 @@ function snare(t){const n=ctx.sampleRate*.15,b=ctx.createBuffer(1,n,ctx.sampleRa
   const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();s.buffer=b;f.type="highpass";f.frequency.value=1500;g.gain.setValueAtTime(.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.15);s.connect(f).connect(g).connect(ctx.destination);s.start(t)}
 function blip(t,f){const o=ctx.createOscillator(),g=ctx.createGain();o.type="square";o.frequency.value=f;g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.1);o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+.12)}
 
+/* ---- 조별 도전 점수 (이 컴퓨터에 저장) ---- */
+const PTS_ROUND=10,PTS_FINISH=20,KEY="beat1-teams";
+let teams=[],cur=null,cleared=0;
+try{teams=JSON.parse(localStorage.getItem(KEY))||[]}catch(e){}
+if(!teams.length)teams=["1조","2조","3조","4조"].map(n=>({n,best:0,pts:0,tries:0,done:false}));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(teams))}catch(e){}};
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(t,ms=1800){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),ms)}
+function paint(){
+  const sorted=[...teams].sort((a,b)=>b.pts-a.pts||b.best-a.best);
+  let r=0;
+  $("#tlist").innerHTML=sorted.map((t,i)=>{r=i&&t.pts===sorted[i-1].pts?r:i+1;return `<li class="${cur===t.n?"sel":""}" data-n="${esc(t.n)}"><span class="r">${t.tries?(["🥇","🥈","🥉"][r-1]||r):"·"}</span><span class="t">${esc(t.n)}<small>${t.tries?`최고 ${t.best}판 성공 · ${t.tries}번 도전`:"아직 도전 전"}</small></span><span class="v">${t.pts}</span><button class="x" data-del="${esc(t.n)}">삭제</button></li>`}).join("");
+  $("#nowTeam").textContent=cur||"조를 고르세요";
+}
+/* 도전 결과 기록: 더 좋은 기록만 남김 */
+function record(roundsCleared,finished){
+  if(!cur)return;
+  const t=teams.find(x=>x.n===cur);if(!t)return;
+  const pts=roundsCleared*PTS_ROUND+(finished?PTS_FINISH:0);
+  t.tries++;
+  if(pts>=t.pts){t.pts=pts;t.best=roundsCleared;t.done=finished}
+  save();paint();
+}
+$("#tlist").addEventListener("click",e=>{
+  const d=e.target.closest("[data-del]");
+  if(d){if(confirmDel(d.dataset.del)){teams=teams.filter(t=>t.n!==d.dataset.del);if(cur===d.dataset.del)cur=null;save();paint()}return}
+  const li=e.target.closest("li");if(!li||running)return;cur=li.dataset.n;paint();reset();toast(`${cur} 도전 준비! 스페이스바로 시작`);
+});
+function confirmDel(n){const t=teams.find(x=>x.n===n);return !t||!t.tries||window.confirm(`${n} 기록을 지울까요?`)}
+$("#tAddBtn").addEventListener("click",()=>{const n=$("#tName").value.trim();if(!n||teams.some(t=>t.n===n))return;teams.push({n,best:0,pts:0,tries:0,done:false});$("#tName").value="";save();paint()});
+$("#tName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#tAddBtn").click();e.stopPropagation()});
+$("#tClear").addEventListener("click",()=>{if(!window.confirm("모든 조 기록을 지울까요?"))return;teams.forEach(t=>Object.assign(t,{best:0,pts:0,tries:0,done:false}));save();paint()});
+
 /* ---- 진행 ---- */
 let round=0,bpm=90,running=false,timer=null,step=0,cells=[];
 const rnd=n=>Math.floor(Math.random()*n);
 function makeRound(){
-  const set=SETS[$("#selSet").value],pool=set[Math.min(round,set.length-1)];
+  const set=SETS[$("#selSet").value];
+  /* 준비된 판을 다 쓰면: 그 세트의 이름을 모두 섞어서 계속 */
+  const pool=round<set.length?set[round]:(()=>{const all=set.flat();return [...new Map(all.map(p=>[p[0],p])).values()].sort(()=>Math.random()-.5).slice(0,4)})();
   /* 8칸: 앞 판은 같은 이름 두 번씩, 뒤 판은 섞어서 */
   let arr=[];
   if(round<2){for(let i=0;i<4;i++){const p=pool[i%pool.length];arr.push(p,p)}}
@@ -147,32 +211,42 @@ function tick(){
   }
   step++;
   if(step>=14){                                 /* 다음 판: 빨라짐 */
+    cleared++;toast(`✅ ${round+1}판 성공!${cur?` +${PTS_ROUND} (${cur} ${cleared*PTS_ROUND}점)`:""} ⚡ 더 빠르게 ${Math.min(BPM_MAX,bpm+BPM_STEP)} BPM`,1300);
     round++;
-    const set=SETS[$("#selSet").value];
-    if(round>=set.length+2){finish();return}
     bpm=Math.min(BPM_MAX,bpm+BPM_STEP);step=0;makeRound();
   }
   timer=setTimeout(tick,beat*1000);
 }
-function start(){unlock();if(running)return;running=true;$("#bGo").textContent="⏸ 멈춤";if(!cells.length)makeRound();tick()}
+function start(){unlock();if(running)return;if(!cur&&teams.length&&!start.warned){start.warned=true;toast("오른쪽에서 도전할 조를 먼저 눌러 주세요 (연습은 그냥 시작)",2600)}running=true;$("#bGo").textContent="⏸ 멈춤";if(!cells.length)makeRound();tick()}
 function pause(){running=false;clearTimeout(timer);$("#bGo").textContent="▶ 계속";$("#ov").classList.add("on");$("#ovBig").textContent="⏸";$("#ovSub").textContent="스페이스바로 계속";}
-function finish(){running=false;clearTimeout(timer);$("#bGo").textContent="▶ 다시";$("#ov").classList.add("on");$("#ovBig").textContent="🎉";
+function finish(){running=false;clearTimeout(timer);record(cleared,true);if(cur)toast(`🎉 ${cur} 완주! ${cleared}판 + 보너스 ${PTS_FINISH} = ${cleared*PTS_ROUND+PTS_FINISH}점`,3500);cleared=0;$("#bGo").textContent="▶ 다시";$("#ov").classList.add("on");$("#ovBig").textContent="🎉";
   $("#ovSub").textContent=`끝까지 성공! 최고 속도 ${bpm} BPM`;[0,.15,.3].forEach((d,i)=>blip(ctx.currentTime+d,[784,988,1318][i]));round=0;bpm=+$("#selBpm").value;cells=[];step=0}
-function reset(){running=false;clearTimeout(timer);round=0;step=0;bpm=+$("#selBpm").value;cells=[];makeRound();
+function reset(){running=false;clearTimeout(timer);round=0;cleared=0;step=0;bpm=+$("#selBpm").value;cells=[];makeRound();
   $("#bGo").textContent="▶ 시작";$("#ov").classList.add("on");$("#ovBig").textContent="🎵";$("#dots").querySelectorAll("i").forEach(d=>d.classList.remove("on"));
-  $("#ovSub").textContent="스페이스바 또는 아래 ▶ 시작을 누르세요 · 판마다 점점 빨라져요!"}
+  $("#ovSub").textContent="스페이스바 또는 아래 ▶ 시작을 누르세요 · 판마다 점점 빨라져요! 실패할 때까지 계속"}
+function fail(){
+  if(!running&&!cleared&&round===0)return;
+  running=false;clearTimeout(timer);
+  const c=cleared;record(c,false);
+  $("#bGo").textContent="▶ 시작";$("#ov").classList.add("on");$("#ovBig").textContent="❌";
+  $("#ovSub").textContent=cur?`${cur} · ${c}판 성공 → ${c*PTS_ROUND}점 (다음 조를 오른쪽에서 고르세요)`:`${c}판 성공!`;
+  [0,.18].forEach((d,i)=>blip(ctx.currentTime+d,[300,200][i]));
+  round=0;step=0;cleared=0;bpm=+$("#selBpm").value;makeRound();   /* 다음 조는 1판부터 */
+}
 function nextRound(){clearTimeout(timer);round++;bpm=Math.min(BPM_MAX,bpm+BPM_STEP);step=0;makeRound();if(running)tick()}
 $("#bGo").addEventListener("click",()=>running?pause():start());
 $("#bNext").addEventListener("click",()=>{unlock();nextRound()});
 $("#bReset").addEventListener("click",reset);
+$("#bFail").addEventListener("click",()=>{unlock();fail()});
 $("#selSet").addEventListener("change",reset);$("#selBpm").addEventListener("change",reset);
 document.addEventListener("keydown",e=>{
-  if(e.target.tagName==="SELECT")return;
+  if(e.target.tagName==="SELECT"||e.target.tagName==="INPUT")return;
   if(e.code==="Space"){e.preventDefault();running?pause():start()}
   else if(e.key==="ArrowRight"){unlock();nextRound()}
+  else if(e.key==="x"||e.key==="X"){unlock();fail()}
   else if(e.key==="r"||e.key==="R")reset();
 });
-reset();
+paint();reset();
 }
 </script>
 </body>
