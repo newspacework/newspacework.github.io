@@ -233,7 +233,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
       <li>성경 인물·지명·단어·책 문제가 나오고, <b>4개 보기</b> 중 정답을 고르세요</li>
       <li><b>3초 안에</b> 맞히면 <b>+10점</b>, 그 뒤에 맞히면 <b>+5점</b></li>
       <li>틀리면 <b>−2점</b>, 바로 다음 문제로 넘어가요</li>
-      <li>시간은 <b>1분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
+      <li>시간은 <b>2분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
   <div>
@@ -265,7 +265,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="play">
   <div class="hud">
-    <div><span>남은 시간</span><b id="tLeft">1:00</b></div>
+    <div><span>남은 시간</span><b id="tLeft">2:00</b></div>
     <div style="text-align:center"><span>연속</span><b id="stk">0</b></div>
     <div style="text-align:right"><span>점수</span><b id="pts">0</b></div>
   </div>
@@ -365,7 +365,7 @@ const SALT="RETREAT-2026-QUIZ";
 const ADMIN_PIN="7777";               /* 관리자 PIN — 바꾸려면 이 숫자만 수정 */
 const BASE="https://ntfy.sh/hdk-retreat-r7k2m9-quiz";
 const CTL=BASE+"-ctl",RES=BASE+"-res";
-const COUNT=5,RACE_SEC=60;
+const COUNT=5,RACE_SEC=120;
 const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36).toUpperCase().padStart(6,"0").slice(-4)};
 const codeOf=(n,sc,ok)=>hashCode(`${String(n).trim()}|${sc}|${ok}|${SALT}`);
 const rnd=n=>Math.floor(Math.random()*n);
