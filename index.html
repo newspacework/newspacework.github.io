@@ -41,7 +41,8 @@ h1 .l2{display:inline-block;white-space:nowrap;font-size:clamp(30px,6.6vw,74px);
   .qrbox{display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:5px solid var(--ink);border-radius:22px;padding:16px;box-shadow:8px 8px 0 var(--ink);transform:rotate(1.5deg)}
   .qr{width:100%;aspect-ratio:1;display:grid;place-items:center;font:900 14px "Noto Sans KR",sans-serif;color:var(--mut)}
   .qr img,.qr canvas{width:100%!important;height:auto!important;image-rendering:pixelated}
-  .qrbox p{margin:0;font:400 20px "Black Han Sans",sans-serif;text-align:center}
+  .qrbox p{margin:0;font:400 22px "Black Han Sans",sans-serif;text-align:center}
+  .tips{align-items:stretch!important}.tips ol{margin:0;padding-left:1.3em;font:700 14.5px/1.65 "Noto Sans KR",sans-serif}.tips b{font-weight:900}
   .qrbox small{font:700 12px "Noto Sans KR",sans-serif;color:var(--mut);word-break:break-all;text-align:center}
 }
 
@@ -63,8 +64,7 @@ h2 small{font:900 14px "Noto Sans KR",sans-serif;color:var(--mut);margin-left:au
 .events{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:26px 22px}
 .ev{position:relative;display:flex;flex-direction:column;gap:10px;background:var(--c);border:5px solid var(--ink);border-radius:26px;padding:24px 20px 18px;box-shadow:8px 8px 0 var(--ink);text-decoration:none;transition:transform .15s,box-shadow .15s}
 .ev:nth-child(odd){transform:rotate(-.6deg)}.ev:nth-child(even){transform:rotate(.6deg)}
-.ev:hover{transform:translate(-3px,-3px) rotate(0);box-shadow:11px 11px 0 var(--ink)}
-.ev:active{transform:translate(4px,4px);box-shadow:3px 3px 0 var(--ink)}
+
 .ev .no{position:absolute;top:-16px;left:18px;background:var(--ink);color:#fff;font:400 17px "Black Han Sans",sans-serif;padding:4px 14px;border-radius:999px}
 .ev .time{position:absolute;top:-18px;right:16px;display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid var(--ink);font:400 17px/1 "Black Han Sans",sans-serif;text-align:center;transform:rotate(8deg);box-shadow:3px 3px 0 var(--ink)}
 .ev .head{display:flex;align-items:center;gap:14px}
@@ -73,6 +73,10 @@ h2 small{font:900 14px "Noto Sans KR",sans-serif;color:var(--mut);margin-left:au
 .ev .tags{display:flex;flex-wrap:wrap;gap:6px}
 .ev .tags span{background:rgba(255,255,255,.8);border:2px solid var(--ink);border-radius:999px;padding:1px 10px;font:900 13px "Noto Sans KR",sans-serif}
 .ev p{margin:0;font:700 15.5px/1.55 "Noto Sans KR",sans-serif}
+.acts{margin-top:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.act{appearance:none;display:block;text-align:center;text-decoration:none;cursor:pointer;background:#fff;color:var(--ink);border:3px solid var(--ink);border-radius:12px;padding:9px 6px;font:900 15px "Noto Sans KR",sans-serif;box-shadow:3px 3px 0 var(--ink)}
+.act:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.act.qrbtn{grid-column:1/-1;background:var(--ink);color:#fff;font:400 22px "Black Han Sans",sans-serif;padding:11px}
 .ev .go{margin-top:auto;display:flex;justify-content:space-between;align-items:center;background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;font:400 22px "Black Han Sans",sans-serif}
 .ev .go b{font-weight:400;transition:transform .15s}
 .ev:hover .go b{transform:translateX(6px)}
@@ -106,6 +110,23 @@ summary{cursor:pointer;font:900 16px "Noto Sans KR",sans-serif}
 .host strong{display:block;font:400 18px "Black Han Sans",sans-serif;margin-bottom:4px}
 .host a{display:inline-block;font:900 14px "Noto Sans KR",sans-serif;background:#fff;border:2px solid var(--ink);border-radius:8px;padding:2px 8px;margin:2px 4px 2px 0;text-decoration:none}
 .note{font:700 13px "Noto Sans KR",sans-serif;color:var(--mut);margin:12px 0 0}
+.modal{position:fixed;inset:0;background:rgba(20,20,20,.82);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.on{display:flex}
+.mcard{width:min(560px,100%);max-height:96vh;overflow:auto;background:var(--c,#fff);border:6px solid var(--ink);border-radius:28px;padding:22px;text-align:center;box-shadow:10px 10px 0 #000}
+.mno{display:inline-block;margin:0;background:var(--ink);color:#fff;border-radius:999px;padding:3px 14px;font:400 18px "Black Han Sans",sans-serif}
+.mcard h3{font:400 clamp(28px,5vw,44px)/1.1 "Black Han Sans",sans-serif;margin:10px 0 14px}
+.mqr{background:#fff;border:5px solid var(--ink);border-radius:18px;padding:14px;width:min(400px,78vw);aspect-ratio:1;margin:0 auto;display:grid;place-items:center;font:900 15px "Noto Sans KR",sans-serif;color:var(--mut)}
+.mqr img,.mqr canvas{width:100%!important;height:auto!important;image-rendering:pixelated}
+.murl{font:900 clamp(16px,2.4vw,22px) "Noto Sans KR",sans-serif;margin:12px 0 4px;word-break:break-all}
+.mhint{font:700 15px "Noto Sans KR",sans-serif;margin:0 0 14px}
+#mClose{display:inline-block;width:auto;padding:9px 22px}
+.gate{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:18px;background:var(--bg) radial-gradient(circle at 1px 1px,rgba(20,20,20,.13) 1.2px,transparent 0) 0 0/22px 22px}
+.gate.off{display:none}
+.gcard{width:min(420px,100%);background:#fff;border:5px solid var(--ink);border-radius:24px;padding:24px;box-shadow:8px 8px 0 var(--ink);display:flex;flex-direction:column;gap:12px;text-align:center}
+.gcard .kicker{align-self:center}
+.gcard h3{font:400 30px/1.15 "Black Han Sans",sans-serif;margin:4px 0}
+#gPin{font:900 22px "Noto Sans KR",sans-serif;text-align:center;padding:12px;border:3px solid var(--ink);border-radius:12px}
+.shake{animation:sh .3s}@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 footer{margin-top:34px;text-align:center;font:400 18px "Black Han Sans",sans-serif;color:var(--mut)}
 footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
 @media (prefers-reduced-motion:reduce){.float,.stand .m{animation:none}.ev,.ev .go b{transition:none}}
@@ -116,57 +137,57 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
 <div class="wrap">
   <header class="hero">
     <div>
-      <span class="kicker">📱 5종목 · 조 대항전 · 개인상</span>
+      <span class="kicker">🛠 진행자 안내 화면 · 5종목 조 대항전</span>
       <h1><span class="l1">폰 들고 모여라! <span class="float" aria-hidden="true">🏅</span></span><span class="l2">스피드 게임 올림픽</span></h1>
       <p class="lead">휴대폰 하나로 다 같이 즐기는 <b>5가지 스피드 종목</b>! 종목마다 <b>개인 순위</b>와 <b>조별 점수</b>가 쌓이고, 마지막에 <b>시상대</b>에서 우승 조를 가려요.</p>
     </div>
-    <div class="qrbox"><div class="qr" id="qr"></div><p>📷 찍고 입장!</p><small id="url"></small></div>
+    <div class="qrbox tips"><p>🎤 진행 순서</p><ol><li>종목 카드의 <b>📺 큰 화면</b>을 프로젝터에</li><li><b>📷 입장 QR</b>로 모두 입장</li><li>폰의 <b>🛠 관리자</b>에서 시작!</li><li>끝나면 <b>🏆 시상대</b>로 결과 발표</li></ol></div>
     
   </header>
 
   <ol class="steps">
-    <li><span>👆</span>종목을 누르고</li>
+    <li><span>📷</span>화면의 QR을 찍고</li>
     <li><span>✍️</span>이름·조(숫자) 쓰고</li>
     <li><span>🚦</span>입장 → 신호에 시작!</li>
   </ol>
 
-  <h2>🏁 경기 순서 <small>누르면 바로 참가</small></h2>
+  <h2>🏁 경기 순서 <small>누르면 입장 QR</small></h2>
   <nav class="track" aria-label="경기 순서">
-    <a href="./ten/" style="--c:var(--c1)" title="종목 1 · 10초 맞히기">🎯</a><i></i>
-    <a href="./race/" style="--c:var(--c2)" title="종목 2 · 레이스">🏎️</a><i></i>
-    <a href="./mole/" style="--c:var(--c3)" title="종목 3 · 두더지">🔨</a><i></i>
-    <a href="./quiz/" style="--c:var(--c4)" title="종목 4 · 성경 퀴즈">📖</a><i></i>
-    <a href="./tap/" style="--c:var(--c5)" title="종목 5 · 줄다리기">👆</a><i></i>
+    <a href="#" data-qr="ten" style="--c:var(--c1)" title="종목 1 · 10초 맞히기">🎯</a><i></i>
+    <a href="#" data-qr="race" style="--c:var(--c2)" title="종목 2 · 레이스">🏎️</a><i></i>
+    <a href="#" data-qr="mole" style="--c:var(--c3)" title="종목 3 · 두더지">🔨</a><i></i>
+    <a href="#" data-qr="quiz" style="--c:var(--c4)" title="종목 4 · 성경 퀴즈">📖</a><i></i>
+    <a href="#" data-qr="tap" style="--c:var(--c5)" title="종목 5 · 줄다리기">👆</a><i></i>
     <a class="fin" href="./total/" title="시상대">🏆</a>
   </nav>
 
   <h2>🏅 오늘의 종목</h2>
   <div class="events">
-    <a class="ev" href="./ten/" style="--c:var(--c1)"><span class="no">종목 1</span><span class="time">1분</span>
+    <div class="ev" style="--c:var(--c1)"><span class="no">종목 1</span><span class="time">1분</span>
       <div class="head"><span class="emo">🎯</span><h3>정확히<br>10초 맞히기</h3></div>
       <div class="tags"><span>3번 도전</span><span>아이스브레이크</span></div>
       <p>시계 없이 마음속으로 10초! 가장 가깝게 멈추는 사람이 승리. 🤫</p>
-      <span class="go">참가하기 <b>→</b></span></a>
-    <a class="ev" href="./race/" style="--c:var(--c2)"><span class="no">종목 2</span><span class="time">1분</span>
+      <div class="acts"><button class="act qrbtn" data-g="ten">📷 입장 QR</button><a class="act" href="./ten/#board" target="_blank" rel="noopener">📺 큰 화면</a><a class="act" href="./ten/#admin" target="_blank" rel="noopener">🛠 관리자</a><a class="act" href="./ten/#practice" target="_blank" rel="noopener">🎮 연습</a></div></div>
+    <div class="ev" style="--c:var(--c2)"><span class="no">종목 2</span><span class="time">1분</span>
       <div class="head"><span class="emo">🏎️</span><h3>1분 챌린지<br>레이스</h3></div>
       <div class="tags"><span>순발력</span><span>두뇌</span></div>
       <p>색깔·계산·숫자 순서·틀린 글자 찾기를 1분 동안 쉬지 않고!</p>
-      <span class="go">참가하기 <b>→</b></span></a>
-    <a class="ev" href="./mole/" style="--c:var(--c3)"><span class="no">종목 3</span><span class="time">1분</span>
+      <div class="acts"><button class="act qrbtn" data-g="race">📷 입장 QR</button><a class="act" href="./race/#board" target="_blank" rel="noopener">📺 큰 화면</a><a class="act" href="./race/#admin" target="_blank" rel="noopener">🛠 관리자</a><a class="act" href="./race/#practice" target="_blank" rel="noopener">🎮 연습</a></div></div>
+    <div class="ev" style="--c:var(--c3)"><span class="no">종목 3</span><span class="time">1분</span>
       <div class="head"><span class="emo">🔨</span><h3>두더지<br>잡기</h3></div>
       <div class="tags"><span>반사신경</span><span>😈 가짜 조심</span></div>
       <p>진짜 두더지만 톡! 가짜 두더지와 폭탄은 피하세요. 30초부터 스피드 업! ⚡</p>
-      <span class="go">참가하기 <b>→</b></span></a>
-    <a class="ev" href="./quiz/" style="--c:var(--c4)"><span class="no">종목 4</span><span class="time">3분</span>
+      <div class="acts"><button class="act qrbtn" data-g="mole">📷 입장 QR</button><a class="act" href="./mole/#board" target="_blank" rel="noopener">📺 큰 화면</a><a class="act" href="./mole/#admin" target="_blank" rel="noopener">🛠 관리자</a><a class="act" href="./mole/#practice" target="_blank" rel="noopener">🎮 연습</a></div></div>
+    <div class="ev" style="--c:var(--c4)"><span class="no">종목 4</span><span class="time">3분</span>
       <div class="head"><span class="emo">📖</span><h3>성경<br>스피드 퀴즈</h3></div>
       <div class="tags"><span>4지선다</span><span>😆 넌센스 보너스</span></div>
       <p>3초 안에 맞히면 +10점! 성경 실력과 순발력을 동시에.</p>
-      <span class="go">참가하기 <b>→</b></span></a>
-    <a class="ev" href="./tap/" style="--c:var(--c5)"><span class="no">종목 5</span><span class="time">30초</span>
+      <div class="acts"><button class="act qrbtn" data-g="quiz">📷 입장 QR</button><a class="act" href="./quiz/#board" target="_blank" rel="noopener">📺 큰 화면</a><a class="act" href="./quiz/#admin" target="_blank" rel="noopener">🛠 관리자</a><a class="act" href="./quiz/#practice" target="_blank" rel="noopener">🎮 연습</a></div></div>
+    <div class="ev" style="--c:var(--c5)"><span class="no">종목 5</span><span class="time">30초</span>
       <div class="head"><span class="emo">👆</span><h3>조 대항<br>연타 줄다리기</h3></div>
       <div class="tags"><span>조 대항</span><span>💪 마무리</span></div>
       <p>버튼을 마구마구 두드려 우리 조 쪽으로 줄을 끌어와요!</p>
-      <span class="go">참가하기 <b>→</b></span></a>
+      <div class="acts"><button class="act qrbtn" data-g="tap">📷 입장 QR</button><a class="act" href="./tap/#board" target="_blank" rel="noopener">📺 큰 화면</a><a class="act" href="./tap/#admin" target="_blank" rel="noopener">🛠 관리자</a><a class="act" href="./tap/#practice" target="_blank" rel="noopener">🎮 연습</a></div></div>
   </div>
 
   <a class="podium" href="./total/">
@@ -184,27 +205,43 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
     <div class="rule"><b>📱 같은 폰으로</b><span>모든 종목을 <em>같은 폰</em>으로 해야 점수가 한 사람으로 합쳐져요. 조는 <em>숫자</em>로!</span></div>
   </div>
 
-  <details>
-    <summary>🛠 진행자용 바로가기 (큰 화면 · 관리자 · 연습)</summary>
-    <div class="host">
-      <div style="--c:var(--c1)"><strong>🎯 10초 맞히기</strong><a href="./ten/#board">큰 화면</a><a href="./ten/#admin">관리자</a><a href="./ten/#practice">연습</a></div>
-      <div style="--c:var(--c2)"><strong>🏎️ 레이스</strong><a href="./race/#board">큰 화면</a><a href="./race/#admin">관리자</a><a href="./race/#practice">연습</a></div>
-      <div style="--c:var(--c3)"><strong>🔨 두더지</strong><a href="./mole/#board">큰 화면</a><a href="./mole/#admin">관리자</a><a href="./mole/#practice">연습</a></div>
-      <div style="--c:var(--c4)"><strong>📖 성경 퀴즈</strong><a href="./quiz/#board">큰 화면</a><a href="./quiz/#admin">관리자</a><a href="./quiz/#practice">연습</a></div>
-      <div style="--c:var(--c5)"><strong>👆 줄다리기</strong><a href="./tap/#board">큰 화면</a><a href="./tap/#admin">관리자</a><a href="./tap/#practice">연습</a></div>
-      <div style="--c:var(--gold)"><strong>🏆 시상대</strong><a href="./total/">종합 순위</a></div>
-    </div>
-    <p class="note">큰 화면·관리자는 진행자 PIN이 필요해요. 큰 화면에서는 오른쪽 아래 '효과음 켜기'를 한 번 눌러 주세요.</p>
-  </details>
+  <p class="note" style="text-align:center">🔐 큰 화면·관리자도 같은 진행자 PIN이 필요해요 · 큰 화면에서는 오른쪽 아래 '효과음 켜기'를 한 번 눌러 주세요</p>
 
-  <footer>폰 들고 모여라! 스피드 게임 올림픽<small>newspacework</small></footer>
+  <div class="modal" id="qrModal" role="dialog" aria-modal="true">
+  <div class="mcard"><p class="mno" id="mNo"></p><h3 id="mTitle"></h3><div class="mqr" id="mQr"></div><p class="murl" id="mUrl"></p><p class="mhint">📷 폰 카메라로 찍고 · 이름과 조(숫자) 쓰고 · 입장하기!</p><button class="act" id="mClose">닫기 ✕</button></div>
+</div>
+<div class="gate" id="gate"><div class="gcard"><span class="kicker">🔐 진행자 전용</span><h3>스피드 게임 올림픽<br>진행자 안내 화면</h3><input id="gPin" type="password" inputmode="numeric" autocomplete="off" placeholder="진행자 PIN"><button class="act qrbtn" id="gOk">열기</button><p class="note" id="gMsg">학생은 진행자가 보여 주는 QR로 입장해요.</p></div></div>
+<footer>폰 들고 모여라! 스피드 게임 올림픽<small>newspacework</small></footer>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 {
-  const u=location.origin+location.pathname.replace(/index\.html$/,"");
-  document.getElementById("url").textContent=u.replace(/^https?:\/\//,"").replace(/\/$/,"");
-  if(matchMedia("(min-width:920px)").matches){try{new QRCode(document.getElementById("qr"),{text:u,width:400,height:400,correctLevel:QRCode.CorrectLevel.M})}catch(e){document.getElementById("qr").textContent="QR"}}
+const $=q=>document.querySelector(q);
+const PIN="7777";                    /* 진행자 PIN — 게임 관리자 화면과 같게 */
+const NAMES={ten:["종목 1","정확히 10초 맞히기",1],race:["종목 2","1분 챌린지 레이스",2],mole:["종목 3","두더지 잡기",3],quiz:["종목 4","성경 스피드 퀴즈",4],tap:["종목 5","조 대항 연타 줄다리기",5]};
+const base=location.origin+location.pathname.replace(/index\.html$/,"");
+/* PIN 잠금 */
+const OK="nsw-host-ok";
+let ok=false;try{ok=localStorage.getItem(OK)===PIN}catch(e){}
+if(ok)$("#gate").classList.add("off");else $("#gPin").focus();
+const open=()=>{if($("#gPin").value!==PIN){$("#gMsg").textContent="PIN이 달라요";$(".gcard").classList.add("shake");setTimeout(()=>$(".gcard").classList.remove("shake"),300);$("#gPin").select();return}
+  try{localStorage.setItem(OK,PIN)}catch(e){}$("#gate").classList.add("off")};
+$("#gOk").addEventListener("click",open);$("#gPin").addEventListener("keydown",e=>{if(e.key==="Enter")open()});
+/* 종목 입장 QR 크게 */
+function showQr(g){
+  const [no,title,c]=NAMES[g],url=base+g+"/";
+  $("#mNo").textContent=no;$("#mTitle").textContent=title;$("#mUrl").textContent=url.replace(/^https?:\/\//,"").replace(/\/$/,"");
+  $(".mcard").style.setProperty("--c",`var(--c${c})`);
+  const box=$("#mQr");box.innerHTML="";
+  try{new QRCode(box,{text:url,width:600,height:600,correctLevel:QRCode.CorrectLevel.M})}catch(e){box.textContent=url}
+  $("#qrModal").classList.add("on");
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-g].qrbtn,[data-qr]");if(!b)return;e.preventDefault();showQr(b.dataset.g||b.dataset.qr);
+});
+$("#mClose").addEventListener("click",()=>$("#qrModal").classList.remove("on"));
+$("#qrModal").addEventListener("click",e=>{if(e.target.id==="qrModal")$("#qrModal").classList.remove("on")});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#qrModal").classList.remove("on")});
 }
 </script>
 </body>
