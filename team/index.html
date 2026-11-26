@@ -32,6 +32,16 @@ textarea{width:100%;min-height:300px;border:3px solid var(--ink);border-radius:1
 .opt label{display:flex;align-items:center;gap:6px;cursor:pointer}
 .preview{font:700 13px "Noto Sans KR",sans-serif;color:var(--mut);margin:0 0 14px}
 .go{width:100%;justify-content:center;background:var(--pink);color:#fff;font:400 28px "Black Han Sans",sans-serif;padding:12px;border-radius:16px}
+h2.sv{margin-top:22px}
+.svrow{display:flex;gap:8px}.svrow input{flex:1;border:3px solid var(--ink);border-radius:10px;padding:6px 10px;font:900 15px "Noto Sans KR",sans-serif}
+.svlist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.svlist li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;border:3px solid var(--ink);border-radius:12px;padding:6px 8px;background:#fffbea}
+.svlist li.cur{background:#ffe8f3;border-color:var(--pink)}
+.svlist b{display:block;font:900 15px "Noto Sans KR",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svlist small{font:700 12px "Noto Sans KR",sans-serif;color:var(--mut)}
+.svlist button{border:2px solid var(--ink);border-radius:8px;background:#fff;padding:3px 9px;font:900 13px "Noto Sans KR",sans-serif;cursor:pointer}
+.svlist button.ld{background:var(--gold)}
+.svlist .none{display:block;border:0;background:none;padding:0;color:var(--mut);font:700 13px "Noto Sans KR",sans-serif}
 .result .bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .result .bar .tip{font:700 13px "Noto Sans KR",sans-serif;color:var(--mut);margin-right:auto}
 .teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
@@ -80,6 +90,9 @@ body.big .team h3{font-size:46px}body.big .team li{font-size:28px}
       </div>
       <p class="preview" id="preview"></p>
       <button class="btn go" id="go">🎲 랜덤 편성!</button>
+      <h2 class="sv">3. 저장 · 불러오기</h2>
+      <div class="svrow"><input id="svName" maxlength="20" placeholder="이름 (예: 수련회 1일차)"><button class="btn" id="svBtn">💾 저장</button></div>
+      <ul class="svlist" id="svList"></ul>
     </section>
 
     <section class="result">
@@ -167,6 +180,34 @@ $("#out").addEventListener("click",e=>{
 function save(){try{localStorage.setItem(KEY,JSON.stringify({names:$("#names").value,mode:mode(),num:$("#num").value,teams}))}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(!d)return;$("#names").value=d.names||"";$("#num").value=d.num||5;
   const r=document.querySelector(`input[name=mode][value="${d.mode}"]`);if(r)r.checked=true;teams=Array.isArray(d.teams)?d.teams:[]}catch(e){}}
+/* ---- 저장 · 불러오기 · 삭제 (이 기기에 보관) ---- */
+const SKEY="nsw-team-saves";let curSave=null;
+const saves=()=>{try{return JSON.parse(localStorage.getItem(SKEY))||[]}catch(e){return []}};
+const putSaves=a=>{try{localStorage.setItem(SKEY,JSON.stringify(a))}catch(e){toast("저장 공간이 부족해요")}};
+function stamp(t){const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
+function renderSaves(){
+  const a=saves();
+  $("#svList").innerHTML=a.length?a.map((x,i)=>`<li class="${x.id===curSave?"cur":""}"><span><b>${esc(x.name)}</b><small>${x.teams.length}개 조 · ${x.teams.flat().length}명 · ${stamp(x.at)}</small></span><button class="ld" data-ld="${i}">불러오기</button><button data-del="${i}">삭제</button></li>`).join("")
+    :`<li class="none">저장한 편성이 없어요</li>`;
+}
+$("#svBtn").addEventListener("click",()=>{
+  if(!teams.length)return toast("먼저 편성해 주세요");
+  const name=$("#svName").value.trim()||`조 편성 ${stamp(Date.now())}`;
+  const a=saves(),same=a.findIndex(x=>x.name===name);
+  if(same>=0&&!confirm(`'${name}'이(가) 이미 있어요. 덮어쓸까요?`))return;
+  const item={id:same>=0?a[same].id:Date.now().toString(36),name,at:Date.now(),names:$("#names").value,mode:mode(),num:$("#num").value,teams};
+  if(same>=0)a[same]=item;else a.unshift(item);
+  putSaves(a.slice(0,30));curSave=item.id;$("#svName").value="";renderSaves();toast(`💾 '${name}' 저장됨`);
+});
+$("#svName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#svBtn").click()});
+$("#svList").addEventListener("click",e=>{
+  const a=saves(),ld=e.target.closest("[data-ld]"),del=e.target.closest("[data-del]");
+  if(ld){const x=a[+ld.dataset.ld];if(!x)return;$("#names").value=x.names||"";$("#num").value=x.num||5;
+    const r=document.querySelector(`input[name=mode][value="${x.mode}"]`);if(r)r.checked=true;
+    teams=x.teams;sel=null;curSave=x.id;update();render();renderSaves();toast(`📂 '${x.name}' 불러옴`);return}
+  if(del){const x=a[+del.dataset.del];if(!x||!confirm(`'${x.name}'을(를) 삭제할까요?`))return;
+    a.splice(+del.dataset.del,1);putSaves(a);if(curSave===x.id)curSave=null;renderSaves();toast(`🗑 '${x.name}' 삭제됨`)}
+});
 function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),1800)}
 
 $("#names").addEventListener("input",update);$("#num").addEventListener("input",update);
@@ -179,7 +220,7 @@ $("#copy").addEventListener("click",()=>{
   const txt=teams.map((t,i)=>`${i+1}조 (${t.length}명): ${t.map(p=>p.n).join(", ")}`).join("\n");
   navigator.clipboard.writeText(txt).then(()=>toast("✓ 복사됨 — 단톡방에 붙여넣으세요"),()=>toast("복사 실패"));
 });
-load();update();render();
+load();update();render();renderSaves();
 }
 </script>
 </body>
