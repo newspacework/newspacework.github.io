@@ -169,8 +169,9 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <div class="card">
     <ol class="rules">
       <li>색깔·계산·숫자·틀린그림 문제가 섞여서 나와요</li>
-      <li>맞히면 <b>+10점</b>, 연속으로 맞히면 보너스</li>
-      <li>틀리면 <b>−5점</b>, 잠깐 멈춤</li>
+      <li>맞히면 <b>+10점</b> (숫자 순서는 <b>+20점</b>)</li>
+      <li>연속으로 맞히면 보너스 <b>+2, +4, +6…</b> 최대 <b>+10점</b>까지</li>
+      <li>틀리면 <b>−5점</b>, 연속 보너스 초기화</li>
       <li>진행자가 <b>출발!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
@@ -404,8 +405,7 @@ function good(base){st.streak++;st.ok++;st.best=Math.max(st.best,st.streak);cons
 function bad(){
   st.streak=0;st.no++;st.score=Math.max(0,st.score-5);hud();buzz([60,40,60]);
   const sg=$("#stage");sg.classList.add("shake");setTimeout(()=>sg.classList.remove("shake"),300);
-  st.frozen=true;const f=document.createElement("div");f.className="freeze on";f.textContent="−5 앗!";sg.appendChild(f);
-  setTimeout(()=>{f.remove();st.frozen=false},700);
+  pop("−5");
 }
 const guard=fn=>(...a)=>{if(st.frozen||Date.now()>=st.endAt)return;fn(...a)};
 /* ---- 문제 4종 ---- */
