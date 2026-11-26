@@ -79,7 +79,7 @@ footer button:hover{border-color:#d9dde6}
 </main>
 <details class="how"><summary>❓ 점수는 어떻게 계산하나요?</summary>
   <ol>
-    <li><b>종목 점수</b>: 게임에서 받은 점수 그대로 (레이스 맞히면 +5·틀리면 −2, 두더지 +5, 성경 3초 안 +10·10초 넘으면 0점, 불나는 30초 1번에 +1, 10초는 오차가 작은 순으로 순위 점수)</li>
+    <li><b>종목 점수</b>: 게임에서 받은 점수 그대로 (레이스 맞히면 +5·틀리면 −2, 두더지 +5, 성경 3초 안 +10·10초 넘으면 0점, 불나는 30초 1번에 +1, 10초는 오차 작은 순 1등 100 → 꼴찌 50)</li>
     <li><b>100점 환산</b>: <span class="f">내 점수 ÷ 1등 점수 × 100</span> — 1등이 130점이면 117점은 90점. 어느 종목이든 1등은 100점!</li>
     <li><b>조 점수</b>: 종목마다 <b>조원 1인당 평균</b>을 내서 1등 조 = 100점으로 환산 + 개인 🥇+5 🥈+3 🥉+2</li>
     <li><b>종합</b>: 다섯 종목 환산 점수를 모두 더해요 (개인 최대 500점)</li>
@@ -150,8 +150,8 @@ function gameResult(g){
 const pct=(v,top)=>top>0?Math.max(0,Math.round(v/top*100)):0;
 function computeGame(g){
   const list=gameResult(g),tm=new Map();
-  /* 10초 맞히기: 점수 대신 오차 순위 점수 = (인원 − 순위 + 1) ÷ 인원 × 100 */
-  const N=list.length;for(const x of list)x.v=g.id==="ten"?(N?Math.round((N-x.rk+1)/N*100):0):x.s;
+  /* 10초 맞히기: 점수 대신 오차 순위 점수 = 1등 100 → 꼴찌 50 고르게 */
+  const N=list.length;for(const x of list)x.v=g.id==="ten"?(N<=1?100:Math.round(50+50*(N-x.rk)/(N-1))):x.s;
   for(const x of list){const k=x.g||"조 없음";const T=tm.get(k)||{k,n:0,s:0,bo:0};T.n++;T.s+=x.v;T.bo+=x.bo;tm.set(k,T)}
   const ts=[...tm.values()].map(T=>{const avg=T.s/T.n;return {...T,avg:Math.round(avg),raw:avg}});
   const tTop=Math.max(0,...ts.map(T=>T.raw)),pTop=Math.max(0,...list.map(x=>x.v));
