@@ -18,6 +18,8 @@ h1{font:400 clamp(26px,3.2vw,48px)/1 "Black Han Sans",sans-serif;margin:0}
 h1 em{font-style:normal;color:var(--pink)}
 .chips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
 .chip{background:#fff;color:var(--ink);border-radius:999px;padding:6px 16px;font:400 clamp(18px,1.8vw,26px) "Black Han Sans",sans-serif;border:3px solid #000}
+.chip.home{background:#2a2245;color:#fff;border-color:#fff;text-decoration:none;font-size:clamp(15px,1.3vw,20px);display:flex;align-items:center}.chip.home:hover{background:#3b3160}
+footer a.flink{background:#2a2245;color:#fff;border:3px solid #fff;border-radius:12px;padding:8px 12px;font:900 15px "Noto Sans KR",sans-serif;text-decoration:none;white-space:nowrap}footer a.flink:first-of-type{margin-left:auto}
 .chip.team{background:var(--pink);color:#fff}.chip.ok{background:#fff}.chip.round{background:var(--gold)}.chip.bpm{background:var(--mint)}
 .stage{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:clamp(10px,1.6vw,24px)}
 .cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--c);color:var(--ink);border:6px solid #000;border-radius:28px;box-shadow:8px 8px 0 #000;transition:transform .08s,box-shadow .08s,filter .15s;filter:saturate(.75) brightness(.78)}
@@ -111,7 +113,7 @@ footer button.fail{background:#e8253b;color:#fff}
     <button id="bReset">처음부터 ⟲</button>
     <label>세트 <select id="selSet"><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option></select></label>
     <label>시작 속도 <select id="selBpm"><option value="80">느리게 80</option><option value="90" selected>보통 90</option><option value="100">빠르게 100</option></select></label>
-    <span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
+    <a class="flink" href="../">📱 소개 페이지</a><a class="flink" href="../total/" target="_blank" rel="noopener">🏆 종합 순위</a><span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
   </footer>
 </div>
 <div class="toast" id="toast"></div>
