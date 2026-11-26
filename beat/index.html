@@ -70,9 +70,14 @@ footer button.fail{background:#e8253b;color:#fff}
 .pgrid button{min-width:150px;border:4px solid #000;border-radius:18px;background:#fff;padding:14px 20px;font:400 clamp(26px,2.6vw,38px) "Black Han Sans",sans-serif;cursor:pointer;box-shadow:5px 5px 0 #000}
 .pgrid button small{display:block;font:900 13px "Noto Sans KR",sans-serif;color:#666}
 .pgrid button:hover{background:var(--mint)}
+#memTa{width:min(640px,80vw);border:4px solid #000;border-radius:14px;padding:12px;font:900 22px "Noto Sans KR",sans-serif;resize:vertical}
+.mbtns{display:flex;gap:16px;justify-content:center;align-items:center;margin-top:12px}
+#memSave{border:4px solid #000;border-radius:14px;background:var(--mint);padding:10px 30px;font:400 24px "Black Han Sans",sans-serif;cursor:pointer}
+.tlist .mem{grid-column:2/4;font:700 12px "Noto Sans KR",sans-serif;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tlist .btns .me{background:#dff7ff}
 .pcancel{margin-top:18px;background:none;border:0;color:#cfc8e8;font:900 15px "Noto Sans KR",sans-serif;cursor:pointer;text-decoration:underline}
-.tlist .btns{grid-column:2/4;display:flex;gap:6px;justify-content:flex-end}
-.tlist .btns button{white-space:nowrap;font:900 12px "Noto Sans KR",sans-serif;border:2px solid #000;border-radius:8px;background:#f3f0ff;padding:2px 8px;cursor:pointer}
+.tlist .btns{grid-column:2/4;display:flex;gap:4px;justify-content:flex-end}
+.tlist .btns button{white-space:nowrap;padding:2px 6px!important;font:900 12px "Noto Sans KR",sans-serif;border:2px solid #000;border-radius:8px;background:#f3f0ff;padding:2px 8px;cursor:pointer}
 .tlist .btns .rs{background:var(--gold)}.tlist .btns .st{background:var(--pink);color:#fff}
 .toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#fff;color:var(--ink);border:4px solid #000;border-radius:16px;padding:10px 22px;font:400 clamp(22px,2.6vw,36px) "Black Han Sans",sans-serif;z-index:20;box-shadow:6px 6px 0 #000;display:none}
 .toast.on{display:block}
@@ -83,7 +88,7 @@ footer button.fail{background:#e8253b;color:#fff}
 <body>
 <div class="app">
   <header>
-    <h1>🎵 리듬 맞춰 <em>말하기</em> · 성경 인물</h1>
+    <h1>🎵 리듬 맞춰 <em>말하기</em> · <span id="setName">성경 인물</span></h1>
     <div class="chips"><span class="chip team" id="cTeam">조 선택 전</span><span class="chip ok" id="cOk">성공 0판 · 0점</span><span class="chip round" id="cRound">1판</span><span class="chip bpm" id="cBpm">90 BPM</span></div>
   </header>
 
@@ -111,12 +116,15 @@ footer button.fail{background:#e8253b;color:#fff}
     <button class="fail" id="bFail">❌ 실패 (X)</button>
     <button id="bNext">다음 판 ⏭</button>
     <button id="bReset">처음부터 ⟲</button>
-    <label>세트 <select id="selSet"><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option></select></label>
+    <label>세트 <select id="selSet"><option value="team">👥 조원 이름 (조마다)</option><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option></select></label>
     <label>시작 속도 <select id="selBpm"><option value="80">느리게 80</option><option value="90" selected>보통 90</option><option value="100">빠르게 100</option></select></label>
     <button class="flink" id="bVoice">🗣 안내 음성 켬</button><a class="flink" href="../">📱 소개 페이지</a><a class="flink" href="../total/" target="_blank" rel="noopener">🏆 종합 순위</a><span class="keys"><b>Space</b> 시작·멈춤 <b>X</b> 실패 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
   </footer>
 </div>
 <div class="toast" id="toast"></div>
+<div class="pick" id="memBox"><div class="pbox"><h2 id="memH">조원 이름</h2><p>쉼표·띄어쓰기·줄바꿈으로 구분 · 2명 이상 (이 조가 도전할 때 이 이름들이 나와요)</p>
+<textarea id="memTa" rows="5" placeholder="예) 김민준, 이서연, 박지호, 최하은"></textarea>
+<div class="mbtns"><button id="memSave">저장</button><button class="pcancel" id="memCancel">닫기</button></div></div></div>
 <div class="pick" id="pick"><div class="pbox"><h2>어느 조가 도전할까요?</h2><p>조를 누르면 바로 시작합니다</p><div class="pgrid" id="pgrid"></div><button class="pcancel" id="pCancel">닫기</button></div></div>
 
 <script>
@@ -193,7 +201,7 @@ function toast(t,ms=1800){const el=$("#toast");el.textContent=t;el.classList.add
 function paint(){
   const sorted=[...teams].sort((a,b)=>b.pts-a.pts||b.best-a.best);
   let r=0;
-  $("#tlist").innerHTML=sorted.map((t,i)=>{r=i&&t.pts===sorted[i-1].pts?r:i+1;return `<li class="${cur===t.n?"sel":""}" data-n="${esc(t.n)}"><span class="r">${t.pts>0?(["🥇","🥈","🥉"][r-1]||r):"·"}</span><span class="t">${esc(t.n)}<small>${t.tries?`${t.best}판 성공 · ${t.pts}점${t.tries>1?` (${t.tries}번 중 최고)`:""}`:"아직 도전 전"}</small></span><span class="v">${cur===t.n&&(running||cleared)?`<em class="live">도전 중 ${cleared}판</em>+${cleared*PTS_ROUND}`:t.pts}</span><span class="btns"><button class="st" data-st="${esc(t.n)}">▶ 시작</button><button class="rs" data-rs="${esc(t.n)}">↺ 리셋</button><button data-del="${esc(t.n)}">삭제</button></span></li>`}).join("");
+  $("#tlist").innerHTML=sorted.map((t,i)=>{r=i&&t.pts===sorted[i-1].pts?r:i+1;return `<li class="${cur===t.n?"sel":""}" data-n="${esc(t.n)}"><span class="r">${t.pts>0?(["🥇","🥈","🥉"][r-1]||r):"·"}</span><span class="t">${esc(t.n)}<small>${t.tries?`${t.best}판 성공 · ${t.pts}점${t.tries>1?` (${t.tries}번 중 최고)`:""}`:"아직 도전 전"}</small></span><span class="v">${cur===t.n&&(running||cleared)?`<em class="live">도전 중 ${cleared}판</em>+${cleared*PTS_ROUND}`:t.pts}</span>${setVal()==="team"?`<span class="mem">👥 ${t.mem&&t.mem.length?esc(t.mem.join(", ")):"조원 이름 없음 → ✎ 조원"}</span>`:""}<span class="btns"><button class="me" data-me="${esc(t.n)}">✎조원</button><button class="st" data-st="${esc(t.n)}">▶시작</button><button class="rs" data-rs="${esc(t.n)}">↺리셋</button><button data-del="${esc(t.n)}" title="삭제">✕</button></span></li>`}).join("");
   $("#nowTeam").textContent=cur||"시작 때 선택";
   $("#cTeam").textContent=cur||"조 선택 전";
   if(!running)$("#bGo").textContent=cur?`▶ ${cur} 시작`:"▶ 조 선택·시작";
@@ -212,6 +220,8 @@ $("#tlist").addEventListener("click",e=>{
   const d=e.target.closest("[data-del]");
   const st=e.target.closest("[data-st]");
   if(st){if(running)return;cur=st.dataset.st;reset();paint();start();return}
+  const me=e.target.closest("[data-me]");
+  if(me){if(running)return;openMem(me.dataset.me);return}
   const rs=e.target.closest("[data-rs]");
   if(rs){if(running)return;const t=teams.find(x=>x.n===rs.dataset.rs);if(!t)return;
     if(t.tries&&!window.confirm(`${t.n} 기록(${t.best}판 · ${t.pts}점)을 지우고 다시 도전할까요?`))return;
@@ -219,6 +229,17 @@ $("#tlist").addEventListener("click",e=>{
   if(d){if(confirmDel(d.dataset.del)){teams=teams.filter(t=>t.n!==d.dataset.del);if(cur===d.dataset.del)cur=null;save();paint()}return}
   const li=e.target.closest("li");if(!li||running)return;cur=li.dataset.n;paint();reset();toast(`${cur} 도전 준비! 스페이스바로 시작`);
 });
+/* ---- 조원 이름 ---- */
+const setVal=()=>$("#selSet").value;
+let memFor=null;
+function openMem(n){const t=teams.find(x=>x.n===n);if(!t)return;memFor=n;$("#memH").textContent=`${n} 조원 이름`;$("#memTa").value=(t.mem||[]).join(", ");$("#memBox").classList.add("on");setTimeout(()=>$("#memTa").focus(),50)}
+$("#memSave").addEventListener("click",()=>{const t=teams.find(x=>x.n===memFor);if(!t)return;
+  t.mem=[...new Set($("#memTa").value.split(/[,，\n\s]+/).map(x=>x.trim().slice(0,6)).filter(Boolean))].slice(0,30);
+  $("#memBox").classList.remove("on");save();
+  if(t.mem.length>=2&&setVal()!=="team"){$("#selSet").value="team"}
+  if(!running){if(cur===t.n||setVal()==="team")reset()}paint();toast(`${t.n} 조원 ${t.mem.length}명 저장`)});
+$("#memCancel").addEventListener("click",()=>$("#memBox").classList.remove("on"));
+$("#memTa").addEventListener("keydown",e=>e.stopPropagation());
 function openPick(){
   if(!teams.length){toast("오른쪽에서 조를 먼저 추가해 주세요",2200);return}
   $("#pgrid").innerHTML=teams.map(t=>`<button data-n="${esc(t.n)}">${esc(t.n)}<small>${t.tries?`지금 ${t.best}판 · ${t.pts}점`:"첫 도전"}</small></button>`).join("");
@@ -234,8 +255,20 @@ $("#tClear").addEventListener("click",()=>{if(!window.confirm("모든 조 기록
 /* ---- 진행 ---- */
 let round=0,bpm=90,running=false,timer=null,step=0,cells=[];
 const rnd=n=>Math.floor(Math.random()*n);
+const MEMO=["😀","😎","🤩","😆","🥳","😇","🤠","🦁","🐯","🐻","🐰","🐶","🦊","🐼","🐸","⭐","🔥","🌈"];
+function teamSet(){
+  const t=cur&&teams.find(x=>x.n===cur),m=(t&&t.mem)||[];
+  if(m.length<2)return null;
+  const em=m.map((_,i)=>MEMO[i%MEMO.length]),all=m.map((n,i)=>[n,em[i]]);
+  /* 판마다 최대 4명씩 섞어서 */
+  return Array.from({length:6},()=>[...all].sort(()=>Math.random()-.5).slice(0,4));
+}
 function makeRound(){
-  const set=SETS[$("#selSet").value];
+  let set=SETS[setVal()];
+  if(setVal()==="team"){set=teamSet();
+    $("#setName").textContent=set?`${cur} 조원 이름`:"조원 이름";
+    if(!set){set=SETS.mix;$("#setName").textContent=cur?`${cur} 조원 없음 → 성경 인물`:"조원 이름 (조를 고르면)"}}
+  else $("#setName").textContent=$("#selSet").selectedOptions[0].textContent;
   /* 준비된 판을 다 쓰면: 그 세트의 이름을 모두 섞어서 계속 */
   const pool=round<set.length?set[round]:(()=>{const all=set.flat();return [...new Map(all.map(p=>[p[0],p])).values()].sort(()=>Math.random()-.5).slice(0,4)})();
   /* 8칸: 앞 판은 같은 이름 두 번씩, 뒤 판은 섞어서 */
@@ -244,7 +277,7 @@ function makeRound(){
   else{for(let i=0;i<8;i++)arr.push(pool[rnd(pool.length)]);if(new Set(arr.map(a=>a[0])).size<2)arr[7]=pool.find(p=>p[0]!==arr[0][0])||arr[7]}
   cells=arr;
   const st=$("#stage");st.querySelectorAll(".cell").forEach(c=>c.remove());
-  arr.forEach(([n,e],i)=>{const d=document.createElement("div");d.className="cell";d.style.setProperty("--c",COLORS[i]);d.innerHTML=`<span class="no">${i+1}</span><span class="emo">${e}</span><span class="nm">${n}</span>`;st.appendChild(d)});
+  arr.forEach(([n,e],i)=>{const d=document.createElement("div");d.className="cell";d.style.setProperty("--c",COLORS[i]);d.innerHTML=`<span class="no">${i+1}</span><span class="emo">${e}</span><span class="nm">${esc(n)}</span>`;st.appendChild(d)});
   $("#cRound").textContent=`${round+1}판`;$("#cBpm").textContent=`${bpm} BPM`;
 }
 /* 한 판 = 준비 4박(쿵짝쿵짝) + 이름 8박 + 쉼 2박 */
@@ -317,13 +350,13 @@ $("#bReset").addEventListener("click",reset);
 $("#bFail").addEventListener("click",()=>{unlock();fail()});
 const vLabel=()=>$("#bVoice").textContent=voiceOn()?"🗣 안내 음성 켬":"🔇 안내 음성 끔";vLabel();
 $("#bVoice").addEventListener("click",()=>{try{localStorage.setItem("beat1-voice",voiceOn()?"0":"1")}catch(e){}vLabel()});
-$("#selSet").addEventListener("change",reset);$("#selBpm").addEventListener("change",reset);
+$("#selSet").addEventListener("change",()=>{reset();paint()});$("#selBpm").addEventListener("change",reset);
 document.addEventListener("keydown",e=>{
   if(e.target.tagName==="SELECT"||e.target.tagName==="INPUT")return;
   if(e.code==="Space"){e.preventDefault();running?pause():start()}
   else if(e.key==="ArrowRight"){unlock();nextRound()}
   else if(e.key==="x"||e.key==="X"){unlock();fail()}
-  else if(e.key==="Escape")$("#pick").classList.remove("on");
+  else if(e.key==="Escape"){$("#pick").classList.remove("on");$("#memBox").classList.remove("on")}
   else if(e.key==="r"||e.key==="R")reset();
 });
 paint();reset();
