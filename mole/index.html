@@ -225,10 +225,10 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <h1>두더지<br><em>잡기</em> 대작전</h1>
   <div class="card">
     <ol class="rules">
-      <li><b>60초</b> 동안 튀어나오는 두더지를 톡! 잡으면 <b>+1점</b></li>
-      <li>황금 두더지는 <b>+3점</b> 🌟</li>
+      <li><b>60초</b> 동안 튀어나오는 두더지를 톡! 잡으면 <b>+5점</b></li>
+      <li>황금 두더지는 <b>+10점</b> 🌟</li>
       <li>⚡ <b>남은 30초부터 스피드 업!</b> 두더지가 훨씬 빨리, 많이 나와요</li>
-      <li>💣 폭탄을 치면 <b>−2점</b>, 1초 동안 멈춰요</li>
+      <li>💣 폭탄·가짜 두더지를 치면 <b>−5점</b>, 1초 동안 멈춰요</li>
       <li>😈 <b>가짜 두더지</b> 조심! 눈썹이 화난 녀석은 폭탄이에요</li>
       <li>🔄 나오다가 <b>폭탄↔두더지로 변신</b>하는 녀석도 있어요. 치는 순간 모습이 기준!</li>
       <li>진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
@@ -549,10 +549,10 @@ function whack(i){
   hideHole(i);
   h.classList.add("hit");h.classList.toggle("boom",a.k==="bomb"||a.k==="fake");h.classList.add("up");
   setTimeout(()=>h.classList.remove("hit","boom","up"),260);
-  if(a.k==="mole")good(1);
-  else if(a.k==="gold")good(3);
+  if(a.k==="mole")good(5);
+  else if(a.k==="gold")good(10);
   else{
-    bad(2);st.frozen=true;$("#frz").classList.add("on");
+    bad(5);st.frozen=true;$("#frz").classList.add("on");
     setTimeout(()=>{st.frozen=false;$("#frz").classList.remove("on")},1000);
   }
 }
@@ -658,7 +658,7 @@ function initBoard(){
     const n=order.length,H=Math.max(window.innerHeight-330,300);
     const lh=Math.max(28,Math.min(78,Math.floor(H/Math.max(n,1))));
     const box=$("#lanes");box.style.setProperty("--lh",lh+"px");box.style.height=(lh*n)+"px";
-    const max=Math.max(10,order[0]?order[0].s:0);
+    const max=Math.max(50,order[0]?order[0].s:0);
     const lo=n>1?Math.max(0,order[n-1].s*0.7):0;
     const pos=s=>max>lo?0.06+0.94*Math.max(0,(s-lo)/(max-lo)):1;
     order.forEach((x,i)=>{
