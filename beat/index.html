@@ -47,7 +47,8 @@ footer label{font:900 14px "Noto Sans KR",sans-serif;color:#cfc8e8;display:flex;
 .board .now{font:900 14px "Noto Sans KR",sans-serif;color:#cfc8e8;background:#1b1530;border-radius:10px;padding:6px 10px}.board .now b{color:#fff;font:400 18px "Black Han Sans",sans-serif}
 .tlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .tlist li{display:grid;grid-template-columns:1.6em minmax(0,1fr) auto;gap:2px 8px;align-items:center;background:#fff;color:var(--ink);border:3px solid #000;border-radius:14px;padding:8px 10px;cursor:pointer}
-.tlist li.sel{outline:4px solid var(--pink);outline-offset:2px}
+.tlist li.sel{outline:4px solid var(--pink);outline-offset:2px;background:#ffe8f3}
+.tlist .live{display:block;font:900 11px "Noto Sans KR",sans-serif;color:#e8253b;font-style:normal;text-align:right}
 .tlist .r{font:400 22px "Black Han Sans",sans-serif;text-align:center}
 .tlist .t{font:400 20px "Black Han Sans",sans-serif}
 .tlist .t small{display:block;font:900 12px "Noto Sans KR",sans-serif;color:#555}
@@ -174,7 +175,7 @@ function toast(t,ms=1800){const el=$("#toast");el.textContent=t;el.classList.add
 function paint(){
   const sorted=[...teams].sort((a,b)=>b.pts-a.pts||b.best-a.best);
   let r=0;
-  $("#tlist").innerHTML=sorted.map((t,i)=>{r=i&&t.pts===sorted[i-1].pts?r:i+1;return `<li class="${cur===t.n?"sel":""}" data-n="${esc(t.n)}"><span class="r">${t.pts>0?(["🥇","🥈","🥉"][r-1]||r):"·"}</span><span class="t">${esc(t.n)}<small>${t.tries?`${t.best}판 성공 · ${t.pts}점${t.tries>1?` (${t.tries}번 중 최고)`:""}`:"아직 도전 전"}</small></span><span class="v">${t.pts}</span><span class="btns"><button class="st" data-st="${esc(t.n)}">▶ 시작</button><button class="rs" data-rs="${esc(t.n)}">↺ 리셋</button><button data-del="${esc(t.n)}">삭제</button></span></li>`}).join("");
+  $("#tlist").innerHTML=sorted.map((t,i)=>{r=i&&t.pts===sorted[i-1].pts?r:i+1;return `<li class="${cur===t.n?"sel":""}" data-n="${esc(t.n)}"><span class="r">${t.pts>0?(["🥇","🥈","🥉"][r-1]||r):"·"}</span><span class="t">${esc(t.n)}<small>${t.tries?`${t.best}판 성공 · ${t.pts}점${t.tries>1?` (${t.tries}번 중 최고)`:""}`:"아직 도전 전"}</small></span><span class="v">${cur===t.n&&(running||cleared)?`<em class="live">도전 중 ${cleared}판</em>+${cleared*PTS_ROUND}`:t.pts}</span><span class="btns"><button class="st" data-st="${esc(t.n)}">▶ 시작</button><button class="rs" data-rs="${esc(t.n)}">↺ 리셋</button><button data-del="${esc(t.n)}">삭제</button></span></li>`}).join("");
   $("#nowTeam").textContent=cur||"시작 때 선택";
   $("#cTeam").textContent=cur||"조 선택 전";
   if(!running)$("#bGo").textContent=cur?`▶ ${cur} 시작`:"▶ 조 선택·시작";
@@ -235,7 +236,7 @@ function tick(){
     (step%2?snare:kick)(now);blip(now,step===3?1320:880);
     $("#ov").classList.add("on");$("#ovBig").textContent=4-step;
     $("#dots").querySelectorAll("i").forEach((d,i)=>d.classList.toggle("on",i<=step));
-    $("#ovSub").textContent=`${round+1}판 · ${bpm} BPM · 준비~`;
+    $("#ovSub").textContent=`${cur?cur+" 도전 · ":""}${round+1}판 · ${bpm} BPM · 준비~`;
   }else if(step<12){                            /* 이름 8박 */
     $("#ov").classList.remove("on");
     (step%2?snare:kick)(now);
@@ -256,7 +257,7 @@ function tick(){
 }
 function start(){unlock();if(running)return;if(!cur){openPick();return}running=true;$("#bGo").textContent="⏸ 멈춤";if(!cells.length)makeRound();
   /* 소리 장치가 완전히 켜진 뒤 첫 박 시작 (처음 한 번만 조금 기다림) */
-  const go=()=>{if(running)tick()};
+  const go=()=>{if(running){paint();tick()}};
   const p=ctx&&ctx.state!=="running"&&ctx.resume?ctx.resume():null;
   const wait=start.warm?60:350;start.warm=true;
   (p?p.then(()=>setTimeout(go,wait),()=>setTimeout(go,wait)):setTimeout(go,wait))}
