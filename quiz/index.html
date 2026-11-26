@@ -253,7 +253,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
       <li><b>3초 안에</b> 맞히면 <b>+10점</b>, 그 뒤에 맞히면 <b>+5점</b></li>
       <li>틀리면 <b>−2점</b>. 모르면 <b>패스</b>(0점) — 게임당 <b>3번</b>까지!</li>
       <li>중간중간 <b>😆 넌센스 보너스</b>! 맞히면 <b>+15점</b>, 틀려도 감점 없음</li>
-      <li>시간은 <b>2분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
+      <li>시간은 <b>3분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
   <div>
@@ -286,7 +286,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="play">
   <div class="hud">
-    <div><span>남은 시간</span><b id="tLeft">2:00</b></div>
+    <div><span>남은 시간</span><b id="tLeft">3:00</b></div>
     <div style="text-align:center"><span>연속</span><b id="stk">0</b></div>
     <div style="text-align:right"><span>점수</span><b id="pts">0</b></div>
   </div>
@@ -387,7 +387,7 @@ const SALT="RETREAT-2026-QUIZ";
 const ADMIN_PIN="7777";               /* 관리자 PIN — 바꾸려면 이 숫자만 수정 */
 const BASE="https://ntfy.sh/hdk-retreat-r7k2m9-quiz";
 const CTL=BASE+"-ctl",RES=BASE+"-res";
-const COUNT=5,RACE_SEC=120;
+const COUNT=5,RACE_SEC=180;
 const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36).toUpperCase().padStart(6,"0").slice(-4)};
 const codeOf=(n,sc,ok)=>hashCode(`${String(n).trim()}|${sc}|${ok}|${SALT}`);
 const rnd=n=>Math.floor(Math.random()*n);
