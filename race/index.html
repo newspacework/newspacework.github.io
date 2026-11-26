@@ -210,9 +210,8 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <div class="card">
     <ol class="rules">
       <li>색깔·계산·숫자·틀린그림 문제가 섞여서 나와요</li>
-      <li>맞히면 <b>+10점</b> (숫자 순서는 <b>+20점</b>)</li>
-      <li>연속으로 맞히면 보너스 <b>+2, +4, +6…</b> 최대 <b>+10점</b>까지</li>
-      <li>틀리면 <b>−5점</b>, 연속 보너스 초기화</li>
+      <li>맞히면 <b>+1점</b> (숫자 순서는 <b>+2점</b>)</li>
+      <li>틀리면 <b>−1점</b></li>
       <li>진행자가 <b>출발!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
@@ -472,11 +471,11 @@ function tick(){
 }
 function hud(){$("#pts").textContent=st.score;$("#stk").textContent=st.streak}
 function pop(txt){const p=document.createElement("div");p.className="pop go";p.textContent=txt;$("#stage").appendChild(p);setTimeout(()=>p.remove(),650)}
-function good(base){st.streak++;st.ok++;st.best=Math.max(st.best,st.streak);const g=base+Math.min(st.streak-1,5)*2;st.score+=g;hud();buzz(15);pop("+"+g)}
+function good(base){st.streak++;st.ok++;st.best=Math.max(st.best,st.streak);const g=base;st.score+=g;hud();buzz(15);pop("+"+g)}
 function bad(){
-  st.streak=0;st.no++;st.score=Math.max(0,st.score-5);hud();buzz([60,40,60]);
+  st.streak=0;st.no++;st.score=Math.max(0,st.score-1);hud();buzz([60,40,60]);
   const sg=$("#stage");sg.classList.add("shake");setTimeout(()=>sg.classList.remove("shake"),300);
-  pop("−5");
+  pop("−1");
 }
 const guard=fn=>(...a)=>{if(st.frozen||Date.now()>=st.endAt)return;fn(...a)};
 /* ---- 문제 4종 ---- */
@@ -486,28 +485,28 @@ function qStroop(sg){
   const askInk=Math.random()<.65,ans=askInk?c:w;
   const pool=shuffle([...Array(COLORS.length).keys()].filter(i=>i!==ans)).slice(0,3);pool.push(ans);shuffle(pool);
   sg.innerHTML=`<p class="q">${askInk?"글자의 <u>색깔</u>은?":"적혀 있는 <u>글자</u>는?"}</p><p class="word" style="color:${COLORS[c][1]}">${COLORS[w][0]}</p><div class="opts">${pool.map(i=>`<button class="opt" data-i="${i}">${COLORS[i][0]}</button>`).join("")}</div>`;
-  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===ans){good(10);next()}else bad()})));
+  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===ans){good(1);next()}else bad()})));
 }
 function qMath(sg){
   const op=["+","−","×"][rnd(3)];let a,b,r;
   if(op==="+"){a=rnd(40)+5;b=rnd(40)+5;r=a+b}else if(op==="−"){a=rnd(50)+20;b=rnd(a-5)+3;r=a-b}else{a=rnd(8)+2;b=rnd(8)+2;r=a*b}
   const truth=Math.random()<.5;const shown=truth?r:r+[-10,-2,-1,1,2,10][rnd(6)];
   sg.innerHTML=`<p class="q">맞으면 O, 틀리면 X</p><p class="word" style="color:#141414;font-size:clamp(44px,14vw,64px)">${a} ${op} ${b} = ${shown}</p><div class="opts"><button class="opt ox" data-v="1">O</button><button class="opt ox" data-v="0">X</button></div>`;
-  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if((b.dataset.v==="1")===truth){good(10);next()}else bad()})));
+  sg.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",guard(()=>{if((b.dataset.v==="1")===truth){good(1);next()}else bad()})));
 }
 function qOrder(sg){
   const n=6,cells=shuffle([...Array(9)].map((_,i)=>i<n?i+1:0));let want=1;
   sg.innerHTML=`<p class="q">1부터 ${n}까지 순서대로 빠르게!</p><div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${cells.map(v=>`<button class="cell${v?"":" blank"}" data-v="${v}">${v||""}</button>`).join("")}</div>`;
   sg.querySelectorAll(".cell:not(.blank)").forEach(b=>b.addEventListener("click",guard(()=>{
     const v=+b.dataset.v;if(b.classList.contains("done"))return;
-    if(v===want){b.classList.add("done");want++;buzz(8);if(want>n){good(20);next()}}else bad();
+    if(v===want){b.classList.add("done");want++;buzz(8);if(want>n){good(2);next()}}else bad();
   })));
 }
 const PAIRS=[["뭉","뭄"],["O","Q"],["갈","걀"],["E","F"],["밤","범"],["6","9"],["M","N"],["곰","공"],["d","b"],["8","B"],["W","V"]];
 function qOdd(sg){
   const [s,o]=shuffle(PAIRS[rnd(PAIRS.length)].slice());const k=16,at=rnd(k);
   sg.innerHTML=`<p class="q">하나만 다른 글자를 찾아라!</p><div class="grid" style="grid-template-columns:repeat(4,minmax(0,1fr))">${[...Array(k)].map((_,i)=>`<button class="cell" data-i="${i}" style="font-size:clamp(22px,7vw,34px)">${i===at?o:s}</button>`).join("")}</div>`;
-  sg.querySelectorAll(".cell").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===at){good(10);next()}else bad()})));
+  sg.querySelectorAll(".cell").forEach(b=>b.addEventListener("click",guard(()=>{if(+b.dataset.i===at){good(1);next()}else bad()})));
 }
 const QS=[qStroop,qMath,qOrder,qOdd];let last=-1;
 function next(){let i=rnd(QS.length);if(i===last)i=(i+1)%QS.length;last=i;QS[i]($("#stage"))}
@@ -606,7 +605,7 @@ function initBoard(){
     const n=order.length,H=Math.max(window.innerHeight-330,300);
     const lh=Math.max(28,Math.min(78,Math.floor(H/Math.max(n,1))));
     const box=$("#lanes");box.style.setProperty("--lh",lh+"px");box.style.height=(lh*n)+"px";
-    const max=Math.max(100,order[0]?order[0].s:0);
+    const max=Math.max(10,order[0]?order[0].s:0);
     const lo=n>1?Math.max(0,order[n-1].s*0.7):0;
     const pos=s=>max>lo?0.06+0.94*Math.max(0,(s-lo)/(max-lo)):1;
     order.forEach((x,i)=>{
