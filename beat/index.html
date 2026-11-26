@@ -122,7 +122,7 @@ footer button.fail{background:#e8253b;color:#fff}
   </footer>
 </div>
 <div class="toast" id="toast"></div>
-<div class="pick" id="memBox"><div class="pbox"><h2 id="memH">조원 이름</h2><p>쉼표·띄어쓰기·줄바꿈으로 구분 · 2명 이상 (이 조가 도전할 때 이 이름들이 나와요)</p>
+<div class="pick" id="memBox"><div class="pbox"><h2 id="memH">조원 이름</h2><p>비워 두면 휴대폰 게임에 이 조로 입장한 사람 이름을 자동으로 써요.<br>직접 넣으면 그 이름이 우선 (쉼표·띄어쓰기·줄바꿈으로 구분)</p>
 <textarea id="memTa" rows="5" placeholder="예) 김민준, 이서연, 박지호, 최하은"></textarea>
 <div class="mbtns"><button id="memSave">저장</button><button class="pcancel" id="memCancel">닫기</button></div></div></div>
 <div class="pick" id="pick"><div class="pbox"><h2>어느 조가 도전할까요?</h2><p>조를 누르면 바로 시작합니다</p><div class="pgrid" id="pgrid"></div><button class="pcancel" id="pCancel">닫기</button></div></div>
@@ -201,7 +201,7 @@ function toast(t,ms=1800){const el=$("#toast");el.textContent=t;el.classList.add
 function paint(){
   const sorted=[...teams].sort((a,b)=>b.pts-a.pts||b.best-a.best);
   let r=0;
-  $("#tlist").innerHTML=sorted.map((t,i)=>{r=i&&t.pts===sorted[i-1].pts?r:i+1;return `<li class="${cur===t.n?"sel":""}" data-n="${esc(t.n)}"><span class="r">${t.pts>0?(["🥇","🥈","🥉"][r-1]||r):"·"}</span><span class="t">${esc(t.n)}<small>${t.tries?`${t.best}판 성공 · ${t.pts}점${t.tries>1?` (${t.tries}번 중 최고)`:""}`:"아직 도전 전"}</small></span><span class="v">${cur===t.n&&(running||cleared)?`<em class="live">도전 중 ${cleared}판</em>+${cleared*PTS_ROUND}`:t.pts}</span>${setVal()==="team"?`<span class="mem">👥 ${t.mem&&t.mem.length?esc(t.mem.join(", ")):"조원 이름 없음 → ✎ 조원"}</span>`:""}<span class="btns"><button class="me" data-me="${esc(t.n)}">✎조원</button><button class="st" data-st="${esc(t.n)}">▶시작</button><button class="rs" data-rs="${esc(t.n)}">↺리셋</button><button data-del="${esc(t.n)}" title="삭제">✕</button></span></li>`}).join("");
+  $("#tlist").innerHTML=sorted.map((t,i)=>{r=i&&t.pts===sorted[i-1].pts?r:i+1;return `<li class="${cur===t.n?"sel":""}" data-n="${esc(t.n)}"><span class="r">${t.pts>0?(["🥇","🥈","🥉"][r-1]||r):"·"}</span><span class="t">${esc(t.n)}<small>${t.tries?`${t.best}판 성공 · ${t.pts}점${t.tries>1?` (${t.tries}번 중 최고)`:""}`:"아직 도전 전"}</small></span><span class="v">${cur===t.n&&(running||cleared)?`<em class="live">도전 중 ${cleared}판</em>+${cleared*PTS_ROUND}`:t.pts}</span>${setVal()==="team"?(M=>`<span class="mem">👥 ${M.list.length?`${M.src} ${M.list.length}명: ${esc(M.list.join(", "))}`:"입장한 사람 없음 → ✎조원으로 입력"}</span>`)(members(t)):""}<span class="btns"><button class="me" data-me="${esc(t.n)}">✎조원</button><button class="st" data-st="${esc(t.n)}">▶시작</button><button class="rs" data-rs="${esc(t.n)}">↺리셋</button><button data-del="${esc(t.n)}" title="삭제">✕</button></span></li>`}).join("");
   $("#nowTeam").textContent=cur||"시작 때 선택";
   $("#cTeam").textContent=cur||"조 선택 전";
   if(!running)$("#bGo").textContent=cur?`▶ ${cur} 시작`:"▶ 조 선택·시작";
@@ -229,15 +229,34 @@ $("#tlist").addEventListener("click",e=>{
   if(d){if(confirmDel(d.dataset.del)){teams=teams.filter(t=>t.n!==d.dataset.del);if(cur===d.dataset.del)cur=null;save();paint()}return}
   const li=e.target.closest("li");if(!li||running)return;cur=li.dataset.n;paint();reset();toast(`${cur} 도전 준비! 스페이스바로 시작`);
 });
+/* ---- 휴대폰 게임에 입장한 사람 → 조별 명단 자동 수집 ----
+   다섯 게임의 결과 채널(입장·진행·결과·관리자 수정)을 들어서 기기별 최신 이름·조를 모음 */
+const JOIN=new Map();   /* d -> {n,g,t,ed} */
+["","-mole","-quiz","-tug","-ten"].forEach(sfx=>{
+  try{const es=new EventSource("https://ntfy.sh/hdk-retreat-r7k2m9"+sfx+"-res/sse?since=all");
+  es.onmessage=e=>{let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
+    if(!x||typeof x.d!=="string"||typeof x.n!=="string"||!"jpfe".includes(x.t))return;
+    const t=(m.time||0)*1000,o=JOIN.get(x.d),ed=x.t==="e";
+    /* 관리자 수정(e)이 있으면 그게 우선, 아니면 가장 최근 입장 정보 */
+    if(o&&o.ed&&!ed)return;if(o&&t<o.t&&(!ed||o.ed))return;
+    const n=x.n.trim().slice(0,6),g=normG(x.g);if(!n||!g)return;
+    JOIN.set(x.d,{n,g,t,ed});clearTimeout(JOIN.tm);JOIN.tm=setTimeout(addJoinedTeams,500)}}catch(e){}
+});
+/* 입장한 조가 점수판에 없으면 자동 추가 */
+function addJoinedTeams(){let add=false;for(const v of JOIN.values())if(!teams.some(t=>t.n===v.g)){teams.push({n:v.g,best:0,pts:0,tries:0,done:false});add=true}
+  teams.sort((a,b)=>a.n.localeCompare(b.n,"ko",{numeric:true}));if(add)save();if(!running)paint()}
+const joined=k=>[...new Set([...JOIN.values()].filter(v=>v.g===k).map(v=>v.n))];
+/* 조원 = 진행자가 직접 넣은 이름이 있으면 그것, 없으면 휴대폰 입장 명단 */
+const members=t=>t&&t.mem&&t.mem.length?{list:t.mem,src:"직접 입력"}:{list:joined(t&&t.n),src:"입장 명단"};
 /* ---- 조원 이름 ---- */
 const setVal=()=>$("#selSet").value;
 let memFor=null;
-function openMem(n){const t=teams.find(x=>x.n===n);if(!t)return;memFor=n;$("#memH").textContent=`${n} 조원 이름`;$("#memTa").value=(t.mem||[]).join(", ");$("#memBox").classList.add("on");setTimeout(()=>$("#memTa").focus(),50)}
+function openMem(n){const t=teams.find(x=>x.n===n);if(!t)return;memFor=n;$("#memH").textContent=`${n} 조원 이름`;$("#memTa").value=(t.mem||[]).join(", ");$("#memTa").placeholder=joined(n).length?`비워 두면 입장 명단 사용: ${joined(n).join(", ")}`:"예) 김민준, 이서연, 박지호, 최하은";$("#memBox").classList.add("on");setTimeout(()=>$("#memTa").focus(),50)}
 $("#memSave").addEventListener("click",()=>{const t=teams.find(x=>x.n===memFor);if(!t)return;
   t.mem=[...new Set($("#memTa").value.split(/[,，\n\s]+/).map(x=>x.trim().slice(0,6)).filter(Boolean))].slice(0,30);
   $("#memBox").classList.remove("on");save();
   if(t.mem.length>=2&&setVal()!=="team"){$("#selSet").value="team"}
-  if(!running){if(cur===t.n||setVal()==="team")reset()}paint();toast(`${t.n} 조원 ${t.mem.length}명 저장`)});
+  if(!running){if(cur===t.n||setVal()==="team")reset()}paint();toast(t.mem.length?`${t.n} 조원 ${t.mem.length}명 저장`:`${t.n}: 휴대폰 입장 명단 사용`)});
 $("#memCancel").addEventListener("click",()=>$("#memBox").classList.remove("on"));
 $("#memTa").addEventListener("keydown",e=>e.stopPropagation());
 function openPick(){
@@ -257,7 +276,7 @@ let round=0,bpm=90,running=false,timer=null,step=0,cells=[];
 const rnd=n=>Math.floor(Math.random()*n);
 const MEMO=["😀","😎","🤩","😆","🥳","😇","🤠","🦁","🐯","🐻","🐰","🐶","🦊","🐼","🐸","⭐","🔥","🌈"];
 function teamSet(){
-  const t=cur&&teams.find(x=>x.n===cur),m=(t&&t.mem)||[];
+  const t=cur&&teams.find(x=>x.n===cur),m=members(t).list;
   if(m.length<2)return null;
   const em=m.map((_,i)=>MEMO[i%MEMO.length]),all=m.map((n,i)=>[n,em[i]]);
   /* 판마다 최대 4명씩 섞어서 */
