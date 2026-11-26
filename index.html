@@ -98,6 +98,23 @@ h2 small{font:900 14px "Noto Sans KR",sans-serif;color:var(--mut);margin-left:au
 @media(max-width:640px){.podium{grid-template-columns:minmax(0,1fr)}.podium .txt{padding-bottom:4px}.stand{margin-top:56px}.stand .p1{height:130px}.stand .p2{height:96px}.stand .p3{height:74px}}
 @media(max-width:520px){.track a{width:44px;height:44px;font-size:21px;border-width:3px}.track .fin{width:50px;height:50px;font-size:24px}.track i{min-width:8px}}
 
+/* ---- 점수 계산 ---- */
+.calc{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:16px}
+.cbox{background:#fff;border:4px solid var(--ink);border-radius:20px;padding:18px;box-shadow:6px 6px 0 var(--ink)}
+.cbox>b{display:block;font:400 24px "Black Han Sans",sans-serif;margin-bottom:10px}
+.cbox p{margin:6px 0;font:700 15px/1.6 "Noto Sans KR",sans-serif}
+.cbox em{font-style:normal;color:var(--pink);font-weight:900}
+.cbox .big{font:400 clamp(18px,2.1vw,23px) "Black Han Sans",sans-serif;white-space:nowrap;background:var(--gold);border:3px solid var(--ink);border-radius:12px;padding:8px 10px;text-align:center}
+.cbox .sm{font-size:14px;color:var(--mut)}
+.cbox .bon{background:#fff0f6;border:2px dashed var(--pink);border-radius:10px;padding:8px 10px}
+.ptab{width:100%;border-collapse:collapse;font:700 14.5px/1.45 "Noto Sans KR",sans-serif}
+.ptab td{padding:7px 4px;border-bottom:1px dashed #d8cfb8;vertical-align:top}
+.ptab td:first-child{white-space:nowrap;font-weight:900;padding-right:10px}
+.ex{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.ex div{display:grid;grid-template-columns:5.6em minmax(0,1fr) 3.4em;gap:8px;align-items:center;font:900 14px "Noto Sans KR",sans-serif}
+.ex i{display:block;height:16px;border-radius:6px;background:var(--c4);border:2px solid var(--ink)}
+.ex div:first-child i{background:var(--gold)}
+.ex em{text-align:right}
 /* ---- 규칙 ---- */
 .rules{margin-top:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}
 .rule{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:16px 18px;box-shadow:4px 4px 0 var(--ink)}
@@ -206,6 +223,38 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
     </div>
   </a>
 
+
+  <h2>🧮 점수는 이렇게 계산해요</h2>
+  <div class="calc">
+    <div class="cbox">
+      <b>① 종목마다 점수 모으기</b>
+      <table class="ptab">
+        <tr><td>🏎️ 레이스</td><td>맞히면 <em>+5</em> · 숫자 순서 <em>+10</em> · 틀리면 −2</td></tr>
+        <tr><td>🔨 두더지</td><td>두더지 <em>+5</em> · 황금 <em>+10</em> · 폭탄·가짜 −5</td></tr>
+        <tr><td>📖 성경 퀴즈</td><td>3초 안 <em>+10</em> · 그 뒤 <em>+5</em> · 넌센스 <em>+15</em> · 틀리면 −2</td></tr>
+        <tr><td>🔥 불나는 30초</td><td>한 번 두드릴 때마다 <em>+1</em></td></tr>
+        <tr><td>🎯 10초 맞히기</td><td><em>100 − 오차</em> (10.03초 → 97점) · 3번 중 가장 좋은 1번</td></tr>
+      </table>
+    </div>
+    <div class="cbox">
+      <b>② 1등을 100점으로 바꾸기</b>
+      <p class="big">내 점수 ÷ 1등 점수 × 100</p>
+      <p>종목마다 점수 크기가 달라서, <b>1등 점수를 100점 만점</b>으로 놓고 다시 채점해요.</p>
+      <div class="ex">
+        <div><span>1등 130점</span><i style="width:100%"></i><em>100점</em></div>
+        <div><span>나 117점</span><i style="width:90%"></i><em>90점</em></div>
+        <div><span>친구 65점</span><i style="width:50%"></i><em>50점</em></div>
+      </div>
+      <p class="sm">→ 어느 종목이든 1등은 똑같이 100점! 다섯 종목을 공평하게 더해요.</p>
+    </div>
+    <div class="cbox">
+      <b>③ 조 점수 = 우리 조 평균</b>
+      <p>조원 점수를 더해 <b>인원수로 나눈 평균</b>으로 겨뤄요. 인원이 달라도 공평!</p>
+      <p>평균이 가장 높은 조 = <b>100점</b>, 나머지 조는 비율로 바꿔요.</p>
+      <p class="bon">🥇 개인 1등이 있는 조 <em>+5</em> · 🥈 2등 <em>+3</em> · 🥉 3등 <em>+2</em></p>
+      <p class="sm">→ 다섯 종목을 더한 점수로 시상대에서 우승 조를 가려요!</p>
+    </div>
+  </div>
   <div class="rules">
     <div class="rule"><b>👥 조별 점수</b><span>종목마다 <em>조원 1인당 평균</em>으로 겨뤄요. 인원이 달라도 공평! 시상대에서는 종목마다 <em>1등 = 100점</em>으로 환산해 더해요.</span></div>
     <div class="rule"><b>🥇 개인 보너스</b><span>종목마다 개인 1·2·3등은 우리 조에 <em>+5 / +3 / +2점</em>을 더 가져다줘요.</span></div>

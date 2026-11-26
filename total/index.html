@@ -51,6 +51,10 @@ footer{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:cen
 footer button{appearance:none;border:2px solid var(--line);background:transparent;color:#d9dde6;border-radius:10px;padding:8px 14px;font:900 14px "Noto Sans KR",sans-serif;cursor:pointer}
 footer button:hover{border-color:#d9dde6}
 .full section{max-width:none}
+.how{margin:0 clamp(14px,2vw,32px) 18px;background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:12px 18px;color:#d9dde6}
+.how summary{cursor:pointer;font:900 16px "Noto Sans KR",sans-serif;color:var(--gold)}
+.how ol{margin:10px 0 2px;padding-left:1.3em;font:700 15px/1.75 "Noto Sans KR",sans-serif}
+.how b{color:#fff}.how .f{background:var(--gold);color:#141414;border-radius:6px;padding:1px 8px;font-weight:900}
 #allBox{display:none}#allBox.on{display:block;margin:0 clamp(14px,2vw,32px) 20px}
 @media (prefers-reduced-motion:reduce){.gchip.run i{animation:none}}
 </style>
@@ -73,6 +77,13 @@ footer button:hover{border-color:#d9dde6}
     <div id="people"></div>
   </section>
 </main>
+<details class="how"><summary>❓ 점수는 어떻게 계산하나요?</summary>
+  <ol>
+    <li><b>종목 점수</b>: 게임에서 받은 점수 그대로 (레이스 맞히면 +5, 두더지 +5, 성경 3초 안 +10, 불나는 30초 1번에 +1, 10초는 100 − 오차)</li>
+    <li><b>100점 환산</b>: <span class="f">내 점수 ÷ 1등 점수 × 100</span> — 1등이 130점이면 117점은 90점. 어느 종목이든 1등은 100점!</li>
+    <li><b>조 점수</b>: 종목마다 <b>조원 1인당 평균</b>을 내서 1등 조 = 100점으로 환산 + 개인 🥇+5 🥈+3 🥉+2</li>
+    <li><b>종합</b>: 다섯 종목 환산 점수를 모두 더해요 (개인 최대 500점)</li>
+  </ol></details>
 <div id="allBox"><section><h2 id="aH">📋 개인 종합 전체 순위</h2><div id="allList"></div></section></div>
 <footer>
   <span id="conn">연결 중…</span>
