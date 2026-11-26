@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>3분 챌린지 레이스</title>
+<title>1분 챌린지 레이스</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -178,7 +178,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr on" id="start">
   <div class="tape"></div>
-  <h1>3분<br><em>챌린지</em> 레이스</h1>
+  <h1>1분<br><em>챌린지</em> 레이스</h1>
   <div class="card">
     <ol class="rules">
       <li>색깔·계산·숫자·틀린그림 문제가 섞여서 나와요</li>
@@ -217,7 +217,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="play">
   <div class="hud">
-    <div><span>남은 시간</span><b id="tLeft">3:00</b></div>
+    <div><span>남은 시간</span><b id="tLeft">1:00</b></div>
     <div style="text-align:center"><span>연속</span><b id="stk">0</b></div>
     <div style="text-align:right"><span>점수</span><b id="pts">0</b></div>
   </div>
@@ -262,7 +262,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="board">
   <header class="bhead">
-    <h1>3분 <em>챌린지</em> 레이스</h1>
+    <h1>1분 <em>챌린지</em> 레이스</h1>
     <div class="bclock"><small id="bLabel">레이스 대기</small><span id="bBig">READY</span></div>
     <div class="bcount"><b id="bWait">0</b> 대기 중<br><b id="bRun">0</b> 달리는 중 · <b id="bFin">0</b> 결승</div>
     <div class="bqr"><div class="qr" id="qr"></div><p class="url" id="bUrl"></p></div>
@@ -305,7 +305,7 @@ const SALT="RETREAT-2026";
 const ADMIN_PIN="7777";               /* 관리자 PIN — 바꾸려면 이 숫자만 수정 */
 const BASE="https://ntfy.sh/hdk-retreat-r7k2m9";
 const CTL=BASE+"-ctl",RES=BASE+"-res";
-const COUNT=5,RACE_SEC=180;
+const COUNT=5,RACE_SEC=60;
 const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36).toUpperCase().padStart(6,"0").slice(-4)};
 const codeOf=(n,sc,ok)=>hashCode(`${String(n).trim()}|${sc}|${ok}|${SALT}`);
 const rnd=n=>Math.floor(Math.random()*n);
@@ -407,7 +407,7 @@ function begin(endAt){
   Object.assign(st,{score:0,ok:0,no:0,streak:0,best:0,endAt,frozen:false});
   show("play");hud();next();
   st.tick=setInterval(tick,200);tick();
-  if(!practice){progOff=false;setTimeout(sendProgress,rnd(3000));st.prog=setInterval(sendProgress,20000)}
+  if(!practice){progOff=false;setTimeout(sendProgress,3000+rnd(4000));st.prog=setInterval(sendProgress,15000)}
 }
 let progOff=false;
 function sendProgress(){
@@ -668,7 +668,7 @@ function initAdmin(){
       }
     }else if(tab==="live"){
       html=list.length||sus.length?`<ul class="alist">${list.map(x=>row(x)).join("")}${sus.map(x=>row(x,"bad")).join("")}</ul>`
-        :`<p class="aempty">${p==="idle"||p==="cd"?"출발하면 20초마다 점수가 들어와요.":"아직 들어온 점수가 없어요."}</p>`;
+        :`<p class="aempty">${p==="idle"||p==="cd"?"출발하면 15초마다 점수가 들어와요.":"아직 들어온 점수가 없어요."}</p>`;
     }else{
       const L=fin.list;
       if(!L.length)html=`<p class="aempty">${p==="end"?"결과가 들어오는 중이에요. 잠시만요.":"레이스가 끝나면 최종 결과가 여기 나와요."}</p>`;
