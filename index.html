@@ -42,7 +42,10 @@ h1 .l2{display:inline-block;white-space:nowrap;font-size:clamp(30px,6.6vw,74px);
   .qr{width:100%;aspect-ratio:1;display:grid;place-items:center;font:900 14px "Noto Sans KR",sans-serif;color:var(--mut)}
   .qr img,.qr canvas{width:100%!important;height:auto!important;image-rendering:pixelated}
   .qrbox p{margin:0;font:400 22px "Black Han Sans",sans-serif;text-align:center}
-  .tips{align-items:stretch!important}.tips ol{margin:0;padding-left:1.3em;font:700 14.5px/1.65 "Noto Sans KR",sans-serif}.tips b{font-weight:900}
+  .board{align-items:stretch!important;background:var(--ink)!important;color:#fff;gap:10px!important}.board>p{color:var(--gold)}
+  .sb{display:grid;grid-template-columns:4.2em minmax(0,1fr);align-items:center;gap:10px;border-top:2px dashed #555;padding-top:8px}
+  .sb b{font:400 34px/1 "Black Han Sans",sans-serif;color:var(--gold);text-align:center;font-weight:400}
+  .sb span{font:900 16px "Noto Sans KR",sans-serif}
   .qrbox small{font:700 12px "Noto Sans KR",sans-serif;color:var(--mut);word-break:break-all;text-align:center}
 }
 
@@ -137,11 +140,15 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
 <div class="wrap">
   <header class="hero">
     <div>
-      <span class="kicker">🛠 진행자 안내 화면 · 5종목 조 대항전</span>
+      <span class="kicker">📱 5종목 · 조 대항전 · 개인상</span>
       <h1><span class="l1">폰 들고 모여라! <span class="float" aria-hidden="true">🏅</span></span><span class="l2">스피드 게임 올림픽</span></h1>
       <p class="lead">휴대폰 하나로 다 같이 즐기는 <b>5가지 스피드 종목</b>! 종목마다 <b>개인 순위</b>와 <b>조별 점수</b>가 쌓이고, 마지막에 <b>시상대</b>에서 우승 조를 가려요.</p>
     </div>
-    <div class="qrbox tips"><p>🎤 진행 순서</p><ol><li>종목 카드의 <b>📺 큰 화면</b>을 프로젝터에</li><li><b>📷 입장 QR</b>로 모두 입장</li><li>폰의 <b>🛠 관리자</b>에서 시작!</li><li>끝나면 <b>🏆 시상대</b>로 결과 발표</li></ol></div>
+    <div class="qrbox board"><p>🏟 오늘의 경기</p>
+      <div class="sb"><b>5</b><span>종목</span></div>
+      <div class="sb"><b>6:30</b><span>총 경기 시간</span></div>
+      <div class="sb"><b>👥</b><span>조 대항전</span></div>
+      <div class="sb"><b>🥇</b><span>개인상도 있어요</span></div></div>
     
   </header>
 
