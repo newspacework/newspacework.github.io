@@ -150,6 +150,17 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .agrp .g{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:10px 12px}
 .agrp .g b{display:flex;justify-content:space-between;font:400 20px "Black Han Sans",sans-serif;margin-bottom:6px}
 .agrp .chip{border:2px solid var(--line);display:inline-block;margin:0 4px 4px 0}
+.edhint{font:900 14px "Noto Sans KR",sans-serif;color:var(--mut);margin:0 0 8px}
+.chip.ed{cursor:grab;touch-action:none;user-select:none}
+.chip.drag{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-60%) scale(1.15);box-shadow:4px 4px 0 var(--line);background:var(--pink);color:#fff}
+.agrp .g.over{outline:4px dashed var(--pink);outline-offset:2px}
+.alist li.ed{cursor:pointer}
+.edlg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.edlg.on{display:flex}
+.edlg .card{width:min(440px,100%);display:flex;flex-direction:column;gap:12px}
+.edgs{display:flex;flex-wrap:wrap;gap:6px}
+.edgs button{appearance:none;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 12px;font:900 15px "Noto Sans KR",sans-serif;cursor:pointer}
+.edgs button.on{background:var(--line);color:var(--bg)}
 .ttl{font:400 22px "Black Han Sans",sans-serif;margin:14px 0 6px}
 table.gs{width:100%;border-collapse:collapse;background:var(--card);border:2px solid var(--line);border-radius:12px;overflow:hidden;font-size:15px}
 table.gs th,table.gs td{padding:8px 10px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap}
@@ -335,6 +346,14 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <div class="alinks"><a href="#board">큰 화면 순위판</a><button id="aCopyLink">학생 접속 주소 복사</button><button id="aOut">나가기</button><span id="aConn">연결 중…</span></div>
   <div class="tabs"><button class="tab" data-t="wait"><b id="tW">0</b>대기자</button><button class="tab" data-t="live"><b id="tL">0</b>실시간</button><button class="tab" data-t="res"><b id="tR">0</b>결과</button></div>
   <div id="aPanel"></div>
+  <div class="edlg" id="edlg"><div class="card">
+    <p class="ttl" style="margin:0">이름·조 수정</p>
+    <div><label for="edN">이름</label><input id="edN" maxlength="10" autocomplete="off"></div>
+    <div><label for="edG">조</label><input id="edG" maxlength="8" autocomplete="off" placeholder="예: 3조"></div>
+    <div class="edgs" id="edGs"></div>
+    <p class="note" id="edOld"></p>
+    <div class="abtns"><button class="btn" id="edOk">저장</button><button class="btn sub" id="edNo">취소</button></div>
+  </div></div>
 </section>
 
 
@@ -361,6 +380,13 @@ const post=(url,obj)=>fetch(url,{method:"POST",body:JSON.stringify(obj)});
 const hash=location.hash.slice(1);
 const practice=hash==="practice";
 const DUR=practice?30:RACE_SEC;
+/* 관리자가 고친 이름·조 (기기별). 인증코드 확인은 원래 이름(n0)으로 */
+function edits(results,joins){
+  const ov=new Map();
+  return {ov,
+    apply(d,n,g){ov.set(d,{n,g});const j=joins.get(d);if(j){j.n=n;j.g=g}for(const rows of results.values()){const r=rows.get(d);if(r){r.n=n;r.g=g}}},
+    fix(d,o){const v=ov.get(d);if(v){o.n=v.n;o.g=v.g}return o}};
+}
 function deviceId(){let d=store.get("mole1-did");if(!d){d=Math.random().toString(36).slice(2,10);store.set("mole1-did",d)}return d}
 const KEYR=rid=>"mole1-r-"+rid;
 
@@ -588,10 +614,11 @@ function initBoard(){
   try{new QRCode($("#qr"),{text:gameUrl,width:400,height:400,correctLevel:QRCode.CorrectLevel.M})}catch(e){$("#qr").textContent="QR"}
   const results=new Map();      /* rid -> Map(device -> row) */
   const joins=new Map();        /* device -> {t,n,g} 대기 신청 */
+  const ED=edits(results,joins);
   let freshJ=new Set();
   const els=new Map();let boosted=new Set(),cur=null,resetAt=0;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const okc=x=>x.c===codeOf(x.n,x.s,x.ok);
+  const okc=x=>x.c===codeOf(x.n0||x.n,x.s,x.ok);
   const colorOf=d=>{let h=0;for(const c of d)h=(h*31+c.charCodeAt(0))>>>0;return CAR_COLORS[h%CAR_COLORS.length]};
   const rowsNow=()=>cur&&results.get(cur.rid)||new Map();
   function waiting(){
@@ -679,12 +706,13 @@ function initBoard(){
   es.onmessage=e=>{
     let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
     if(!x||typeof x.d!=="string"||typeof x.n!=="string")return;
-    if(x.t==="j"){const p=joins.get(x.d);joins.set(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)});if(!p)freshJ.add(x.d);later();return}
+    if(x.t==="e"){ED.apply(x.d,x.n.slice(0,10),normG(x.g));later();return}
+    if(x.t==="j"){const p=joins.get(x.d);joins.set(x.d,ED.fix(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)}));if(!p)freshJ.add(x.d);later();return}
     if(typeof x.rid!=="string")return;
     let rows=results.get(x.rid);if(!rows){rows=new Map();results.set(x.rid,rows)}
     const prev=rows.get(x.d);
     if(prev&&prev.f&&x.t!=="f")return;
-    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.g=normG(x.g);x.f=x.t==="f";
+    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.n0=x.n;x.g=normG(x.g);ED.fix(x.d,x);x.f=x.t==="f";
     if(!prev||x.s>prev.s)boosted.add(x.d);
     rows.set(x.d,x);later();
   };
@@ -721,9 +749,9 @@ function gate(next){
 }
 function initAdmin(){
   show("admin");
-  const results=new Map(),joins=new Map();let cur=null,resetAt=0,tab=null,picked=false;
+  const results=new Map(),joins=new Map(),ED=edits(results,joins);let cur=null,resetAt=0,tab=null,picked=false;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const okc=x=>x.c===codeOf(x.n,x.s,x.ok);
+  const okc=x=>x.c===codeOf(x.n0||x.n,x.s,x.ok);
   const rowsNow=()=>cur&&results.get(cur.rid)||new Map();
   const waiting=()=>{const since=Math.max(cur?cur.sent:0,resetAt),rows=rowsNow(),out=[];for(const [d,j] of joins)if(j.t>=since&&!rows.has(d))out.push({d,...j});return out};
   const ranked=onlyFin=>{
@@ -735,9 +763,11 @@ function initAdmin(){
   const phase=()=>{const now=Date.now();return !cur?"idle":now<cur.startAt?"cd":now<cur.endAt?"run":"end"};
   const row=(x,kind)=>{
     const bd=kind==="bad"?'<span class="badge bad">코드 불일치</span>':(x.f?'<span class="badge fin">완료</span>':'<span class="badge run">게임 중</span>');
-    return `<li><span class="rk">${kind==="bad"?"–":x.rk}</span><span class="who">${esc(x.n)}${bd}<small>${x.g?esc(x.g)+" · ":""}잡음 ${x.ok} · 폭탄 ${x.no} · 최대연속 ${x.b}</small></span><span class="sc">${x.s}</span></li>`;
+    return `<li class="ed" data-d="${esc(x.d)}"><span class="rk">${kind==="bad"?"–":x.rk}</span><span class="who">${esc(x.n)}${bd}<small>${x.g?esc(x.g)+" · ":""}잡음 ${x.ok} · 폭탄 ${x.no} · 최대연속 ${x.b}</small></span><span class="sc">${x.s}</span></li>`;
   };
+  let dragging=false;
   function render(){
+    if(dragging)return;
     const p=phase(),w=waiting(),{list,sus}=ranked(false),fin=ranked(true);
     if(!picked)tab=p==="run"?"live":p==="end"?"res":"wait";
     document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
@@ -748,10 +778,10 @@ function initAdmin(){
       else{
         const by=new Map();for(const x of w){const k=x.g||"조 없음";if(!by.has(k))by.set(k,[]);by.get(k).push(x)}
         const keys=[...by.keys()].sort((a,b)=>a.localeCompare(b,"ko",{numeric:true}));
-        html=`<div class="agrp">${keys.map(k=>{const a=by.get(k).sort((p,q)=>p.t-q.t);return `<div class="g"><b>${esc(k)}<span>${a.length}명</span></b>${a.map(x=>`<span class="chip">${esc(x.n)}</span>`).join("")}</div>`}).join("")}</div>`;
+        html=`<p class="edhint">✎ 이름을 누르면 수정 · 이름을 끌어서 다른 조로 옮기기</p><div class="agrp">${keys.map(k=>{const a=by.get(k).sort((p,q)=>p.t-q.t);return `<div class="g" data-g="${esc(k==="조 없음"?"":k)}"><b>${esc(k)}<span>${a.length}명</span></b>${a.map(x=>`<span class="chip ed" data-d="${esc(x.d)}">${esc(x.n)}</span>`).join("")}</div>`}).join("")}</div>`;
       }
     }else if(tab==="live"){
-      html=list.length||sus.length?`<ul class="alist">${list.map(x=>row(x)).join("")}${sus.map(x=>row(x,"bad")).join("")}</ul>`
+      html=list.length||sus.length?`<p class="edhint">✎ 이름을 누르면 이름·조 수정</p><ul class="alist">${list.map(x=>row(x)).join("")}${sus.map(x=>row(x,"bad")).join("")}</ul>`
         :`<p class="aempty">${p==="idle"||p==="cd"?"시작하면 15초마다 점수가 들어와요.":"아직 들어온 점수가 없어요."}</p>`;
     }else{
       const L=fin.list;
@@ -760,7 +790,7 @@ function initAdmin(){
         const gm=new Map();for(const x of L){const k=x.g||"조 없음";const g=gm.get(k)||{n:0,s:0,best:0};g.n++;g.s+=x.s;g.best=Math.max(g.best,x.s);gm.set(k,g)}
         const gs=[...gm.entries()].map(([k,g])=>({k,...g,avg:Math.round(g.s/g.n)})).sort((a,b)=>b.s-a.s);teamRows=gs;
         html=`<button class="btn sub" id="aCopy" style="margin-bottom:10px">결과 복사 (엑셀에 붙여넣기)</button>`+
-          `<p class="ttl">🏅 개인 순위 (개인상)</p><ul class="alist">${L.map(x=>row(x)).join("")}${fin.sus.map(x=>row(x,"bad")).join("")}</ul>`+
+          `<p class="ttl">🏅 개인 순위 (개인상)</p><p class="edhint">✎ 이름을 누르면 이름·조 수정</p><ul class="alist">${L.map(x=>row(x)).join("")}${fin.sus.map(x=>row(x,"bad")).join("")}</ul>`+
           `<p class="ttl">👥 조별 합산 순위 (조별상)</p><table class="gs"><thead><tr><th>조</th><th>합계</th><th>인원</th><th>평균</th><th>최고</th></tr></thead><tbody>${gs.map((g,i)=>`<tr><td>${i+1}. ${esc(g.k)}</td><td><b>${g.s}</b></td><td>${g.n}</td><td>${g.avg}</td><td>${g.best}</td></tr>`).join("")}</tbody></table>`;
         const unfinished=list.filter(x=>!x.f).length;
         if(unfinished)html+=`<p class="note" style="margin-top:8px">아직 최종 기록이 안 들어온 학생 ${unfinished}명 (실시간 탭에서 확인)</p>`;
@@ -795,11 +825,12 @@ function initAdmin(){
   es.onmessage=e=>{
     let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
     if(!x||typeof x.d!=="string"||typeof x.n!=="string")return;
-    if(x.t==="j"){joins.set(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)});later();return}
+    if(x.t==="e"){ED.apply(x.d,x.n.slice(0,10),normG(x.g));later();return}
+    if(x.t==="j"){joins.set(x.d,ED.fix(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)}));later();return}
     if(typeof x.rid!=="string")return;
     let rows=results.get(x.rid);if(!rows){rows=new Map();results.set(x.rid,rows)}
     const prev=rows.get(x.d);if(prev&&prev.f&&x.t!=="f")return;
-    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.g=normG(x.g);x.f=x.t==="f";
+    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.n0=x.n;x.g=normG(x.g);ED.fix(x.d,x);x.f=x.t==="f";
     rows.set(x.d,x);later();
   };
   listenCtl(r=>{if(r.sent<resetAt)return;cur=r;later()},null,sent=>{if(sent<=resetAt)return;resetAt=sent;if(cur&&cur.sent<sent)cur=null;later()});
@@ -811,6 +842,53 @@ function initAdmin(){
   const send=(body,msg)=>{$("#aMsg").textContent=msg;post(CTL,body).then(r=>{if(!r.ok)throw 0;setTimeout(()=>$("#aMsg").textContent="",2500)}).catch(()=>{$("#aMsg").textContent="전송 실패 — 다시 눌러주세요"})};
   $("#aStart").addEventListener("click",()=>arm("start",$("#aStart"),"한 번 더 누르면 시작!",()=>send({type:"start",rid:Math.random().toString(36).slice(2,10)},"시작 신호 보냄!")));
   $("#aReset").addEventListener("click",()=>arm("reset",$("#aReset"),"한 번 더!",()=>{$("#aReset").textContent="리셋";send({type:"reset"},"리셋 신호 보냄")}));
+  /* ---- 이름·조 수정 ---- */
+  const who=d=>rowsNow().get(d)||joins.get(d)||[...results.values()].map(r=>r.get(d)).find(Boolean);
+  const allGroups=()=>{const s=new Set();for(const j of joins.values())if(j.g)s.add(j.g);for(const x of rowsNow().values())if(x.g)s.add(x.g);return [...s].sort((a,b)=>a.localeCompare(b,"ko",{numeric:true}))};
+  const save=(d,n,g)=>{
+    ED.apply(d,n,g);render();
+    post(RES,{t:"e",d,n,g}).then(r=>{if(!r.ok)throw 0;$("#aMsg").textContent=`✓ ${n}${g?" · "+g:""} 로 수정됨`;setTimeout(()=>$("#aMsg").textContent="",2500)})
+      .catch(()=>{$("#aMsg").textContent="수정 전송 실패 — 다시 해 주세요"});
+  };
+  let edD=null;
+  const paintGs=()=>{const cur=normG($("#edG").value);$("#edGs").innerHTML=allGroups().map(g=>`<button type="button" class="${g===cur?"on":""}" data-g="${esc(g)}">${esc(g)}</button>`).join("")};
+  function openEdit(d){
+    const w=who(d);if(!w)return;edD=d;
+    $("#edN").value=w.n;$("#edG").value=w.g||"";paintGs();
+    $("#edOld").textContent=w.n0&&w.n0!==w.n?`처음 입력한 이름: ${w.n0}`:"";
+    $("#edlg").classList.add("on");
+  }
+  const closeEdit=()=>{$("#edlg").classList.remove("on");edD=null};
+  $("#edGs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;$("#edG").value=b.dataset.g;paintGs()});
+  $("#edG").addEventListener("input",paintGs);
+  $("#edNo").addEventListener("click",closeEdit);
+  $("#edlg").addEventListener("click",e=>{if(e.target.id==="edlg")closeEdit()});
+  $("#edOk").addEventListener("click",()=>{
+    const n=$("#edN").value.trim();if(!n){$("#edN").focus();return}
+    const d=edD;closeEdit();save(d,n.slice(0,10),normG($("#edG").value));
+  });
+  $("#aPanel").addEventListener("click",e=>{const li=e.target.closest("li.ed");if(li)openEdit(li.dataset.d)});
+  $("#aPanel").addEventListener("pointerdown",e=>{
+    const c=e.target.closest(".chip.ed");if(!c)return;
+    e.preventDefault();
+    const d=c.dataset.d,sx=e.clientX,sy=e.clientY;let ghost=null,over=null;
+    dragging=true;try{c.setPointerCapture(e.pointerId)}catch(_){}
+    const mv=ev=>{
+      if(!ghost){if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<8)return;ghost=c.cloneNode(true);ghost.classList.add("drag");document.body.appendChild(ghost);c.style.opacity=".3"}
+      ghost.style.left=ev.clientX+"px";ghost.style.top=ev.clientY+"px";
+      const t=document.elementFromPoint(ev.clientX,ev.clientY),g=t&&t.closest(".g[data-g]");
+      if(g!==over){over&&over.classList.remove("over");over=g;over&&over.classList.add("over")}
+    };
+    const up=()=>{
+      c.removeEventListener("pointermove",mv);c.removeEventListener("pointerup",up);c.removeEventListener("pointercancel",up);
+      dragging=false;
+      if(!ghost){openEdit(d);render();return}
+      ghost.remove();over&&over.classList.remove("over");
+      const w=who(d);
+      if(w&&over&&over.dataset.g!==(w.g||""))save(d,w.n,over.dataset.g);else render();
+    };
+    c.addEventListener("pointermove",mv);c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up);
+  });
   $("#aOut").addEventListener("click",()=>{store.del("mole1-admin");location.hash=""});
   $("#aCopyLink").addEventListener("click",()=>{const u=location.origin+location.pathname;navigator.clipboard.writeText(u).then(()=>{$("#aCopyLink").textContent="✓ 복사됨"},()=>{$("#aCopyLink").textContent=u})});
 }
