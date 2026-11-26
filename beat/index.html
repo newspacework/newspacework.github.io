@@ -319,13 +319,24 @@ const voiceOn=()=>{try{return localStorage.getItem("beat1-voice")!=="0"}catch(e)
 function koVoice(){const v=(window.speechSynthesis&&speechSynthesis.getVoices())||[];return v.find(x=>/^ko/i.test(x.lang)&&/google/i.test(x.name))||v.find(x=>/^ko/i.test(x.lang))}
 if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>koVoice();
 const LINES=["{t}, 도전! 준비됐나요? 박자에 맞춰 다 같이 외쳐 주세요!","자~ {t} 차례입니다! 끝까지 가 봅시다!","{t}, 출발합니다! 틀리지 말고, 크게 외쳐요!"];
+/* 조 이름 안내 → 첫 판 이름 8개를 순서대로 먼저 불러 줌(칸도 하나씩 켜짐) → 카운트 시작 */
 function announce(t,done){
   $("#ov").classList.add("on");$("#ovBig").textContent="🎤";$("#ovSub").textContent=`${t} 도전!`;
-  const say=LINES[Math.floor(Math.random()*LINES.length)].replace("{t}",t);
+  const intro=LINES[Math.floor(Math.random()*LINES.length)].replace("{t}",t);
   if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){setTimeout(done,1200);return}
-  let fin=false;const end=()=>{if(fin)return;fin=true;clearTimeout(guard);setTimeout(done,250)};
-  const guard=setTimeout(end,6000);   /* 음성이 안 나와도 6초 뒤엔 시작 */
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(say);u.lang="ko-KR";u.rate=1.05;u.pitch=1.1;const v=koVoice();if(v)u.voice=v;u.onend=end;u.onerror=end;speechSynthesis.speak(u)}catch(e){end()}
+  const all=[...$("#stage").querySelectorAll(".cell")];
+  let fin=false;const end=()=>{if(fin)return;fin=true;clearTimeout(guard);all.forEach(c=>c.classList.remove("on","done"));setTimeout(done,300)};
+  const guard=setTimeout(end,20000);   /* 음성이 안 나와도 20초 뒤엔 시작 */
+  const v=koVoice();
+  const mk=(txt,rate,onend)=>{const u=new SpeechSynthesisUtterance(txt);u.lang="ko-KR";u.rate=rate;u.pitch=1.1;if(v)u.voice=v;u.onend=onend;u.onerror=end;return u};
+  try{
+    speechSynthesis.cancel();
+    speechSynthesis.speak(mk(intro+" 이름 먼저 들어 보세요!",1.05,()=>{$("#ov").classList.remove("on")}));
+    /* 이름을 하나씩: 말하는 칸을 켜 줌 */
+    cells.forEach(([n],i)=>{const u=mk(n,1.0,i===cells.length-1?end:null);
+      u.onstart=()=>{if(fin)return;all.forEach((c,j)=>{c.classList.toggle("on",j===i);c.classList.toggle("done",j<i)})};
+      speechSynthesis.speak(u)});
+  }catch(e){end()}
 }
 function pause(){running=false;clearTimeout(timer);try{speechSynthesis.cancel()}catch(e){}$("#bGo").textContent="▶ 계속";$("#ov").classList.add("on");$("#ovBig").textContent="⏸";$("#ovSub").textContent="스페이스바로 계속";}
 function finish(){running=false;clearTimeout(timer);record(cleared,true);if(cur)toast(`🎉 ${cur} 완주! ${cleared}판 + 보너스 ${PTS_FINISH} = ${cleared*PTS_ROUND+PTS_FINISH}점`,3500);cleared=0;$("#bGo").textContent="▶ 다시";$("#ov").classList.add("on");$("#ovBig").textContent="🎉";
