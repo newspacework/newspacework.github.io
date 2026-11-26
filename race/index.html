@@ -153,6 +153,23 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   #qrToggle{display:none}
 }
 .bempty{color:#c9ccd4;font:900 clamp(18px,1.8vw,26px) "Noto Sans KR",sans-serif;text-align:center;padding:12vh 20px}
+.bmain{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,30%);align-items:start}
+.bmain.solo{grid-template-columns:minmax(0,1fr)}
+.teams{margin:14px clamp(10px,1.6vw,28px) 20px 0;background:#2a2d34;border:2px solid #4a4d55;border-radius:16px;padding:14px 16px}
+.teams:empty{display:none}
+.teams h2{font:400 clamp(24px,2.2vw,36px) "Black Han Sans",sans-serif;color:var(--bg);margin:0 0 10px}
+.tlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.tlist li{display:grid;grid-template-columns:1.6em minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.tlist .r{font:400 clamp(22px,2vw,32px) "Black Han Sans",sans-serif;color:#9aa0ad;text-align:center}
+.tlist li:nth-child(1) .r{color:#ffd23f}.tlist li:nth-child(2) .r{color:#d9dde6}.tlist li:nth-child(3) .r{color:#e8a26a}
+.tlist .t{font:400 clamp(20px,1.8vw,28px) "Black Han Sans",sans-serif;color:#fff;overflow-wrap:anywhere}
+.tlist .t small{font:900 clamp(12px,1vw,15px) "Noto Sans KR",sans-serif;color:#c9ccd4;margin-left:6px}
+.tlist .v{font:400 clamp(22px,2vw,34px) "Black Han Sans",sans-serif;color:var(--bg);text-align:right;white-space:nowrap}
+.tlist .bar2{grid-column:2 / span 2;height:10px;background:#3a3d45;border-radius:6px;overflow:hidden}
+.tlist .bar2 i{display:block;height:100%;background:var(--bg);border-radius:6px;transition:width 1s ease}
+.tlist li:nth-child(1) .bar2 i{background:#ffd23f}
+.tnote{font:700 13px "Noto Sans KR",sans-serif;color:#9aa0ad;margin:10px 0 0}
+@media(max-width:1000px){.bmain{grid-template-columns:minmax(0,1fr)}.teams{margin:0 clamp(10px,1.6vw,28px) 20px}}
 .bfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px clamp(16px,2.4vw,36px);font-size:13px;color:#9aa0ad}
 .conn{font-size:13px;font-weight:700;margin:0}.conn i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#aaa;margin-right:6px;vertical-align:1px}
 .conn.ok i{background:#2bd46b}.conn.bad i{background:var(--pink)}
@@ -267,11 +284,14 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <div class="bcount"><b id="bWait">0</b> 대기 중<br><b id="bRun">0</b> 달리는 중 · <b id="bFin">0</b> 결승</div>
     <div class="bqr"><div class="qr" id="qr"></div><p class="url" id="bUrl"></p></div>
   </header>
+  <div class="bmain">
   <div class="track" id="track">
     <div class="lanes" id="lanes"></div>
     <p class="brest" id="bRest"></p>
     <div class="roster" id="roster"></div>
     <p class="bempty" id="bEmpty">QR을 찍고 이름·조를 쓰면 출발선에서 대기합니다</p>
+  </div>
+  <aside class="teams" id="teams"></aside>
   </div>
   <footer class="bfoot">
     <p class="conn" id="conn"><i></i><span id="connT">순위판 연결 중…</span><span id="bSus"></span> · <a href="#admin" style="color:#c9ccd4">관리자 화면</a> · <a href="#" id="bOut" style="color:#c9ccd4">나가기</a></p>
@@ -310,6 +330,7 @@ const COUNT=5,RACE_SEC=60;
 const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36).toUpperCase().padStart(6,"0").slice(-4)};
 const codeOf=(n,sc,ok)=>hashCode(`${String(n).trim()}|${sc}|${ok}|${SALT}`);
 const rnd=n=>Math.floor(Math.random()*n);
+const normG=v=>{let g=String(v||"").replace(/\s+/g,"").slice(0,8);if(/^\d+$/.test(g))g+="조";return g};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const show=id=>{document.querySelectorAll(".scr").forEach(s=>s.classList.toggle("on",s.id===id));window.scrollTo(0,0)};
@@ -376,7 +397,7 @@ function onRace(r){
   else if(phase==="result")$("#nextBtn").style.display="block";
 }
 $("#goBtn").addEventListener("click",()=>{
-  const n=$("#nm").value.trim(),g=$("#grp").value.trim();
+  const n=$("#nm").value.trim(),g=normG($("#grp").value);
   const bad=!n?$("#nm"):(!g&&!practice?$("#grp"):null);
   if(bad){bad.focus();bad.classList.add("shake");setTimeout(()=>bad.classList.remove("shake"),300);return}
   st.name=n;st.grp=g;
@@ -527,6 +548,17 @@ function initBoard(){
     for(const [d,j] of joins)if(j.t>=since&&!rows.has(d))out.push({d,...j});
     return out;
   }
+  function renderTeams(list){
+    const box=$("#teams");
+    if(!list.length){box.innerHTML="";$(".bmain").classList.add("solo");return}
+    const gm=new Map();for(const x of list){const k=x.g||"조 없음";const g=gm.get(k)||{k,n:0,s:0};g.n++;g.s+=x.s;gm.set(k,g)}
+    const gs=[...gm.values()].sort((a,b)=>b.s-a.s||a.k.localeCompare(b.k,"ko",{numeric:true}));
+    const top=Math.max(1,gs[0].s);
+    const fin=cur&&Date.now()>=cur.endAt;
+    box.innerHTML=`<h2>조별 합산${fin?" · 최종":""}</h2><ol class="tlist">${gs.map((g,i)=>`<li><span class="r">${i&&g.s===gs[i-1].s?"":i+1}</span><span class="t">${esc(g.k)}<small>${g.n}명 · 평균 ${Math.round(g.s/g.n)}</small></span><span class="v">${g.s}</span><span class="bar2"><i style="width:${Math.max(3,g.s/top*100)}%"></i></span></li>`).join("")}</ol><p class="tnote">조원 점수를 모두 더한 값${fin?"":" · 실시간"}</p>`+
+      `<h2 style="margin-top:20px">개인 TOP 3${fin?" · 개인상":""}</h2><ol class="tlist">${list.filter(x=>x.rk<=3).slice(0,5).map(x=>`<li><span class="r">${["🥇","🥈","🥉"][x.rk-1]}</span><span class="t">${esc(x.n)}<small>${esc(x.g||"")}</small></span><span class="v">${x.s}</span></li>`).join("")}</ol>`;
+    $(".bmain").classList.remove("solo");
+  }
   function renderRoster(){
     const now=Date.now(),running=cur&&now>=cur.startAt&&now<cur.endAt;
     const list=running?[]:waiting();
@@ -563,6 +595,7 @@ function initBoard(){
     });
     const shown=new Set(order.map(x=>x.d));
     for(const [d,el] of els)if(!shown.has(d)){el.remove();els.delete(d)}
+    renderTeams(list);
     renderRoster();
     $("#bEmpty").style.display=all.length||waiting().length?"none":"block";
     $("#bEmpty").textContent=cur&&Date.now()>=cur.startAt?"출발! 곧 첫 기록이 들어옵니다":"QR을 찍고 이름·조를 쓰면 출발선에서 대기합니다";
@@ -595,12 +628,12 @@ function initBoard(){
   es.onmessage=e=>{
     let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
     if(!x||typeof x.d!=="string"||typeof x.n!=="string")return;
-    if(x.t==="j"){const p=joins.get(x.d);joins.set(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:String(x.g||"").slice(0,8)});if(!p)freshJ.add(x.d);later();return}
+    if(x.t==="j"){const p=joins.get(x.d);joins.set(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)});if(!p)freshJ.add(x.d);later();return}
     if(typeof x.rid!=="string")return;
     let rows=results.get(x.rid);if(!rows){rows=new Map();results.set(x.rid,rows)}
     const prev=rows.get(x.d);
     if(prev&&prev.f&&x.t!=="f")return;
-    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.g=String(x.g||"").slice(0,8);x.f=x.t==="f";
+    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.g=normG(x.g);x.f=x.t==="f";
     if(!prev||x.s>prev.s)boosted.add(x.d);
     rows.set(x.d,x);later();
   };
@@ -659,7 +692,7 @@ function initAdmin(){
     if(!picked)tab=p==="run"?"live":p==="end"?"res":"wait";
     document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
     $("#tW").textContent=w.length;$("#tL").textContent=list.length+sus.length;$("#tR").textContent=fin.list.length;
-    let html="";
+    let html="",teamRows=[];
     if(tab==="wait"){
       if(!w.length)html=`<p class="aempty">${p==="run"?"레이스 진행 중이에요. 지금 들어오는 학생은 남은 시간만큼 합류해요.":"아직 대기자가 없어요. 학생들이 QR로 들어와 준비 완료를 누르면 여기 나와요."}</p>`;
       else{
@@ -675,17 +708,17 @@ function initAdmin(){
       if(!L.length)html=`<p class="aempty">${p==="end"?"결과가 들어오는 중이에요. 잠시만요.":"레이스가 끝나면 최종 결과가 여기 나와요."}</p>`;
       else{
         const gm=new Map();for(const x of L){const k=x.g||"조 없음";const g=gm.get(k)||{n:0,s:0,best:0};g.n++;g.s+=x.s;g.best=Math.max(g.best,x.s);gm.set(k,g)}
-        const gs=[...gm.entries()].map(([k,g])=>({k,...g,avg:Math.round(g.s/g.n)})).sort((a,b)=>b.avg-a.avg);
+        const gs=[...gm.entries()].map(([k,g])=>({k,...g,avg:Math.round(g.s/g.n)})).sort((a,b)=>b.s-a.s);teamRows=gs;
         html=`<button class="btn sub" id="aCopy" style="margin-bottom:10px">결과 복사 (엑셀에 붙여넣기)</button>`+
-          `<ul class="alist">${L.map(x=>row(x)).join("")}${fin.sus.map(x=>row(x,"bad")).join("")}</ul>`+
-          `<p class="ttl">조별 현황</p><table class="gs"><thead><tr><th>조</th><th>인원</th><th>평균</th><th>합계</th><th>최고</th></tr></thead><tbody>${gs.map(g=>`<tr><td>${esc(g.k)}</td><td>${g.n}</td><td>${g.avg}</td><td>${g.s}</td><td>${g.best}</td></tr>`).join("")}</tbody></table>`;
+          `<p class="ttl">🏅 개인 순위 (개인상)</p><ul class="alist">${L.map(x=>row(x)).join("")}${fin.sus.map(x=>row(x,"bad")).join("")}</ul>`+
+          `<p class="ttl">👥 조별 합산 순위 (조별상)</p><table class="gs"><thead><tr><th>조</th><th>합계</th><th>인원</th><th>평균</th><th>최고</th></tr></thead><tbody>${gs.map((g,i)=>`<tr><td>${i+1}. ${esc(g.k)}</td><td><b>${g.s}</b></td><td>${g.n}</td><td>${g.avg}</td><td>${g.best}</td></tr>`).join("")}</tbody></table>`;
         const unfinished=list.filter(x=>!x.f).length;
         if(unfinished)html+=`<p class="note" style="margin-top:8px">아직 최종 기록이 안 들어온 학생 ${unfinished}명 (실시간 탭에서 확인)</p>`;
       }
     }
     $("#aPanel").innerHTML=html;
     const cp=$("#aCopy");if(cp)cp.addEventListener("click",()=>{
-      const tsv=["순위\t이름\t조\t점수\t정답\t오답\t최대연속"].concat(fin.list.map(x=>[x.rk,x.n,x.g,x.s,x.ok,x.no,x.b].join("\t"))).join("\n");
+      const tsv=["순위\t이름\t조\t점수\t정답\t오답\t최대연속"].concat(fin.list.map(x=>[x.rk,x.n,x.g,x.s,x.ok,x.no,x.b].join("\t"))).concat(["","조별 순위\t조\t합계\t인원\t평균\t최고"]).concat(teamRows.map((g,i)=>[i+1,g.k,g.s,g.n,g.avg,g.best].join("\t"))).join("\n");
       navigator.clipboard.writeText(tsv).then(()=>{cp.textContent="✓ 복사됨 — 엑셀에 붙여넣으세요"},()=>{cp.textContent="복사 실패"});
     });
     status();
@@ -712,11 +745,11 @@ function initAdmin(){
   es.onmessage=e=>{
     let m,x;try{m=JSON.parse(e.data);if(m.event!=="message")return;x=JSON.parse(m.message)}catch(_){return}
     if(!x||typeof x.d!=="string"||typeof x.n!=="string")return;
-    if(x.t==="j"){joins.set(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:String(x.g||"").slice(0,8)});later();return}
+    if(x.t==="j"){joins.set(x.d,{t:(m.time||0)*1000,n:x.n.slice(0,10),g:normG(x.g)});later();return}
     if(typeof x.rid!=="string")return;
     let rows=results.get(x.rid);if(!rows){rows=new Map();results.set(x.rid,rows)}
     const prev=rows.get(x.d);if(prev&&prev.f&&x.t!=="f")return;
-    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.g=String(x.g||"").slice(0,8);x.f=x.t==="f";
+    x.s=+x.s||0;x.ok=+x.ok||0;x.no=+x.no||0;x.b=+x.b||0;x.at=+x.at||0;x.n=x.n.slice(0,10);x.g=normG(x.g);x.f=x.t==="f";
     rows.set(x.d,x);later();
   };
   listenCtl(r=>{if(r.sent<resetAt)return;cur=r;later()},null,sent=>{if(sent<=resetAt)return;resetAt=sent;if(cur&&cur.sent<sent)cur=null;later()});
