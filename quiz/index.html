@@ -270,6 +270,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
       <li>성경 인물·지명·단어·책 문제가 나오고, <b>4개 보기</b> 중 정답을 고르세요</li>
       <li><b>3초 안에</b> 맞히면 <b>+10점</b>, 그 뒤에 맞히면 <b>+5점</b></li>
       <li>틀리면 <b>−2점</b>. 모르면 <b>패스</b>(0점) — 게임당 <b>3번</b>까지!</li>
+      <li>⏰ 한 문제에 <b>10초</b>가 지나면 자동으로 다음 문제 (0점, 패스 횟수는 안 줄어요)</li>
       <li>중간중간 <b>😆 넌센스 보너스</b>! 맞히면 <b>+15점</b>, 틀려도 감점 없음</li>
       <li>시간은 <b>3분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
@@ -723,7 +724,7 @@ function buildQuiz(){
   $("#stage").innerHTML=`<div class="qhead"><div class="face" id="qFace"></div><p class="qcat" id="qCat"></p></div><p class="qtext" id="qText"></p><div class="qtimer" id="qTm"><i></i></div><p class="qpts" id="qPts"></p><div class="qopts" id="qOpts"></div><button class="qpass" id="qPass">모르겠어요 · 패스 (0점)</button><p class="reveal" id="qRev"></p>`;
   $("#qOpts").addEventListener("click",e=>{const b=e.target.closest(".qopt");if(b)pick(b)});
   $("#qPass").addEventListener("click",()=>{
-    if(lock||!qlive()||!qcur||st.pl<=0)return;lock=true;clearTimeout(hintT);
+    if(lock||!qlive()||!qcur||st.pl<=0)return;lock=true;clearTimeout(hintT);clearTimeout(limT);clearTimeout(warnT);
     st.pl--;passLabel();st.streak=0;hud();
     $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
     $("#qRev").textContent=`패스 · 정답은 「${qcur[0]}」`;
@@ -753,7 +754,10 @@ function next(keep){
     void tm.offsetWidth;tm.classList.add("run");
     hintT=setTimeout(()=>{$("#qPts").innerHTML="지금 맞히면 <b>+5점</b>"},FAST_MS);
   }
-  qStart=Date.now();faceK=-1;faceTick();clearInterval(faceT);faceT=setInterval(faceTick,200);
+  qStart=Date.now();clearTimeout(limT);clearTimeout(warnT);
+  warnT=setTimeout(()=>{if(!lock)$("#qPts").innerHTML="⏰ <b>3초</b> 안에 안 고르면 넘어가요!"},Q_LIMIT-3000);
+  limT=setTimeout(timeUp,Q_LIMIT);
+  faceK=-1;faceTick();clearInterval(faceT);faceT=setInterval(faceTick,200);
   if(!keep)$("#qRev").textContent="";
 }
 /* 맞히면 초록 O, 틀리면 빨간 X — 카드 전체에 크게 보여 주고 다음 문제로 */
@@ -762,9 +766,18 @@ function mark(ok,big,sub,ms){
   o.innerHTML=`<b>${ok?"O":"X"}</b><span>${big}</span>${sub?`<em>${sub}</em>`:""}`;$("#stage").appendChild(o);
   setTimeout(()=>{o.remove();if(qlive())next(true)},ms);
 }
+/* 한 문제 10초 제한 → 자동으로 다음 문제 (0점, 패스 횟수 안 씀) */
+const Q_LIMIT=10000;let limT=null,warnT=null;
+function timeUp(){
+  if(lock||!qlive()||!qcur)return;
+  lock=true;clearTimeout(hintT);st.streak=0;hud();buzz(40);
+  $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
+  $("#qRev").textContent=`⏰ 시간 초과 · 정답은 「${qcur[0]}」`;
+  mark(false,"⏰ 시간 초과! (0점)",`정답: ${qcur[0]}`,1100);
+}
 function pick(b){
   if(lock||!qlive()||!qcur)return;
-  lock=true;clearTimeout(hintT);
+  lock=true;clearTimeout(hintT);clearTimeout(limT);clearTimeout(warnT);
   const a=b.dataset.a;
   if(a===qcur[0]){
     const fast=!isNS&&Date.now()-qStart<=FAST_MS;if(fast)st.cs++;
@@ -786,7 +799,7 @@ function pick(b){
 }
 
 function finish(){
-  if(!st.tick)return;clearInterval(faceT);clearInterval(st.tick);clearInterval(st.prog);st.tick=null;clearTimeout(hintT);try{$("#ans").blur()}catch(e){}buzz(300);
+  if(!st.tick)return;clearInterval(faceT);clearTimeout(limT);clearTimeout(warnT);clearInterval(st.tick);clearInterval(st.prog);st.tick=null;clearTimeout(hintT);try{$("#ans").blur()}catch(e){}buzz(300);
   const r={rid:st.rid,n:st.name,g:st.grp,s:st.score,ok:st.ok,no:st.no,cs:st.cs,best:st.best,at:Date.now(),p:practice,sent:false};
   if(!practice)store.set(KEYR(st.rid),r);
   phase="result";showResult(r);
