@@ -62,6 +62,9 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .qtext{font:900 clamp(20px,6vw,26px)/1.45 "Noto Sans KR",sans-serif;text-align:center;margin:4px 0;min-height:3em;display:flex;align-items:center;justify-content:center;word-break:keep-all}
 .qopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .qopt{appearance:none;border:3px solid var(--line);background:var(--card);color:var(--ink);font:900 clamp(20px,6vw,26px) "Noto Sans KR",sans-serif;min-height:84px;border-radius:14px;box-shadow:4px 4px 0 var(--line);cursor:pointer;padding:6px;word-break:keep-all}
+#stage.ns{background:#fff3b0}
+#stage.ns .qcat{color:#c2410c;font-size:18px}
+#stage.ns .qtimer{visibility:hidden}
 .qpass{appearance:none;border:2px solid var(--line);background:transparent;color:var(--mut);font:900 16px "Noto Sans KR",sans-serif;border-radius:12px;padding:10px;cursor:pointer}
 .qopt:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--line)}
 .qopt.ok{background:#2bd46b;color:#fff}.qopt.ng{background:var(--pink);color:#fff}
@@ -234,6 +237,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
       <li>성경 인물·지명·단어·책 문제가 나오고, <b>4개 보기</b> 중 정답을 고르세요</li>
       <li><b>3초 안에</b> 맞히면 <b>+10점</b>, 그 뒤에 맞히면 <b>+5점</b></li>
       <li>틀리면 <b>−2점</b>. 모르면 <b>패스</b>(0점)하고 다음 문제로!</li>
+      <li>중간중간 <b>😆 넌센스 보너스</b>! 맞히면 <b>+15점</b>, 틀려도 감점 없음</li>
       <li>시간은 <b>2분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
@@ -590,6 +594,31 @@ const QZ=[
 ["로마서","바울이 로마 교회에 쓴 편지","성경"],
 ["요한계시록","성경의 마지막 책","성경"]
 ];
+/* 😆 넌센스 보너스 — 5문제마다 1번. [정답, 문제] */
+const NS=[
+["후다닥","세상에서 가장 빠른 닭은?"],
+["킹콩","왕(King)이 넘어지면?"],
+["우하하","소가 웃으면?"],
+["바나나킥","바나나가 웃으면?"],
+["언덕","오리(duck)가 얼면?"],
+["다이아몬드","아몬드가 죽으면?"],
+["카톡","자동차(car)를 톡 치면?"],
+["원빈","콩 한 알을 영어로 하면?"],
+["개인지도","개가 사람을 가르치면?"],
+["자원봉사자","세상에서 가장 착한 사자는?"],
+["추적60분","비가 1시간 동안 추적추적 내리면?"],
+["천만의말씀","서울 시민 천만 명이 동시에 한마디 하면?"],
+["로딩중","세상에서 가장 지루한 중학교는?"],
+["궁시렁궁시렁","왕이 궁에 들어가기 싫을 때 하는 말은?"],
+["딸기시럽","딸기가 직장을 잃으면?"],
+["천도복숭아","세상에서 가장 뜨거운 과일은?"],
+["신발끈","신(神)이 화가 나면?"],
+["아멘리카노","교회 다니는 사람이 좋아하는 커피는?"],
+["시험지","진짜 문제투성이인 것은?"],
+["당기소","'미소'의 반대말은?"]
+];
+const NS_EVERY=5,NS_PTS=15;
+let nsDeck=[],nsI=0,qn=0,isNS=false;
 const FAST_MS=3000;
 let deck=[],qi=0,qcur=null,qStart=0,lock=false,hintT=null;
 const qlive=()=>!!st.tick&&Date.now()<st.endAt;
@@ -608,15 +637,25 @@ function next(keep){
   if(!$("#qOpts"))buildQuiz();
   if(!keep){deck=shuffle(QZ.slice());qi=0}
   else if(++qi>=deck.length){deck=shuffle(QZ.slice());qi=0}
-  qcur=deck[qi];lock=false;clearTimeout(hintT);
-  const others=shuffle(QZ.filter(q=>q[2]===qcur[2]&&q[0]!==qcur[0])).slice(0,3).map(q=>q[0]);
+  if(!keep){qn=0;nsDeck=shuffle(NS.slice());nsI=0}
+  qn++;isNS=qn%NS_EVERY===0;
+  if(isNS){if(nsI>=nsDeck.length){nsDeck=shuffle(NS.slice());nsI=0}const n=nsDeck[nsI++];qcur=[n[0],n[1],"😆 넌센스 보너스"];qi--}
+  else qcur=deck[qi];
+  lock=false;clearTimeout(hintT);
+  $("#stage").classList.toggle("ns",isNS);
+  const pool=isNS?NS.map(n=>[n[0],n[1],qcur[2]]):QZ;
+  const others=shuffle(pool.filter(q=>q[2]===qcur[2]&&q[0]!==qcur[0])).slice(0,3).map(q=>q[0]);
   const opts=shuffle([qcur[0],...others]);
   $("#qCat").textContent=`[${qcur[2]}]`;
   $("#qText").textContent=qcur[1];
   $("#qOpts").innerHTML=opts.map(o=>`<button class="qopt" data-a="${o}">${o}</button>`).join("");
-  $("#qPts").innerHTML="3초 안에 맞히면 <b>+10점</b>";
-  const tm=$("#qTm");tm.classList.remove("run");void tm.offsetWidth;tm.classList.add("run");
-  hintT=setTimeout(()=>{$("#qPts").innerHTML="지금 맞히면 <b>+5점</b>"},FAST_MS);
+  const tm=$("#qTm");tm.classList.remove("run");
+  if(isNS){$("#qPts").innerHTML=`보너스 문제! 맞히면 <b>+${NS_PTS}점</b> · 틀려도 감점 없음`}
+  else{
+    $("#qPts").innerHTML="3초 안에 맞히면 <b>+10점</b>";
+    void tm.offsetWidth;tm.classList.add("run");
+    hintT=setTimeout(()=>{$("#qPts").innerHTML="지금 맞히면 <b>+5점</b>"},FAST_MS);
+  }
   qStart=Date.now();
   if(!keep)$("#qRev").textContent="";
 }
@@ -625,12 +664,16 @@ function pick(b){
   lock=true;clearTimeout(hintT);
   const a=b.dataset.a;
   if(a===qcur[0]){
-    const fast=Date.now()-qStart<=FAST_MS;if(fast)st.cs++;
-    b.classList.add("ok");good(fast?10:5);
+    const fast=!isNS&&Date.now()-qStart<=FAST_MS;if(fast)st.cs++;
+    b.classList.add("ok");good(isNS?NS_PTS:fast?10:5);
     $("#qRev").textContent=`✓ 정답! 「${qcur[0]}」`;
     setTimeout(()=>next(true),250);
   }else{
     b.classList.add("ng");
+    if(isNS){
+      $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
+      $("#qRev").textContent=`😆 정답은 「${qcur[0]}」 (감점 없음)`;setTimeout(()=>next(true),1100);return;
+    }
     $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
     st.streak=0;st.no++;st.score=Math.max(0,st.score-2);hud();buzz([60,40,60]);pop("−2");
     const sg=$("#stage");sg.classList.add("shake");setTimeout(()=>sg.classList.remove("shake"),300);
