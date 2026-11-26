@@ -70,6 +70,8 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .hole.hit .m{transform:translateY(30%) scaleY(.75);transition:transform .08s}
 .hole.hit::after{content:"쾅!";position:absolute;left:50%;top:6%;transform:translateX(-50%) rotate(-10deg);font:400 clamp(18px,6vw,28px) "Black Han Sans",sans-serif;color:#fff;text-shadow:2px 2px 0 #141414;pointer-events:none}
 .hole.boom::after{content:"펑!";color:#ff2e88}
+.hole.swap .m{animation:swp .22s ease-out}
+@keyframes swp{0%{transform:translateY(4%) scale(1.25,.7)}50%{transform:translateY(0) scale(.85,1.15)}}
 /* result */
 .res{text-align:center}
 .res .name{font:400 30px "Black Han Sans",sans-serif;margin:0}
@@ -197,6 +199,8 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
       <li>황금 두더지는 <b>+30점</b> 🌟</li>
       <li>연속으로 잡으면 보너스 <b>+2, +4, +6…</b> 최대 <b>+10점</b>까지</li>
       <li>💣 폭탄을 치면 <b>−15점</b>, 1초 동안 멈춰요</li>
+      <li>😈 <b>가짜 두더지</b> 조심! 눈썹이 화난 녀석은 폭탄이에요</li>
+      <li>🔄 나오다가 <b>폭탄↔두더지로 변신</b>하는 녀석도 있어요. 치는 순간 모습이 기준!</li>
       <li>두더지를 놓치거나 빈 구멍을 치면 연속 보너스 초기화</li>
       <li>진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
@@ -447,6 +451,7 @@ function bad(p=5){
 const SVG={
  mole:`<svg viewBox="0 0 100 110" aria-hidden="true"><ellipse cx="50" cy="70" rx="42" ry="46" fill="#8a5a3b" stroke="#141414" stroke-width="4"/><ellipse cx="50" cy="82" rx="26" ry="24" fill="#c99a72"/><circle cx="36" cy="52" r="6" fill="#141414"/><circle cx="64" cy="52" r="6" fill="#141414"/><circle cx="38" cy="50" r="2" fill="#fff"/><circle cx="66" cy="50" r="2" fill="#fff"/><ellipse cx="50" cy="66" rx="10" ry="7" fill="#ff7aa8" stroke="#141414" stroke-width="3"/><path d="M44 76 Q50 81 56 76" stroke="#141414" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="45" y="78" width="10" height="7" rx="2" fill="#fff" stroke="#141414" stroke-width="2"/></svg>`,
  gold:`<svg viewBox="0 0 100 110" aria-hidden="true"><path d="M28 30 L34 8 L44 22 L50 4 L56 22 L66 8 L72 30Z" fill="#ffd23f" stroke="#141414" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="50" cy="72" rx="42" ry="44" fill="#ffc21a" stroke="#141414" stroke-width="4"/><ellipse cx="50" cy="84" rx="26" ry="22" fill="#ffe78a"/><path d="M30 54 l6 -6 l6 6 M58 54 l6 -6 l6 6" stroke="#141414" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="50" cy="68" rx="10" ry="7" fill="#ff7aa8" stroke="#141414" stroke-width="3"/><path d="M42 78 Q50 86 58 78" stroke="#141414" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M14 40 l4 -4 M86 40 l-4 -4 M10 62 h6 M90 62 h-6" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>`,
+ fake:`<svg viewBox="0 0 100 110" aria-hidden="true"><path d="M22 34 L26 18 L34 30Z M78 34 L74 18 L66 30Z" fill="#8a5a3b" stroke="#141414" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="70" rx="42" ry="46" fill="#8a5a3b" stroke="#141414" stroke-width="4"/><ellipse cx="50" cy="82" rx="26" ry="24" fill="#c99a72"/><path d="M28 42 L42 48 M72 42 L58 48" stroke="#141414" stroke-width="4" stroke-linecap="round"/><circle cx="36" cy="54" r="6" fill="#d11a2a"/><circle cx="64" cy="54" r="6" fill="#d11a2a"/><ellipse cx="50" cy="66" rx="10" ry="7" fill="#ff7aa8" stroke="#141414" stroke-width="3"/><path d="M42 82 Q50 75 58 82" stroke="#141414" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
  bomb:`<svg viewBox="0 0 100 110" aria-hidden="true"><path d="M58 30 Q66 14 78 12" stroke="#7a5a3a" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="80" cy="10" r="7" fill="#ff7a1a"/><circle cx="80" cy="10" r="3" fill="#ffe14d"/><rect x="42" y="24" width="20" height="14" rx="3" fill="#555" stroke="#141414" stroke-width="3"/><circle cx="50" cy="70" r="40" fill="#2a2a2e" stroke="#141414" stroke-width="4"/><circle cx="36" cy="56" r="9" fill="#fff" opacity=".25"/><path d="M34 72 l8 -8 M34 64 l8 8 M58 72 l8 -8 M58 64 l8 8" stroke="#ff2e88" stroke-width="4" stroke-linecap="round"/></svg>`
 };
 const HOLES=9;
@@ -458,7 +463,7 @@ function buildField(){
   f.querySelectorAll(".hole").forEach(h=>h.addEventListener("pointerdown",e=>{e.preventDefault();whack(+h.dataset.i)}));
 }
 const holeEl=i=>$("#field").children[i];
-function hideHole(i){const a=act.get(i);if(a)clearTimeout(a.t);act.delete(i);const h=holeEl(i);if(h)h.classList.remove("up")}
+function hideHole(i){const a=act.get(i);if(a){clearTimeout(a.t);clearTimeout(a.t2)}act.delete(i);const h=holeEl(i);if(h)h.classList.remove("up")}
 function spawn(){
   if(!st.tick)return;
   const now=Date.now(),left=st.endAt-now,f=Math.min(1,Math.max(0,1-left/(DUR*1000)));
@@ -467,10 +472,19 @@ function spawn(){
     const free=[...Array(HOLES).keys()].filter(i=>!act.has(i)&&!holeEl(i).classList.contains("hit"));
     if(free.length){
       const i=free[rnd(free.length)],r=Math.random(),early=f<.08;
-      const k=early?"mole":r<.1?"gold":r<.3?"bomb":"mole";
-      const life=(k==="gold"?650:1150)-450*f+rnd(200);
-      const h=holeEl(i);h.querySelector(".m").innerHTML=SVG[k];h.classList.add("up");
-      act.set(i,{k,t:setTimeout(()=>{act.delete(i);h.classList.remove("up");if(k!=="bomb"&&st.tick){st.streak=0;hud()}},life)});
+      /* 시간이 갈수록 가짜 두더지·변신 두더지가 늘어남 */
+      const fakeP=.10+.15*f,flipP=.08+.12*f;
+      let k=early?"mole":r<.08?"gold":r<.20?"bomb":r<.20+fakeP?"fake":r<.20+fakeP+flipP?"flip":"mole";
+      const life=(k==="gold"?650:1150)-450*f+rnd(200)+(k==="flip"?250:0);
+      const h=holeEl(i),m=h.querySelector(".m");
+      const a={k};
+      if(k==="flip"){                      /* 두더지로 나왔다가 폭탄으로, 또는 그 반대로 변신 */
+        const toBomb=Math.random()<.6;a.k=toBomb?"mole":"bomb";
+        a.t2=setTimeout(()=>{if(act.get(i)!==a)return;a.k=toBomb?"bomb":"mole";m.innerHTML=SVG[a.k];h.classList.remove("swap");void h.offsetWidth;h.classList.add("swap")},life*(.35+Math.random()*.25));
+      }
+      m.innerHTML=SVG[a.k];h.classList.remove("swap");h.classList.add("up");
+      a.t=setTimeout(()=>{if(act.get(i)!==a)return;act.delete(i);h.classList.remove("up");if((a.k==="mole"||a.k==="gold")&&st.tick){st.streak=0;hud()}},life);
+      act.set(i,a);
     }
   }
   spawnT=setTimeout(spawn,Math.max(200,560-300*f+rnd(260)));
@@ -480,7 +494,7 @@ function whack(i){
   const a=act.get(i),h=holeEl(i);
   if(!a){if(st.streak){st.streak=0;hud()}return}
   hideHole(i);
-  h.classList.add("hit");h.classList.toggle("boom",a.k==="bomb");h.classList.add("up");
+  h.classList.add("hit");h.classList.toggle("boom",a.k==="bomb"||a.k==="fake");h.classList.add("up");
   setTimeout(()=>h.classList.remove("hit","boom","up"),260);
   if(a.k==="mole")good(10);
   else if(a.k==="gold")good(30);
