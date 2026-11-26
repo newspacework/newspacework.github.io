@@ -142,6 +142,7 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .rlist .n{font:900 clamp(18px,1.7vw,26px)/1.25 "Noto Sans KR",sans-serif;overflow-wrap:anywhere}
 .rlist .n small{display:block;font-size:.65em;color:#c9ccd4;font-weight:700}
 .rlist .l{font:400 clamp(18px,1.6vw,26px) "Black Han Sans",sans-serif;color:var(--bg);white-space:nowrap}
+.pbox{display:none;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:8px}.pbox.on{display:grid}.pbox .btn{font-size:20px;padding:10px}.pbox .btn.sub{font-size:15px}
 .brest{color:#c9ccd4;font-weight:900;margin:10px 0 0}
 .roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:12px;width:100%}
 .roster .g{background:#2a2d34;border:2px solid #4a4d55;border-radius:14px;padding:10px 12px;text-align:left}
@@ -186,6 +187,7 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 
 <section class="scr" id="play">
   <div class="call" id="call"><div class="ball" id="cNo">–</div><div><b id="cName">시작!</b><span id="cDesc">진행자가 첫 인물을 뽑을 때까지 기다려요</span></div></div>
+  <div class="pbox" id="pBox"><button class="btn" id="pDraw">연습용 뽑기!</button><button class="btn sub" id="pAgain">새 판으로 다시</button></div>
   <div class="hud2"><span id="who2"></span><span>빙고 <b id="lines">0</b>줄</span></div>
   <div class="bgrid" id="grid"></div>
   <div class="card editbox" id="edit">
@@ -222,6 +224,7 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
   </div>
   <button class="btn" id="aDraw" disabled>뽑기!</button>
   <div class="abtns"><button class="btn" id="aStart">게임 시작</button><button class="btn sub" id="aReset">리셋</button></div>
+  <a class="btn sub" href="#practice" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">🎮 진행자 연습해 보기 <small style="font-size:15px">(새 탭 · 기록 안 남음)</small></a>
   <p class="note" id="aMsg" style="text-align:center;font-weight:900;min-height:1.4em"></p>
   <div class="alinks"><a href="#board">큰 화면 열기</a><button id="aCopyLink">학생 접속 주소 복사</button><button id="aOut">나가기</button><span id="aConn">연결 중…</span></div>
   <div class="tabs"><button class="tab" data-t="wait"><b id="tW">0</b>대기자</button><button class="tab" data-t="rank"><b id="tR">0</b>빙고 순위</button><button class="tab" data-t="drawn"><b id="tD">0</b>뽑은 인물</button></div>
@@ -316,6 +319,7 @@ const hashCode=s=>{let h=2166136261;for(const c of s){h^=c.codePointAt(0);h=Math
 let toastT=null;const toast=t=>{const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("on"),1400)};
 function deviceId(){let d=store.get("bingo-did");if(!d){d=Math.random().toString(36).slice(2,10);store.set("bingo-did",d)}return d}
 const hash=location.hash.slice(1);
+const practice=hash==="practice";
 const LINES=(()=>{const L=[];for(let r=0;r<5;r++)L.push([0,1,2,3,4].map(c=>r*5+c));for(let c=0;c<5;c++)L.push([0,1,2,3,4].map(r=>r*5+c));L.push([0,6,12,18,24],[4,8,12,16,20]);return L})();
 
 /* ---- 진행 신호 (시작·뽑기·리셋) 공통 상태 ---- */
@@ -414,7 +418,7 @@ function paint(){
   if(full.length>B.sent){
     const first=B.sent===0;B.sent=full.length;store.set("bingo-b-"+B.rid,B);
     sendBingo(full.length,drawn.length);
-    if(first){$("#bingoMsg").textContent=`${drawn.length}번째 인물에서 빙고! 큰 화면을 확인하세요`;$("#bingo").classList.add("on");buzz([200,80,200])}
+    if(first){$("#bingoMsg").textContent=practice?`${drawn.length}번째 인물에서 빙고! (연습이라 기록은 안 남아요)`:`${drawn.length}번째 인물에서 빙고! 큰 화면을 확인하세요`;$("#bingo").classList.add("on");buzz([200,80,200])}
     else toast(`${full.length}줄 빙고!`);
   }
 }
@@ -426,12 +430,33 @@ function renderCall(w,isNew){
   if(isNew){const c=$("#call");c.classList.remove("new");void c.offsetWidth;c.classList.add("new");buzz(30)}
 }
 async function sendBingo(l,k){
+  if(practice)return;
   const msg={t:"b",rid:B.rid,d:deviceId(),n:me.name,g:me.grp,l,k,at:Date.now()};
   for(const wait of [0,3,6,10,20,30]){
     if(wait)await new Promise(ok=>setTimeout(ok,wait*1000+rnd(2000)));
     try{const r=await post(RES,msg);if(r.ok)return}catch(e){}
   }
   toast("순위판 전송 실패 — 진행자에게 화면을 보여주세요");
+}
+
+/* ---------------- 연습 모드 (혼자, 기록 안 남음) ---------------- */
+function initPractice(){
+  const start=()=>{
+    store.del("bingo-b-practice");
+    me={name:"연습 모드",grp:"기록 안 남음"};
+    G={game:{rid:"practice",sent:0,draws:[]},resetAt:0};
+    $("#bingo").classList.remove("on");enterGame();
+    $("#pDraw").disabled=false;$("#pDraw").textContent="연습용 뽑기!";
+  };
+  $("#pBox").classList.add("on");
+  $("#pDraw").addEventListener("click",()=>{
+    const d=G.game.draws,left=WORDS.map(w=>w[0]).filter(w=>!d.includes(w));
+    if(!left.length)return;
+    const w=left[rnd(left.length)];d.push(w);onGame(G,"draw",w);
+    $("#pDraw").textContent=left.length>1?"연습용 뽑기!":"모두 뽑았어요";$("#pDraw").disabled=left.length<=1;
+  });
+  $("#pAgain").addEventListener("click",start);
+  start();
 }
 
 /* ---------------- 진행자 공통 ---------------- */
@@ -553,6 +578,7 @@ function initBoard(){
 window.addEventListener("hashchange",()=>location.reload());
 if(hash==="board")gate(initBoard);
 else if(hash==="admin")gate(initAdmin);
+else if(practice)initPractice();
 else initPlayer();
 }
 </script>
