@@ -157,6 +157,8 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .ano{background:var(--line);color:var(--bg);font:400 16px "Black Han Sans",sans-serif;padding:3px 12px;border-radius:999px}
 .arole{background:var(--pink);color:#fff;font:900 14px "Noto Sans KR",sans-serif;padding:4px 12px;border-radius:10px}
 .gname{display:inline-block;align-self:flex-start;margin:0;background:var(--line);color:var(--bg);font:900 15px "Noto Sans KR",sans-serif;padding:5px 14px;border-radius:999px}
+.plinks{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.plinks .btn{display:block;text-align:center;text-decoration:none;font-size:17px;padding:12px 6px}
 .gonav{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:900 14px "Noto Sans KR",sans-serif}
 .gonav span{color:var(--mut);margin-right:4px}
 .gonav a{color:var(--ink);text-decoration:none;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
@@ -324,6 +326,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <p class="note" style="text-align:center">수고했어요! 순위는 큰 화면을 확인하세요.</p>
   <button class="btn" id="nextBtn" style="display:none">다음 퀴즈 참가!</button>
   <button class="btn sub" id="againBtn" style="display:none">연습 다시 하기</button>
+  <div class="plinks" id="pLinks"><a class="btn sub" href="#admin">🛠 진행자 메뉴</a><a class="btn sub" href="../">📱 소개 페이지</a></div>
 </section>
 
 <section class="scr" id="gate">
@@ -800,7 +803,7 @@ function showResult(r){
   $("#rCode").textContent=r.p?"연습":codeOf(r.n,r.s,r.ok);
   const d=new Date(r.at),p2=v=>String(v).padStart(2,"0");
   $("#rTime").textContent=`${d.getMonth()+1}/${d.getDate()} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())} 종료 · 최대 연속 ${r.best}`;
-  $("#againBtn").style.display=r.p?"block":"none";
+  $("#againBtn").style.display=r.p?"block":"none";$("#pLinks").style.display=r.p?"grid":"none";
   $("#nextBtn").style.display=(!r.p&&race&&race.rid!==r.rid&&Date.now()<race.endAt&&!store.get(KEYR(race.rid)))?"block":"none";
   $("#rSend").textContent=r.p?"":(r.sent?"✓ 순위판에 올라갔어요":"");
   if(!r.p&&!r.sent)sendResult(r);
