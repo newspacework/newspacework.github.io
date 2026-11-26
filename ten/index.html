@@ -225,7 +225,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <div class="card">
     <ol class="rules">
       <li><b>시작</b>을 누르고, 마음속으로 세다가 <b>정확히 10초</b>에 <b>멈춰!</b>를 누르세요</li>
-      <li>시계는 <b>보이지 않아요</b> — 오직 마음속으로 세기! 🤫</li>
+      <li>시계는 <b>보이지 않아요</b> — 오직 마음속으로 세기! 🤫 (20초가 지나면 자동으로 멈춰요)</li>
       <li>점수 = <b>100 − 오차</b> (0.01초 단위) — 예: 10.03초 → <b>97점</b>, 9.75초 → <b>75점</b>, 최소 <b>1점</b></li>
       <li>한 사람당 <b>3번 도전</b> — <b>가장 가까운 1번</b>이 최종 기록! 점수가 같으면 오차가 더 작은 사람이 위예요 (제한 시간 1분)</li>
       <li>진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
@@ -552,7 +552,8 @@ const rowInfo=x=>`최고 기록 오차 ${x.no>=999?"–":(x.no/100).toFixed(2)+"
 const TRIES=3,SHOW_MS=0,TARGET=10;   /* SHOW_MS: 처음 몇 ms 동안 시계를 보여 줄지 (0 = 처음부터 안 보임) */
 /* [오차(초) 이내, 점수, 한마디] */
 const PTS=[[0.1,0,"🎯 완벽!"],[0.3,0,"😲 와, 거의!"],[0.5,0,"👍 좋아요"],[1.0,0,"😅 아깝다"],[1.5,0,"🤔 음…"],[Infinity,0,"🙈 많이 빗나갔어요"]];   /* 오차별 한마디 (점수는 100 − 오차) */   /* 1.5초 넘게 틀려도 참가 점수 1점 */
-let tRun=false,t0=0,raf=0,cool=false;
+let tRun=false,t0=0,raf=0,cool=false,autoStop=false;
+const AUTO_STOP_MS=20000;
 function playStart(){
   st.att=[];st.no=999;st.streak=`1/${TRIES}`;tRun=false;cool=false;
   $("#stage").innerHTML=`<p class="q" id="tMsg">시작을 누르고 마음속으로 10초!</p><p class="clock" id="tClock">0.00</p><p class="tres" id="tRes"></p><button class="opt tbig" id="tBtn">시작</button><div class="tatt" id="tAtt"></div>`;
@@ -562,6 +563,7 @@ function loop(){
   const ms=performance.now()-t0,c=$("#tClock");
   if(ms<SHOW_MS){c.textContent=(ms/1000).toFixed(2);c.classList.remove("hide")}
   else if(!c.classList.contains("hide")){c.textContent="?.??";c.classList.add("hide")}
+  if(ms>=AUTO_STOP_MS){autoStop=true;press();return}   /* 20초 지나면 자동으로 멈춤 */
   raf=requestAnimationFrame(loop);
 }
 function press(){
@@ -572,13 +574,13 @@ function press(){
     tRun=true;t0=performance.now();$("#play").classList.add("counting");b.textContent="멈춰!";b.classList.add("stop");
     $("#tRes").innerHTML="";$("#tMsg").textContent="마음속으로 세는 중… 🤫";$("#tClock").textContent="?.??";$("#tClock").classList.add("hide");buzz(20);loop();return;
   }
-  const e=(performance.now()-t0)/1000;tRun=false;cancelAnimationFrame(raf);$("#play").classList.remove("counting");
+  const e=autoStop?AUTO_STOP_MS/1000:(performance.now()-t0)/1000;const wasAuto=autoStop;autoStop=false;tRun=false;cancelAnimationFrame(raf);$("#play").classList.remove("counting");
   const err=Math.abs(e-TARGET),hit=PTS.find(p=>err<=p[0]),pts=Math.max(1,100-Math.round(err*100));   /* 점수 = 100 − 오차(0.01초 단위), 최소 1점 */
   const prevBest=st.best;
   st.att.push(e);st.no=Math.min(st.no,Math.round(err*100));st.best=Math.max(st.best,pts);
   st.score=st.best;st.ok=Math.max(0,300-st.no);   /* 최종 점수 = 최고 기록 점수, ok = 정확도(동점 정렬용) */
   const c=$("#tClock");c.textContent=e.toFixed(2);c.classList.remove("hide");
-  $("#tRes").innerHTML=`${hit?hit[2]:"🙈 많이 빗나갔어요"} <b>${pts}점</b><small>오차 ${err.toFixed(2)}초${st.att.length>1?(pts>prevBest||Math.round(err*100)===st.no?" · ✨ 최고 기록 갱신!":` · 최고 기록 ${st.best}점 유지`):""}</small>`;
+  $("#tRes").innerHTML=`${wasAuto?"⏰ 20초가 지나 자동으로 멈췄어요":hit?hit[2]:"🙈 많이 빗나갔어요"} <b>${pts}점</b><small>오차 ${err.toFixed(2)}초${st.att.length>1?(pts>prevBest||Math.round(err*100)===st.no?" · ✨ 최고 기록 갱신!":` · 최고 기록 ${st.best}점 유지`):""}</small>`;
   $("#tAtt").innerHTML=st.att.map((t,i)=>`<span>${i+1}차 ${t.toFixed(2)}초</span>`).join("");
   st.streak=`${Math.min(st.att.length+1,TRIES)}/${TRIES}`;hud();
   buzz(pts>=80?[80,40,80]:30);
