@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>성경 초성 퀴즈</title>
+<title>성경 스피드 퀴즈</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -59,6 +59,13 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .shake{animation:sh .3s}
 @keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 /* 퀴즈 */
+.qtext{font:900 clamp(20px,6vw,26px)/1.45 "Noto Sans KR",sans-serif;text-align:center;margin:4px 0;min-height:3em;display:flex;align-items:center;justify-content:center;word-break:keep-all}
+.qopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.qopt{appearance:none;border:3px solid var(--line);background:var(--card);color:var(--ink);font:900 clamp(20px,6vw,26px) "Noto Sans KR",sans-serif;min-height:84px;border-radius:14px;box-shadow:4px 4px 0 var(--line);cursor:pointer;padding:6px;word-break:keep-all}
+.qopt:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--line)}
+.qopt.ok{background:#2bd46b;color:#fff}.qopt.ng{background:var(--pink);color:#fff}
+.qtimer{height:8px;border-radius:6px;background:#eee;overflow:hidden}.qtimer i{display:block;height:100%;background:#2bd46b;width:100%}
+.qtimer.run i{animation:qt 3s linear forwards}@keyframes qt{to{width:0}}
 .qcat{font:900 15px "Noto Sans KR",sans-serif;text-align:center;margin:0;color:var(--mut)}
 .cho{font:400 clamp(52px,17vw,96px)/1.05 "Black Han Sans",sans-serif;text-align:center;margin:0;letter-spacing:.08em;color:var(--ink);word-break:keep-all}
 .hintbox{min-height:4.2em;display:flex;align-items:center;justify-content:center;text-align:center;background:#f3efff;border:3px dashed var(--line);border-radius:14px;padding:10px 12px;font:900 18px/1.4 "Noto Sans KR",sans-serif;color:#141414}
@@ -220,13 +227,12 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr on" id="start">
   <div class="tape"></div>
-  <h1>성경<br><em>초성</em> 퀴즈</h1>
+  <h1>성경<br><em>스피드</em> 퀴즈</h1>
   <div class="card">
     <ol class="rules">
-      <li><b>초성</b>을 보고 성경 인물·지명·책·단어를 맞혀요 (예: ㄷㅇ → 다윗)</li>
-      <li>초성만 보고 맞히면 <b>+10점</b></li>
-      <li>5초가 지나면(또는 <b>힌트 보기</b>를 누르면) 힌트가 나와요. 힌트 보고 맞히면 <b>+5점</b></li>
-      <li>정답을 다 쓰면 자동으로 다음 문제! 모르면 <b>패스</b> (감점 없음)</li>
+      <li>성경 인물·지명·단어·책 문제가 나오고, <b>4개 보기</b> 중 정답을 고르세요</li>
+      <li><b>3초 안에</b> 맞히면 <b>+10점</b>, 그 뒤에 맞히면 <b>+5점</b></li>
+      <li>틀리면 <b>−2점</b>, 바로 다음 문제로 넘어가요</li>
       <li>시간은 <b>1분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
@@ -275,8 +281,8 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <p class="big" id="rScore">0</p>
     <div class="stats">
       <div><b id="rOk">0</b><span>정답</span></div>
-      <div><b id="rNo">0</b><span>패스</span></div>
-      <div><b id="rRate">0</b><span>초성만 정답</span></div>
+      <div><b id="rNo">0</b><span>오답</span></div>
+      <div><b id="rRate">0</b><span>3초 안 정답</span></div>
     </div>
   </div>
   <div class="card res">
@@ -304,7 +310,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="board">
   <header class="bhead">
-    <h1>성경 <em>초성</em> 퀴즈</h1>
+    <h1>성경 <em>스피드</em> 퀴즈</h1>
     <div class="bclock"><small id="bLabel">퀴즈 대기</small><span id="bBig">READY</span></div>
     <div class="bcount"><b id="bWait">0</b> 대기 중<br><b id="bRun">0</b> 푸는 중 · <b id="bFin">0</b> 완료</div>
     <div class="bqr"><div class="qr" id="qr"></div><p class="url" id="bUrl"></p></div>
@@ -495,8 +501,8 @@ function bad(){
   pop("−2");
 }
 const guard=fn=>(...a)=>{if(st.frozen||Date.now()>=st.endAt)return;fn(...a)};
-/* ---- 성경 초성 퀴즈 ---- */
-/* [정답, 힌트, 분류] — 문제를 바꾸거나 늘리려면 이 목록만 고치면 됩니다 */
+/* ---- 성경 스피드 퀴즈 ---- */
+/* [정답, 문제, 분류] — 문제를 바꾸거나 늘리려면 이 목록만 고치면 됩니다 */
 const QZ=[
 ["아담","하나님이 흙으로 지으신 첫 사람","인물"],
 ["하와","뱀의 꾐에 넘어가 선악과를 먹은 첫 여자","인물"],
@@ -583,55 +589,46 @@ const QZ=[
 ["로마서","바울이 로마 교회에 쓴 편지","성경"],
 ["요한계시록","성경의 마지막 책","성경"]
 ];
-const CHO="ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
-const cho=w=>[...w].map(c=>{const k=c.charCodeAt(0)-0xAC00;return k>=0&&k<11172?CHO[Math.floor(k/588)]:c}).join("");
-const norm=v=>String(v).replace(/[\s·.\-]/g,"");
-const escQ=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const HINT_MS=5000;
-/* 초성·분류가 같은 다른 정답도 인정 (예: [인물] ㅇㅅ → 이삭·요셉) */
-const isRight=v=>{v=norm(v);if(!v||!qcur)return false;const c=cho(qcur[0]);return QZ.some(q=>q[2]===qcur[2]&&cho(q[0])===c&&norm(q[0])===v)};
-let deck=[],qi=0,qcur=null,hintOn=false,hintT=null;
+const FAST_MS=3000;
+let deck=[],qi=0,qcur=null,qStart=0,lock=false,hintT=null;
 const qlive=()=>!!st.tick&&Date.now()<st.endAt;
 function buildQuiz(){
-  $("#stage").innerHTML=`<p class="qcat" id="qCat"></p><p class="cho" id="qCho"></p><div class="hintbox" id="qHint"></div><p class="qpts" id="qPts"></p><input id="ans" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="여기에 정답 입력" enterkeyhint="done"><div class="qbtns"><button class="opt" id="qOk">확인</button><button class="opt pass" id="qPass">패스</button></div><p class="reveal" id="qRev"></p>`;
-  $("#ans").addEventListener("input",()=>{if(isRight($("#ans").value))right($("#ans").value)});
-  $("#ans").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();submit()}});
-  $("#qOk").addEventListener("click",submit);
-  $("#qPass").addEventListener("click",()=>{if(!qlive()||!qcur)return;st.no++;st.streak=0;hud();$("#qRev").textContent=`패스 · 정답은 「${qcur[0]}」`;next(true)});
-  $("#qHint").addEventListener("click",e=>{if(e.target.closest("button"))showHint()});
+  $("#stage").innerHTML=`<p class="qcat" id="qCat"></p><p class="qtext" id="qText"></p><div class="qtimer" id="qTm"><i></i></div><p class="qpts" id="qPts"></p><div class="qopts" id="qOpts"></div><p class="reveal" id="qRev"></p>`;
+  $("#qOpts").addEventListener("click",e=>{const b=e.target.closest(".qopt");if(b)pick(b)});
 }
 function next(keep){
-  if(!$("#ans"))buildQuiz();
+  if(!$("#qOpts"))buildQuiz();
   if(!keep){deck=shuffle(QZ.slice());qi=0}
   else if(++qi>=deck.length){deck=shuffle(QZ.slice());qi=0}
-  qcur=deck[qi];hintOn=false;clearTimeout(hintT);
+  qcur=deck[qi];lock=false;clearTimeout(hintT);
+  const others=shuffle(QZ.filter(q=>q[2]===qcur[2]&&q[0]!==qcur[0])).slice(0,3).map(q=>q[0]);
+  const opts=shuffle([qcur[0],...others]);
   $("#qCat").textContent=`[${qcur[2]}]`;
-  $("#qCho").textContent=cho(qcur[0]);
-  $("#qHint").innerHTML=`<span><button type="button">힌트 보기</button><small>5초 뒤 자동으로 나와요</small></span>`;
-  $("#qPts").innerHTML="지금 맞히면 <b>+10점</b>";
-  $("#ans").value="";
+  $("#qText").textContent=qcur[1];
+  $("#qOpts").innerHTML=opts.map(o=>`<button class="qopt" data-a="${o}">${o}</button>`).join("");
+  $("#qPts").innerHTML="3초 안에 맞히면 <b>+10점</b>";
+  const tm=$("#qTm");tm.classList.remove("run");void tm.offsetWidth;tm.classList.add("run");
+  hintT=setTimeout(()=>{$("#qPts").innerHTML="지금 맞히면 <b>+5점</b>"},FAST_MS);
+  qStart=Date.now();
   if(!keep)$("#qRev").textContent="";
-  hintT=setTimeout(showHint,HINT_MS);
-  try{$("#ans").focus({preventScroll:true})}catch(e){}
 }
-function showHint(){
-  if(hintOn||!qcur)return;hintOn=true;clearTimeout(hintT);
-  $("#qHint").textContent=qcur[1];
-  $("#qPts").innerHTML="힌트 보고 맞히면 <b>+5점</b>";
-}
-function right(said){
-  if(!qlive()||!qcur)return;
-  if(!hintOn)st.cs++;
-  good(hintOn?5:10);
-  $("#qRev").textContent=`✓ 정답! 「${said&&norm(said)!==norm(qcur[0])?norm(said):qcur[0]}」`;
-  next(true);
-}
-function submit(){
-  if(!qlive()||!qcur)return;
-  const v=norm($("#ans").value);if(!v){$("#ans").focus();return}
-  if(isRight(v)){right($("#ans").value);return}
-  const sg=$("#stage");sg.classList.add("shake");setTimeout(()=>sg.classList.remove("shake"),300);
-  buzz([60,40,60]);pop("땡!");$("#qRev").textContent=`「${$("#ans").value}」 아니에요`;$("#ans").select();
+function pick(b){
+  if(lock||!qlive()||!qcur)return;
+  lock=true;clearTimeout(hintT);
+  const a=b.dataset.a;
+  if(a===qcur[0]){
+    const fast=Date.now()-qStart<=FAST_MS;if(fast)st.cs++;
+    b.classList.add("ok");good(fast?10:5);
+    $("#qRev").textContent=`✓ 정답! 「${qcur[0]}」`;
+    setTimeout(()=>next(true),250);
+  }else{
+    b.classList.add("ng");
+    $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
+    st.streak=0;st.no++;st.score=Math.max(0,st.score-2);hud();buzz([60,40,60]);pop("−2");
+    const sg=$("#stage");sg.classList.add("shake");setTimeout(()=>sg.classList.remove("shake"),300);
+    $("#qRev").textContent=`✗ 정답은 「${qcur[0]}」`;
+    setTimeout(()=>next(true),900);
+  }
 }
 
 function finish(){
@@ -835,7 +832,7 @@ function initAdmin(){
   const phase=()=>{const now=Date.now();return !cur?"idle":now<cur.startAt?"cd":now<cur.endAt?"run":"end"};
   const row=(x,kind)=>{
     const bd=kind==="bad"?'<span class="badge bad">코드 불일치</span>':(x.f?'<span class="badge fin">완료</span>':'<span class="badge run">푸는 중</span>');
-    return `<li class="ed" data-d="${esc(x.d)}"><span class="rk">${kind==="bad"?"–":x.rk}</span><span class="who">${esc(x.n)}${bd}<small>${x.g?esc(x.g)+" · ":""}정답 ${x.ok} · 패스 ${x.no} · 최대연속 ${x.b}</small></span><span class="sc">${x.s}</span></li>`;
+    return `<li class="ed" data-d="${esc(x.d)}"><span class="rk">${kind==="bad"?"–":x.rk}</span><span class="who">${esc(x.n)}${bd}<small>${x.g?esc(x.g)+" · ":""}정답 ${x.ok} · 오답 ${x.no} · 최대연속 ${x.b}</small></span><span class="sc">${x.s}</span></li>`;
   };
   let dragging=false;
   function render(){
@@ -870,7 +867,7 @@ function initAdmin(){
     }
     $("#aPanel").innerHTML=html;
     const cp=$("#aCopy");if(cp)cp.addEventListener("click",()=>{
-      const tsv=["순위\t이름\t조\t점수\t조보너스\t정답\t패스\t최대연속"].concat(fin.list.map(x=>[x.rk,x.n,x.g,x.s,x.rk<=3?BONUS[x.rk-1]:0,x.ok,x.no,x.b].join("\t"))).concat(["","조별 순위\t조\t총점\t점수합\t보너스\t인원\t평균"]).concat(teamRows.map((g,i)=>[i+1,g.k,g.t,g.s,g.bo,g.n,g.avg].join("\t"))).join("\n");
+      const tsv=["순위\t이름\t조\t점수\t조보너스\t정답\t오답\t최대연속"].concat(fin.list.map(x=>[x.rk,x.n,x.g,x.s,x.rk<=3?BONUS[x.rk-1]:0,x.ok,x.no,x.b].join("\t"))).concat(["","조별 순위\t조\t총점\t점수합\t보너스\t인원\t평균"]).concat(teamRows.map((g,i)=>[i+1,g.k,g.t,g.s,g.bo,g.n,g.avg].join("\t"))).join("\n");
       navigator.clipboard.writeText(tsv).then(()=>{cp.textContent="✓ 복사됨 — 엑셀에 붙여넣으세요"},()=>{cp.textContent="복사 실패"});
     });
     status();
