@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>랜덤 조 편성 · 스피드 게임 올림픽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#141414;--bg:#fff4dc;--pink:#ff2e88;--gold:#ffd23f;--mut:#5b5648;
+  --c1:#e9ff3b;--c2:#ffb547;--c3:#b9a4ff;--c4:#6ee7b7;--c5:#7dd3fc;--c6:#ff8fd8;--c7:#fca5a5;--c8:#d9f99d}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;color:var(--ink);font:16px/1.5 "Noto Sans KR",system-ui,sans-serif;
+  background:var(--bg) radial-gradient(circle at 1px 1px,rgba(20,20,20,.13) 1.2px,transparent 0) 0 0/22px 22px;min-height:100%}
+a{color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:18px 18px 40px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:18px}
+h1{margin:0;font:400 clamp(30px,4.4vw,52px)/1.1 "Black Han Sans",sans-serif}
+h1 em{font-style:normal;color:var(--pink)}
+.nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.nav a,.btn{display:inline-flex;align-items:center;gap:6px;border:3px solid var(--ink);border-radius:12px;background:#fff;padding:7px 14px;font:900 15px "Noto Sans KR",sans-serif;text-decoration:none;cursor:pointer;box-shadow:3px 3px 0 var(--ink);color:var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.layout{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+.card{background:#fff;border:4px solid var(--ink);border-radius:22px;padding:18px;box-shadow:6px 6px 0 var(--ink)}
+.card h2{margin:0 0 6px;font:400 24px "Black Han Sans",sans-serif}
+.hint{margin:0 0 10px;color:var(--mut);font:700 13px "Noto Sans KR",sans-serif}
+.hint b{color:var(--pink)}
+textarea{width:100%;min-height:300px;border:3px solid var(--ink);border-radius:14px;padding:10px 12px;font:700 17px/1.6 "Noto Sans KR",sans-serif;resize:vertical}
+.cnt{margin:8px 0 14px;font:900 15px "Noto Sans KR",sans-serif}.cnt b{color:var(--pink);font:400 22px "Black Han Sans",sans-serif}
+.opt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:900 16px "Noto Sans KR",sans-serif;margin-bottom:8px}
+.opt input[type=number]{width:74px;border:3px solid var(--ink);border-radius:10px;padding:6px 8px;font:400 22px "Black Han Sans",sans-serif;text-align:center}
+.opt label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.preview{font:700 13px "Noto Sans KR",sans-serif;color:var(--mut);margin:0 0 14px}
+.go{width:100%;justify-content:center;background:var(--pink);color:#fff;font:400 28px "Black Han Sans",sans-serif;padding:12px;border-radius:16px}
+.result .bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
+.result .bar .tip{font:700 13px "Noto Sans KR",sans-serif;color:var(--mut);margin-right:auto}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.team{background:var(--c);border:4px solid var(--ink);border-radius:20px;padding:12px 14px 14px;box-shadow:5px 5px 0 var(--ink)}
+.team h3{margin:0 0 8px;display:flex;align-items:baseline;gap:8px;font:400 34px/1 "Black Han Sans",sans-serif;cursor:pointer}
+.team h3 small{font:900 14px "Noto Sans KR",sans-serif}
+.team ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.team li{background:#fff;border:3px solid var(--ink);border-radius:12px;padding:5px 10px;font:900 20px "Noto Sans KR",sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px}
+.team li.lead::after{content:"⭐";margin-left:auto;font-size:15px}
+.team li.sel{background:var(--ink);color:#fff}
+.team.drop h3{text-decoration:underline wavy var(--pink)}
+.empty{padding:60px 20px;text-align:center;color:var(--mut);font:400 24px "Black Han Sans",sans-serif;border:4px dashed #c9bfa5;border-radius:22px}
+.shuffling .team li{animation:pop .12s infinite alternate}
+@keyframes pop{to{transform:scale(1.06) rotate(-1deg)}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:14px;padding:10px 20px;font:900 16px "Noto Sans KR",sans-serif;display:none;z-index:9}
+.toast.on{display:block}
+/* 큰 화면 모드 */
+body.big .input,body.big .nav,body.big .bar .tip{display:none}
+body.big .layout{grid-template-columns:1fr}
+body.big .wrap{max-width:none}
+body.big .teams{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+body.big .team h3{font-size:46px}body.big .team li{font-size:28px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.shuffling .team li{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎲 랜덤 <em>조 편성</em></h1>
+    <span class="hint" style="margin:0">한 번 해 보는 도구 · 게임 입장 정보와는 따로예요</span>
+    <nav class="nav"><a href="../">📱 소개 페이지</a></nav>
+  </header>
+
+  <div class="layout">
+    <section class="card input">
+      <h2>1. 이름 등록</h2>
+      <p class="hint">한 줄에 한 명 (쉼표·띄어쓰기로 구분해도 돼요)<br>이름 앞에 <b>*</b>을 붙이면 조마다 고르게 나눠요 (예: <b>*김선생</b> — 교사·조장·리더)</p>
+      <textarea id="names" placeholder="*김선생&#10;*이선생&#10;김민준&#10;이서연&#10;박지호&#10;최하은&#10;..."></textarea>
+      <p class="cnt">총 <b id="nTotal">0</b>명 <span id="nLead"></span></p>
+      <h2>2. 몇 개 조?</h2>
+      <div class="opt">
+        <label><input type="radio" name="mode" value="teams" checked> 조 개수</label>
+        <label><input type="radio" name="mode" value="size"> 조당 인원</label>
+        <input type="number" id="num" min="2" max="20" value="5">
+      </div>
+      <p class="preview" id="preview"></p>
+      <button class="btn go" id="go">🎲 랜덤 편성!</button>
+    </section>
+
+    <section class="result">
+      <div class="bar">
+        <span class="tip">이름 두 개를 차례로 누르면 자리 바꾸기 · 이름 누르고 조 이름 누르면 그 조로 옮기기</span>
+        <button class="btn" id="again">🔀 다시 섞기</button>
+        <button class="btn" id="big">📺 큰 화면</button>
+        <button class="btn" id="copy">📋 복사</button>
+      </div>
+      <div id="out"><p class="empty">왼쪽에 이름을 넣고<br>🎲 랜덤 편성을 누르세요</p></div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const KEY="nsw-team-maker";
+const COL=["--c1","--c2","--c3","--c4","--c5","--c6","--c7","--c8"];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let teams=[];      /* [[{n,lead}]] */
+let sel=null;      /* {t,i} */
+
+/* 이름 읽기: 줄·쉼표·띄어쓰기 구분, 중복 제거 */
+function people(){
+  const seen=new Set(),out=[];
+  for(let raw of $("#names").value.split(/[\n,，\s]+/)){
+    raw=raw.trim();if(!raw)continue;
+    const lead=raw.startsWith("*"),n=raw.replace(/^\*+/,"").slice(0,10);
+    if(!n||seen.has(n))continue;seen.add(n);out.push({n,lead});
+  }
+  return out;
+}
+const mode=()=>document.querySelector('input[name=mode]:checked').value;
+function teamCount(N){const v=Math.max(1,+$("#num").value||1);return Math.max(1,Math.min(N||1,mode()==="teams"?v:Math.round(N/v)||1))}
+function sizes(N,K){const b=Math.floor(N/K),r=N%K;return Array.from({length:K},(_,i)=>b+(i<r?1:0))}
+function update(){
+  const P=people(),L=P.filter(p=>p.lead).length;
+  $("#nTotal").textContent=P.length;$("#nLead").textContent=L?`(⭐ 리더 ${L}명)`:"";
+  if(!P.length){$("#preview").textContent="";return}
+  const K=teamCount(P.length),sz=sizes(P.length,K);
+  const lo=Math.min(...sz),hi=Math.max(...sz);
+  $("#preview").textContent=`→ ${K}개 조 · 조당 ${lo===hi?lo:`${lo}~${hi}`}명`+(L&&L<K?` · 리더가 조 수보다 적어요`:"");
+  save();
+}
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+/* 리더 먼저 고르게, 나머지는 인원 적은 조부터 채움 */
+function make(){
+  const P=people();if(!P.length){toast("이름을 먼저 넣어 주세요");return false}
+  const K=teamCount(P.length),T=Array.from({length:K},()=>[]);
+  const order=shuffle([...Array(K).keys()]);
+  shuffle(P.filter(p=>p.lead)).forEach((p,i)=>T[order[i%K]].push(p));
+  for(const p of shuffle(P.filter(p=>!p.lead))){
+    const min=Math.min(...T.map(t=>t.length));
+    const cand=shuffle(T.map((t,i)=>i).filter(i=>T[i].length===min));
+    T[cand[0]].push(p);
+  }
+  teams=T.map(t=>shuffle(t));sel=null;save();return true;
+}
+function render(){
+  if(!teams.length){$("#out").innerHTML=`<p class="empty">왼쪽에 이름을 넣고<br>🎲 랜덤 편성을 누르세요</p>`;return}
+  $("#out").innerHTML=`<div class="teams">${teams.map((t,ti)=>`<div class="team${sel?" drop":""}" style="--c:var(${COL[ti%COL.length]})"><h3 data-t="${ti}">${ti+1}조 <small>${t.length}명</small></h3><ul>${
+    t.map((p,i)=>`<li class="${p.lead?"lead":""}${sel&&sel.t===ti&&sel.i===i?" sel":""}" data-t="${ti}" data-i="${i}">${esc(p.n)}</li>`).join("")}</ul></div>`).join("")}</div>`;
+}
+/* 섞이는 연출 후 결과 */
+function roll(){
+  if(!make())return;
+  const final=teams,P=final.flat();let k=0;
+  $("#out").classList.add("shuffling");
+  const iv=setInterval(()=>{
+    const s=shuffle(P);let o=0;teams=final.map(t=>t.map(()=>s[o++]));render();
+    if(++k>=12){clearInterval(iv);teams=final;$("#out").classList.remove("shuffling");render();toast(`🎉 ${teams.length}개 조 편성 완료!`)}
+  },90);
+}
+$("#out").addEventListener("click",e=>{
+  const h=e.target.closest("h3[data-t]"),li=e.target.closest("li[data-t]");
+  if(h&&sel){const t=+h.dataset.t;if(t!==sel.t){const [p]=teams[sel.t].splice(sel.i,1);teams[t].push(p);toast(`${p.n} → ${t+1}조`)}sel=null;save();render();return}
+  if(!li)return;const t=+li.dataset.t,i=+li.dataset.i;
+  if(!sel){sel={t,i};render();return}
+  if(sel.t===t&&sel.i===i){sel=null;render();return}
+  const a=teams[sel.t][sel.i],b=teams[t][i];teams[sel.t][sel.i]=b;teams[t][i]=a;
+  toast(`${a.n} ⇄ ${b.n}`);sel=null;save();render();
+});
+function save(){try{localStorage.setItem(KEY,JSON.stringify({names:$("#names").value,mode:mode(),num:$("#num").value,teams}))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(!d)return;$("#names").value=d.names||"";$("#num").value=d.num||5;
+  const r=document.querySelector(`input[name=mode][value="${d.mode}"]`);if(r)r.checked=true;teams=Array.isArray(d.teams)?d.teams:[]}catch(e){}}
+function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),1800)}
+
+$("#names").addEventListener("input",update);$("#num").addEventListener("input",update);
+document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener("change",update));
+$("#go").addEventListener("click",roll);
+$("#again").addEventListener("click",roll);
+$("#big").addEventListener("click",()=>{const on=document.body.classList.toggle("big");$("#big").textContent=on?"↩ 돌아가기":"📺 큰 화면"});
+$("#copy").addEventListener("click",()=>{
+  if(!teams.length)return toast("먼저 편성해 주세요");
+  const txt=teams.map((t,i)=>`${i+1}조 (${t.length}명): ${t.map(p=>p.n).join(", ")}`).join("\n");
+  navigator.clipboard.writeText(txt).then(()=>toast("✓ 복사됨 — 단톡방에 붙여넣으세요"),()=>toast("복사 실패"));
+});
+load();update();render();
+}
+</script>
+</body>
+</html>
