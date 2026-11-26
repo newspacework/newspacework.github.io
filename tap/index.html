@@ -116,6 +116,11 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .abtns{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px}
 .abtns .btn{font-size:22px;padding:12px}
 .btn:disabled{background:#bdbdb0;color:#fff;box-shadow:none}
+.ahead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.ahead h2{font:400 clamp(28px,7vw,40px)/1.1 "Black Han Sans",sans-serif;margin:0;flex:1 1 auto}
+.ano{background:var(--line);color:var(--bg);font:400 16px "Black Han Sans",sans-serif;padding:3px 12px;border-radius:999px}
+.arole{background:var(--pink);color:#fff;font:900 14px "Noto Sans KR",sans-serif;padding:4px 12px;border-radius:10px}
+.gname{display:inline-block;align-self:flex-start;margin:0;background:var(--line);color:var(--bg);font:900 15px "Noto Sans KR",sans-serif;padding:5px 14px;border-radius:999px}
 .gonav{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:900 14px "Noto Sans KR",sans-serif}
 .gonav span{color:var(--mut);margin-right:4px}
 .gonav a{color:var(--ink);text-decoration:none;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
@@ -303,6 +308,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="gate">
   <div class="tape"></div>
+  <p class="gname">종목 4 · 🔥 손가락 불나는 30초</p>
   <h1>진행자<br><em>전용 화면</em></h1>
   <div class="card">
     <label for="gPin">관리자 PIN</label>
@@ -343,6 +349,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="admin">
   <div class="tape"></div>
+  <div class="ahead"><span class="ano">종목 4</span><h2>🔥 손가락 불나는 30초</h2><span class="arole">🛠 진행자 메뉴</span></div>
   <div class="astat card">
     <div><small id="aLabel">게임 대기</small><div class="big2" id="aBig">READY</div></div>
     <div style="text-align:right;font-weight:900;font-size:15px;line-height:1.7">대기 <b id="aW">0</b> · 게임 중 <b id="aR">0</b><br>완료 <b id="aF">0</b></div>
@@ -805,7 +812,7 @@ function gate(next){
   $("#gPin").addEventListener("keydown",e=>{if(e.key==="Enter")ok()});
 }
 function initAdmin(){
-  show("admin");
+  show("admin");document.title="🛠 진행자 · 손가락 불나는 30초";
   const results=new Map(),joins=new Map(),ED=edits(results,joins);let cur=null,resetAt=0,tab=null,picked=false;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const okc=x=>x.c===codeOf(x.n0||x.n,x.s,x.ok);
