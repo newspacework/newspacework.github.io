@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>리듬 맞춰 말하기 · 성경 인물</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@700;900&display=swap" rel="stylesheet">
+<style>
+/* 리듬 맞춰 말하기 (Say the Word on Beat) — 큰 화면 전용
+   비트에 맞춰 강조된 칸의 이름을 외친다. 판마다 빨라지고 비슷한 이름이 섞인다. */
+:root{--ink:#141414;--bg:#1b1530;--pink:#ff2e88;--gold:#ffd23f;--mint:#6ee7b7;--sky:#7dd3fc;--lav:#b9a4ff;--org:#ffb547;--lime:#e9ff3b}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;background:var(--bg);color:#fff;font:16px/1.4 "Noto Sans KR",system-ui,sans-serif;overflow:hidden}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:clamp(10px,1.6vh,20px);padding:clamp(12px,2vh,24px) clamp(14px,2.4vw,40px)}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font:400 clamp(26px,3.2vw,48px)/1 "Black Han Sans",sans-serif;margin:0}
+h1 em{font-style:normal;color:var(--pink)}
+.chips{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+.chip{background:#fff;color:var(--ink);border-radius:999px;padding:6px 16px;font:400 clamp(18px,1.8vw,26px) "Black Han Sans",sans-serif;border:3px solid #000}
+.chip.round{background:var(--gold)}.chip.bpm{background:var(--mint)}
+.stage{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:clamp(10px,1.6vw,24px)}
+.cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--c);color:var(--ink);border:6px solid #000;border-radius:28px;box-shadow:8px 8px 0 #000;transition:transform .08s,box-shadow .08s,filter .15s;filter:saturate(.75) brightness(.78)}
+.cell .emo{font-size:clamp(40px,6vh,80px);line-height:1}
+.cell .nm{font:400 clamp(34px,5.6vw,92px)/1 "Black Han Sans",sans-serif;white-space:nowrap}
+.cell .no{position:absolute;top:10px;left:14px;font:900 clamp(13px,1.2vw,18px) "Noto Sans KR",sans-serif;opacity:.55}
+.cell.on{filter:none;transform:translate(-4px,-6px) scale(1.06);box-shadow:14px 16px 0 #000;outline:8px solid #fff;outline-offset:4px;z-index:2}
+.cell.done{filter:saturate(.35) brightness(.55)}
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:rgba(27,21,48,.86);border-radius:28px;z-index:5;text-align:center}
+.overlay.on{display:flex}
+.overlay .big{font:400 clamp(90px,18vw,260px)/1 "Black Han Sans",sans-serif;color:var(--gold)}
+.overlay .msg{font:400 clamp(28px,3.4vw,54px) "Black Han Sans",sans-serif}
+.overlay .sub{font:900 clamp(15px,1.4vw,20px) "Noto Sans KR",sans-serif;color:#cfc8e8}
+.beatdots{display:flex;gap:10px;justify-content:center}
+.beatdots i{width:22px;height:22px;border-radius:50%;background:#3a3158;border:3px solid #000}
+.beatdots i.on{background:var(--pink)}
+footer{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+footer button,footer select{appearance:none;border:3px solid #000;background:#fff;color:var(--ink);border-radius:14px;padding:10px 16px;font:900 16px "Noto Sans KR",sans-serif;cursor:pointer;box-shadow:4px 4px 0 #000}
+footer button.go{background:var(--pink);color:#fff;font:400 22px "Black Han Sans",sans-serif;padding:8px 26px}
+footer button:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+footer .keys{margin-left:auto;font:700 13px "Noto Sans KR",sans-serif;color:#cfc8e8}
+footer .keys b{background:#fff;color:var(--ink);border-radius:6px;padding:1px 7px;margin:0 2px}
+footer label{font:900 14px "Noto Sans KR",sans-serif;color:#cfc8e8;display:flex;align-items:center;gap:6px}
+@media (prefers-reduced-motion:reduce){.cell{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🎵 리듬 맞춰 <em>말하기</em> · 성경 인물</h1>
+    <div class="chips"><span class="chip round" id="cRound">1판</span><span class="chip bpm" id="cBpm">90 BPM</span></div>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="overlay on" id="ov">
+      <div class="msg">강조된 이름을 <span style="color:var(--pink)">박자에 맞춰</span> 외치세요!</div>
+      <div class="big" id="ovBig">🎵</div>
+      <div class="beatdots" id="dots"><i></i><i></i><i></i><i></i></div>
+      <div class="sub" id="ovSub">스페이스바 또는 아래 ▶ 시작을 누르세요 · 판마다 점점 빨라져요!</div>
+    </div>
+  </div>
+
+  <footer>
+    <button class="go" id="bGo">▶ 시작</button>
+    <button id="bNext">다음 판 ⏭</button>
+    <button id="bReset">처음부터 ⟲</button>
+    <label>세트 <select id="selSet"><option value="mix">성경 인물 섞어서</option><option value="ot">구약 인물</option><option value="nt">신약 인물</option><option value="book">성경 책 이름</option></select></label>
+    <label>시작 속도 <select id="selBpm"><option value="80">느리게 80</option><option value="90" selected>보통 90</option><option value="100">빠르게 100</option></select></label>
+    <span class="keys"><b>Space</b> 시작·멈춤 <b>→</b> 다음 판 <b>R</b> 처음부터</span>
+  </footer>
+</div>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+/* ---- 이름 세트: 판마다 비슷한 이름을 섞어 혀가 꼬이게 ---- */
+const SETS={
+  ot:[
+    [["다윗","👑"],["모세","🪄"]],
+    [["노아","🚢"],["다윗","👑"],["모세","🪄"]],
+    [["아담","🍎"],["아론","🔥"],["아벨","🐑"]],
+    [["사울","⚔️"],["사무엘","📜"],["삼손","💪"],["사라","👵"]],
+    [["이삭","🐏"],["야곱","🪜"],["요셉","🧥"],["요나","🐋"]],
+    [["엘리야","🔥"],["엘리사","💧"],["에스더","👸"],["에스라","📖"]],
+    [["아담","🍎"],["아론","🔥"],["아브람","⭐"],["아벨","🐑"]]
+  ],
+  nt:[
+    [["베드로","🎣"],["바울","✉️"]],
+    [["베드로","🎣"],["바울","✉️"],["바나바","🤝"]],
+    [["마태","💰"],["마가","📘"],["마리아","🌸"]],
+    [["요한","🕊️"],["요셉","🪚"],["요나","🐋"],["유다","🪙"]],
+    [["마리아","🌸"],["마르다","🍲"],["마태","💰"],["마가","📘"]],
+    [["바울","✉️"],["바나바","🤝"],["빌립","🛞"],["베드로","🎣"]],
+    [["삭개오","🌳"],["사울","⚔️"],["스데반","🪨"],["실라","🎶"]]
+  ],
+  book:[
+    [["창세기","🌍"],["출애굽기","🌊"]],
+    [["레위기","⛺"],["민수기","🔢"],["신명기","📜"]],
+    [["시편","🎵"],["잠언","💡"],["전도서","⏳"]],
+    [["마태복음","1️⃣"],["마가복음","2️⃣"],["누가복음","3️⃣"],["요한복음","4️⃣"]],
+    [["로마서","🏛️"],["갈라디아서","🕊️"],["에베소서","🛡️"]],
+    [["요한일서","1️⃣"],["요한이서","2️⃣"],["요한삼서","3️⃣"],["요한계시록","✨"]]
+  ]
+};
+SETS.mix=[SETS.ot[0],SETS.nt[0],SETS.ot[2],SETS.nt[2],SETS.ot[4],SETS.nt[3],SETS.ot[3],SETS.nt[4],SETS.ot[6]];
+const COLORS=["var(--lime)","var(--sky)","var(--org)","var(--lav)","var(--mint)","var(--gold)","#ff9ac6","#a7f3d0"];
+const BPM_STEP=10,BPM_MAX=170;
+
+/* ---- 소리 (파일 없이 합성) ---- */
+let ctx=null;
+const unlock=()=>{try{if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume()}catch(e){}};
+function kick(t){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.14);g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+.22)}
+function snare(t){const n=ctx.sampleRate*.15,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
+  const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();s.buffer=b;f.type="highpass";f.frequency.value=1500;g.gain.setValueAtTime(.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.15);s.connect(f).connect(g).connect(ctx.destination);s.start(t)}
+function blip(t,f){const o=ctx.createOscillator(),g=ctx.createGain();o.type="square";o.frequency.value=f;g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.1);o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+.12)}
+
+/* ---- 진행 ---- */
+let round=0,bpm=90,running=false,timer=null,step=0,cells=[];
+const rnd=n=>Math.floor(Math.random()*n);
+function makeRound(){
+  const set=SETS[$("#selSet").value],pool=set[Math.min(round,set.length-1)];
+  /* 8칸: 앞 판은 같은 이름 두 번씩, 뒤 판은 섞어서 */
+  let arr=[];
+  if(round<2){for(let i=0;i<4;i++){const p=pool[i%pool.length];arr.push(p,p)}}
+  else{for(let i=0;i<8;i++)arr.push(pool[rnd(pool.length)]);if(new Set(arr.map(a=>a[0])).size<2)arr[7]=pool.find(p=>p[0]!==arr[0][0])||arr[7]}
+  cells=arr;
+  const st=$("#stage");st.querySelectorAll(".cell").forEach(c=>c.remove());
+  arr.forEach(([n,e],i)=>{const d=document.createElement("div");d.className="cell";d.style.setProperty("--c",COLORS[i]);d.innerHTML=`<span class="no">${i+1}</span><span class="emo">${e}</span><span class="nm">${n}</span>`;st.appendChild(d)});
+  $("#cRound").textContent=`${round+1}판`;$("#cBpm").textContent=`${bpm} BPM`;
+}
+/* 한 판 = 준비 4박(쿵짝쿵짝) + 이름 8박 + 쉼 2박 */
+function tick(){
+  const beat=60/bpm,now=ctx.currentTime+.02;
+  if(step<4){                                   /* 준비 */
+    (step%2?snare:kick)(now);blip(now,step===3?1320:880);
+    $("#ov").classList.add("on");$("#ovBig").textContent=4-step;
+    $("#dots").querySelectorAll("i").forEach((d,i)=>d.classList.toggle("on",i<=step));
+    $("#ovSub").textContent=`${round+1}판 · ${bpm} BPM · 준비~`;
+  }else if(step<12){                            /* 이름 8박 */
+    $("#ov").classList.remove("on");
+    (step%2?snare:kick)(now);
+    const i=step-4,all=$("#stage").querySelectorAll(".cell");
+    all.forEach((c,j)=>{c.classList.toggle("on",j===i);c.classList.toggle("done",j<i)});
+  }else if(step<14){                            /* 쉼 */
+    $("#stage").querySelectorAll(".cell").forEach(c=>{c.classList.remove("on");c.classList.add("done")});
+    if(step===12)blip(now,660);
+  }
+  step++;
+  if(step>=14){                                 /* 다음 판: 빨라짐 */
+    round++;
+    const set=SETS[$("#selSet").value];
+    if(round>=set.length+2){finish();return}
+    bpm=Math.min(BPM_MAX,bpm+BPM_STEP);step=0;makeRound();
+  }
+  timer=setTimeout(tick,beat*1000);
+}
+function start(){unlock();if(running)return;running=true;$("#bGo").textContent="⏸ 멈춤";if(!cells.length)makeRound();tick()}
+function pause(){running=false;clearTimeout(timer);$("#bGo").textContent="▶ 계속";$("#ov").classList.add("on");$("#ovBig").textContent="⏸";$("#ovSub").textContent="스페이스바로 계속";}
+function finish(){running=false;clearTimeout(timer);$("#bGo").textContent="▶ 다시";$("#ov").classList.add("on");$("#ovBig").textContent="🎉";
+  $("#ovSub").textContent=`끝까지 성공! 최고 속도 ${bpm} BPM`;[0,.15,.3].forEach((d,i)=>blip(ctx.currentTime+d,[784,988,1318][i]));round=0;bpm=+$("#selBpm").value;cells=[];step=0}
+function reset(){running=false;clearTimeout(timer);round=0;step=0;bpm=+$("#selBpm").value;cells=[];makeRound();
+  $("#bGo").textContent="▶ 시작";$("#ov").classList.add("on");$("#ovBig").textContent="🎵";$("#dots").querySelectorAll("i").forEach(d=>d.classList.remove("on"));
+  $("#ovSub").textContent="스페이스바 또는 아래 ▶ 시작을 누르세요 · 판마다 점점 빨라져요!"}
+function nextRound(){clearTimeout(timer);round++;bpm=Math.min(BPM_MAX,bpm+BPM_STEP);step=0;makeRound();if(running)tick()}
+$("#bGo").addEventListener("click",()=>running?pause():start());
+$("#bNext").addEventListener("click",()=>{unlock();nextRound()});
+$("#bReset").addEventListener("click",reset);
+$("#selSet").addEventListener("change",reset);$("#selBpm").addEventListener("change",reset);
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="SELECT")return;
+  if(e.code==="Space"){e.preventDefault();running?pause():start()}
+  else if(e.key==="ArrowRight"){unlock();nextRound()}
+  else if(e.key==="r"||e.key==="R")reset();
+});
+reset();
+}
+</script>
+</body>
+</html>
