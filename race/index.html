@@ -367,7 +367,7 @@ function edits(results,joins){
     fix(d,o){const v=ov.get(d);if(v){o.n=v.n;o.g=v.g}return o}};
 }
 /* 개인 1·2·3등 보너스 — 그 학생의 조 합산에 더해짐 */
-const BONUS=[5,3,2];
+const BONUS=[20,10,5];
 function deviceId(){let d=store.get("race3-did");if(!d){d=Math.random().toString(36).slice(2,10);store.set("race3-did",d)}return d}
 const KEYR=rid=>"race3-r-"+rid;
 
