@@ -62,6 +62,7 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .qtext{font:900 clamp(20px,6vw,26px)/1.45 "Noto Sans KR",sans-serif;text-align:center;margin:4px 0;min-height:3em;display:flex;align-items:center;justify-content:center;word-break:keep-all}
 .qopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .qopt{appearance:none;border:3px solid var(--line);background:var(--card);color:var(--ink);font:900 clamp(20px,6vw,26px) "Noto Sans KR",sans-serif;min-height:84px;border-radius:14px;box-shadow:4px 4px 0 var(--line);cursor:pointer;padding:6px;word-break:keep-all}
+.qpass{appearance:none;border:2px solid var(--line);background:transparent;color:var(--mut);font:900 16px "Noto Sans KR",sans-serif;border-radius:12px;padding:10px;cursor:pointer}
 .qopt:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--line)}
 .qopt.ok{background:#2bd46b;color:#fff}.qopt.ng{background:var(--pink);color:#fff}
 .qtimer{height:8px;border-radius:6px;background:#eee;overflow:hidden}.qtimer i{display:block;height:100%;background:#2bd46b;width:100%}
@@ -232,7 +233,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
     <ol class="rules">
       <li>성경 인물·지명·단어·책 문제가 나오고, <b>4개 보기</b> 중 정답을 고르세요</li>
       <li><b>3초 안에</b> 맞히면 <b>+10점</b>, 그 뒤에 맞히면 <b>+5점</b></li>
-      <li>틀리면 <b>−2점</b>, 바로 다음 문제로 넘어가요</li>
+      <li>틀리면 <b>−2점</b>. 모르면 <b>패스</b>(0점)하고 다음 문제로!</li>
       <li>시간은 <b>2분</b>. 진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
   </div>
@@ -593,8 +594,15 @@ const FAST_MS=3000;
 let deck=[],qi=0,qcur=null,qStart=0,lock=false,hintT=null;
 const qlive=()=>!!st.tick&&Date.now()<st.endAt;
 function buildQuiz(){
-  $("#stage").innerHTML=`<p class="qcat" id="qCat"></p><p class="qtext" id="qText"></p><div class="qtimer" id="qTm"><i></i></div><p class="qpts" id="qPts"></p><div class="qopts" id="qOpts"></div><p class="reveal" id="qRev"></p>`;
+  $("#stage").innerHTML=`<p class="qcat" id="qCat"></p><p class="qtext" id="qText"></p><div class="qtimer" id="qTm"><i></i></div><p class="qpts" id="qPts"></p><div class="qopts" id="qOpts"></div><button class="qpass" id="qPass">모르겠어요 · 패스 (0점)</button><p class="reveal" id="qRev"></p>`;
   $("#qOpts").addEventListener("click",e=>{const b=e.target.closest(".qopt");if(b)pick(b)});
+  $("#qPass").addEventListener("click",()=>{
+    if(lock||!qlive()||!qcur)return;lock=true;clearTimeout(hintT);
+    st.streak=0;hud();
+    $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
+    $("#qRev").textContent=`패스 · 정답은 「${qcur[0]}」`;
+    setTimeout(()=>next(true),700);
+  });
 }
 function next(keep){
   if(!$("#qOpts"))buildQuiz();
