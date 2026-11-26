@@ -159,6 +159,13 @@ input:focus{outline:3px solid var(--pink);outline-offset:2px}
 .gname{display:inline-block;align-self:flex-start;margin:0;background:var(--line);color:var(--bg);font:900 15px "Noto Sans KR",sans-serif;padding:5px 14px;border-radius:999px}
 .plinks{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .plinks .btn{display:block;text-align:center;text-decoration:none;font-size:17px;padding:12px 6px}
+.rightx,.wrongx{position:absolute;inset:-3px;z-index:6;border-radius:16px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:10px;animation:wx .45s ease-out}
+.rightx{background:rgba(15,157,74,.93)}.wrongx{background:rgba(232,37,59,.93)}
+.rightx b,.wrongx b{font:400 clamp(100px,34vw,160px)/1 "Black Han Sans",sans-serif}
+.rightx span,.wrongx span{font:400 clamp(28px,8.5vw,42px) "Black Han Sans",sans-serif}
+.rightx em,.wrongx em{font-style:normal;font:900 clamp(20px,6vw,28px) "Noto Sans KR",sans-serif;background:rgba(0,0,0,.25);border-radius:12px;padding:6px 16px}
+@keyframes wx{0%{opacity:0;transform:scale(1.12)}18%{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.rightx,.wrongx{animation:none}}
 .gonav{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:900 14px "Noto Sans KR",sans-serif}
 .gonav span{color:var(--mut);margin-right:4px}
 .gonav a{color:var(--ink);text-decoration:none;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px 10px}
@@ -749,26 +756,32 @@ function next(keep){
   qStart=Date.now();faceK=-1;faceTick();clearInterval(faceT);faceT=setInterval(faceTick,200);
   if(!keep)$("#qRev").textContent="";
 }
+/* 맞히면 초록 O, 틀리면 빨간 X — 카드 전체에 크게 보여 주고 다음 문제로 */
+function mark(ok,big,sub,ms){
+  const o=document.createElement("div");o.className=ok?"rightx":"wrongx";
+  o.innerHTML=`<b>${ok?"O":"X"}</b><span>${big}</span>${sub?`<em>${sub}</em>`:""}`;$("#stage").appendChild(o);
+  setTimeout(()=>{o.remove();if(qlive())next(true)},ms);
+}
 function pick(b){
   if(lock||!qlive()||!qcur)return;
   lock=true;clearTimeout(hintT);
   const a=b.dataset.a;
   if(a===qcur[0]){
     const fast=!isNS&&Date.now()-qStart<=FAST_MS;if(fast)st.cs++;
-    b.classList.add("ok");good(isNS?NS_PTS:fast?10:5);
+    const p=isNS?NS_PTS:fast?10:5;
+    b.classList.add("ok");good(p);
     $("#qRev").textContent=`✓ 정답! 「${qcur[0]}」`;
-    setTimeout(()=>next(true),250);
+    mark(true,`딩동댕! +${p}점`,fast?"⚡ 3초 안에 정답!":isNS?"😆 넌센스 보너스!":"",450);
   }else{
     b.classList.add("ng");
-    if(isNS){
-      $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
-      $("#qRev").textContent=`😆 정답은 「${qcur[0]}」 (감점 없음)`;setTimeout(()=>next(true),1100);return;
-    }
     $("#qOpts").querySelectorAll(".qopt").forEach(x=>{if(x.dataset.a===qcur[0])x.classList.add("ok")});
-    st.streak=0;st.no++;st.score=Math.max(0,st.score-2);hud();buzz([60,40,60]);pop("−2");
-    const sg=$("#stage");sg.classList.add("shake");setTimeout(()=>sg.classList.remove("shake"),300);
+    if(isNS){
+      $("#qRev").textContent=`😆 정답은 「${qcur[0]}」 (감점 없음)`;
+      mark(false,"아쉬워요! (감점 없음)",`정답: ${qcur[0]}`,1200);return;
+    }
+    st.streak=0;st.no++;st.score=Math.max(0,st.score-2);hud();buzz([60,40,60]);
     $("#qRev").textContent=`✗ 정답은 「${qcur[0]}」`;
-    setTimeout(()=>next(true),900);
+    mark(false,"땡! −2점",`정답: ${qcur[0]}`,1000);
   }
 }
 
