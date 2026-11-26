@@ -52,6 +52,10 @@ h2.sv{margin-top:22px}
 .team ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .team li{background:#fff;border:3px solid var(--ink);border-radius:12px;padding:5px 10px;font:900 20px "Noto Sans KR",sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px}
 .team li.lead::after{content:"⭐";margin-left:auto;font-size:15px}
+.team li[draggable]{cursor:grab}.team li.dragging{opacity:.35}
+.team.over{outline:5px dashed var(--ink);outline-offset:4px;transform:scale(1.02)}
+.team li.before{box-shadow:0 -6px 0 var(--pink)}
+.btn.sv2{background:var(--gold)}.btn.sv2.dirty{background:var(--pink);color:#fff}
 .team li.sel{background:var(--ink);color:#fff}
 .team.drop h3{text-decoration:underline wavy var(--pink)}
 .empty{padding:60px 20px;text-align:center;color:var(--mut);font:400 24px "Black Han Sans",sans-serif;border:4px dashed #c9bfa5;border-radius:22px}
@@ -98,7 +102,8 @@ body.big .team h3{font-size:46px}body.big .team li{font-size:28px}
 
     <section class="result">
       <div class="bar">
-        <span class="tip">이름 두 개를 차례로 누르면 자리 바꾸기 · 이름 누르고 조 이름 누르면 그 조로 옮기기</span>
+        <span class="tip">이름을 <b>끌어서</b> 다른 조로 옮기기</span>
+        <button class="btn sv2" id="svQuick">💾 저장</button>
         <button class="btn" id="again">🔀 다시 섞기</button>
         <button class="btn" id="big">📺 큰 화면</button>
         <button class="btn" id="copy">📋 복사</button>
@@ -156,8 +161,8 @@ function make(){
 }
 function render(){
   if(!teams.length){$("#out").innerHTML=`<p class="empty">왼쪽에 이름을 넣고<br>🎲 랜덤 편성을 누르세요</p>`;return}
-  $("#out").innerHTML=`<div class="teams">${teams.map((t,ti)=>`<div class="team${sel?" drop":""}" style="--c:var(${COL[ti%COL.length]})"><h3 data-t="${ti}">${ti+1}조 <small>${t.length}명</small></h3><ul>${
-    t.map((p,i)=>`<li class="${p.lead?"lead":""}${sel&&sel.t===ti&&sel.i===i?" sel":""}" data-t="${ti}" data-i="${i}">${esc(p.n)}</li>`).join("")}</ul></div>`).join("")}</div>`;
+  $("#out").innerHTML=`<div class="teams">${teams.map((t,ti)=>`<div class="team${sel?" drop":""}" data-team="${ti}" style="--c:var(${COL[ti%COL.length]})"><h3 data-t="${ti}">${ti+1}조 <small>${t.length}명</small></h3><ul>${
+    t.map((p,i)=>`<li draggable="true" class="${p.lead?"lead":""}${sel&&sel.t===ti&&sel.i===i?" sel":""}" data-t="${ti}" data-i="${i}">${esc(p.n)}</li>`).join("")}</ul></div>`).join("")}</div>`;
 }
 /* 섞이는 연출 후 결과 */
 function roll(){
@@ -166,18 +171,33 @@ function roll(){
   $("#out").classList.add("shuffling");
   const iv=setInterval(()=>{
     const s=shuffle(P);let o=0;teams=final.map(t=>t.map(()=>s[o++]));render();
-    if(++k>=12){clearInterval(iv);teams=final;$("#out").classList.remove("shuffling");render();toast(`🎉 ${teams.length}개 조 편성 완료!`)}
+    if(++k>=12){clearInterval(iv);teams=final;$("#out").classList.remove("shuffling");render();markDirty();toast(`🎉 ${teams.length}개 조 편성 완료!`)}
   },90);
 }
 $("#out").addEventListener("click",e=>{
   const h=e.target.closest("h3[data-t]"),li=e.target.closest("li[data-t]");
-  if(h&&sel){const t=+h.dataset.t;if(t!==sel.t){const [p]=teams[sel.t].splice(sel.i,1);teams[t].push(p);toast(`${p.n} → ${t+1}조`)}sel=null;save();render();return}
+  if(h&&sel){const t=+h.dataset.t;if(t!==sel.t){const [p]=teams[sel.t].splice(sel.i,1);teams[t].push(p);toast(`${p.n} → ${t+1}조`);markDirty()}sel=null;save();render();return}
   if(!li)return;const t=+li.dataset.t,i=+li.dataset.i;
   if(!sel){sel={t,i};render();return}
   if(sel.t===t&&sel.i===i){sel=null;render();return}
   const a=teams[sel.t][sel.i],b=teams[t][i];teams[sel.t][sel.i]=b;teams[t][i]=a;
-  toast(`${a.n} ⇄ ${b.n}`);sel=null;save();render();
+  toast(`${a.n} ⇄ ${b.n}`);markDirty();sel=null;save();render();
 });
+let dirty=false;
+function markDirty(v=true){dirty=v;const b=$("#svQuick");if(b){b.classList.toggle("dirty",dirty);b.textContent=dirty?"💾 저장 (바뀜)":"💾 저장"}}
+/* ---- 끌어서 옮기기 ---- */
+let drag=null;
+$("#out").addEventListener("dragstart",e=>{const li=e.target.closest("li[data-t]");if(!li)return;drag={t:+li.dataset.t,i:+li.dataset.i};li.classList.add("dragging");e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",li.textContent)}catch(_){}});
+$("#out").addEventListener("dragend",()=>{drag=null;document.querySelectorAll(".over,.before,.dragging").forEach(x=>x.classList.remove("over","before","dragging"))});
+$("#out").addEventListener("dragover",e=>{const tm=e.target.closest(".team");if(!tm||!drag)return;e.preventDefault();
+  document.querySelectorAll(".over,.before").forEach(x=>x.classList.remove("over","before"));tm.classList.add("over");
+  const li=e.target.closest("li[data-t]");if(li)li.classList.add("before")});
+$("#out").addEventListener("drop",e=>{const tm=e.target.closest(".team");if(!tm||!drag)return;e.preventDefault();
+  const to=+tm.dataset.team,li=e.target.closest("li[data-t]");
+  const [p]=teams[drag.t].splice(drag.i,1);
+  let at=teams[to].length;if(li){at=+li.dataset.i;if(drag.t===to&&drag.i<at)at--}
+  teams[to].splice(at,0,p);
+  if(drag.t!==to)toast(`${p.n} → ${to+1}조`);drag=null;sel=null;markDirty();save();render()});
 function save(){try{localStorage.setItem(KEY,JSON.stringify({names:$("#names").value,mode:mode(),num:$("#num").value,teams}))}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(!d)return;$("#names").value=d.names||"";$("#num").value=d.num||5;
   const r=document.querySelector(`input[name=mode][value="${d.mode}"]`);if(r)r.checked=true;teams=Array.isArray(d.teams)?d.teams:[]}catch(e){}}
@@ -195,17 +215,23 @@ $("#svBtn").addEventListener("click",()=>{
   if(!teams.length)return toast("먼저 편성해 주세요");
   const name=$("#svName").value.trim()||`조 편성 ${stamp(Date.now())}`;
   const a=saves(),same=a.findIndex(x=>x.name===name);
-  if(same>=0&&!confirm(`'${name}'이(가) 이미 있어요. 덮어쓸까요?`))return;
+  if(same>=0&&a[same].id!==curSave&&!confirm(`'${name}'이(가) 이미 있어요. 덮어쓸까요?`))return;
   const item={id:same>=0?a[same].id:Date.now().toString(36),name,at:Date.now(),names:$("#names").value,mode:mode(),num:$("#num").value,teams};
   if(same>=0)a[same]=item;else a.unshift(item);
-  putSaves(a.slice(0,30));curSave=item.id;$("#svName").value="";renderSaves();toast(`💾 '${name}' 저장됨`);
+  putSaves(a.slice(0,30));curSave=item.id;$("#svName").value="";renderSaves();markDirty(false);toast(`💾 '${name}' 저장됨`);
+});
+$("#svQuick").addEventListener("click",()=>{
+  if(!teams.length)return toast("먼저 편성해 주세요");
+  const cur=saves().find(x=>x.id===curSave);
+  if(cur&&!$("#svName").value.trim())$("#svName").value=cur.name;
+  $("#svBtn").click();
 });
 $("#svName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#svBtn").click()});
 $("#svList").addEventListener("click",e=>{
   const a=saves(),ld=e.target.closest("[data-ld]"),del=e.target.closest("[data-del]");
   if(ld){const x=a[+ld.dataset.ld];if(!x)return;$("#names").value=x.names||"";$("#num").value=x.num||5;
     const r=document.querySelector(`input[name=mode][value="${x.mode}"]`);if(r)r.checked=true;
-    teams=x.teams;sel=null;curSave=x.id;update();render();renderSaves();toast(`📂 '${x.name}' 불러옴`);return}
+    teams=x.teams;sel=null;curSave=x.id;update();render();renderSaves();markDirty(false);toast(`📂 '${x.name}' 불러옴`);return}
   if(del){const x=a[+del.dataset.del];if(!x||!confirm(`'${x.name}'을(를) 삭제할까요?`))return;
     a.splice(+del.dataset.del,1);putSaves(a);if(curSave===x.id)curSave=null;renderSaves();toast(`🗑 '${x.name}' 삭제됨`)}
 });
@@ -217,7 +243,7 @@ $("#go").addEventListener("click",roll);
 /* 비우기: 이름과 지금 편성만 지움 (저장한 편성은 그대로) */
 $("#clear").addEventListener("click",()=>{
   if(($("#names").value.trim()||teams.length)&&!confirm("이름과 지금 편성을 모두 지울까요?\n(저장한 편성은 그대로 남아요)"))return;
-  $("#names").value="";teams=[];sel=null;curSave=null;update();render();renderSaves();$("#names").focus();toast("🧹 비웠어요");
+  $("#names").value="";teams=[];sel=null;curSave=null;update();render();renderSaves();markDirty(false);$("#names").focus();toast("🧹 비웠어요");
 });
 $("#again").addEventListener("click",roll);
 $("#big").addEventListener("click",()=>{const on=document.body.classList.toggle("big");$("#big").textContent=on?"↩ 돌아가기":"📺 큰 화면"});
