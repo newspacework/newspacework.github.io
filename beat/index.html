@@ -137,7 +137,15 @@ const BPM_STEP=10,BPM_MAX=300;   /* 판마다 +10 BPM, 실패할 때까지 계�
 
 /* ---- 소리 (파일 없이 합성) ---- */
 let ctx=null;
-const unlock=()=>{try{if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume()}catch(e){}};
+/* 소리 장치를 미리 깨워 둠: 첫 클릭/키 입력 때 켜고, 거의 안 들리는 소리를 계속 흘려
+   블루투스·HDMI 스피커가 절전으로 앞 박자를 먹지 않게 함 */
+let keep=null;
+const unlock=()=>{try{
+  if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
+  if(ctx.state==="suspended")ctx.resume();
+  if(!keep){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=40;g.gain.value=.0015;o.connect(g).connect(ctx.destination);o.start();keep=o}
+}catch(e){}};
+["pointerdown","keydown","touchstart"].forEach(ev=>document.addEventListener(ev,unlock,{capture:true,passive:true}));
 function kick(t){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.14);g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+.22)}
 function snare(t){const n=ctx.sampleRate*.15,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
   const s=ctx.createBufferSource(),f=ctx.createBiquadFilter(),g=ctx.createGain();s.buffer=b;f.type="highpass";f.frequency.value=1500;g.gain.setValueAtTime(.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.15);s.connect(f).connect(g).connect(ctx.destination);s.start(t)}
@@ -194,7 +202,7 @@ function makeRound(){
 }
 /* 한 판 = 준비 4박(쿵짝쿵짝) + 이름 8박 + 쉼 2박 */
 function tick(){
-  const beat=60/bpm,now=ctx.currentTime+.02;
+  const beat=60/bpm,now=ctx.currentTime+.03;
   if(step<4){                                   /* 준비 */
     (step%2?snare:kick)(now);blip(now,step===3?1320:880);
     $("#ov").classList.add("on");$("#ovBig").textContent=4-step;
@@ -217,7 +225,12 @@ function tick(){
   }
   timer=setTimeout(tick,beat*1000);
 }
-function start(){unlock();if(running)return;if(!cur&&teams.length&&!start.warned){start.warned=true;toast("오른쪽에서 도전할 조를 먼저 눌러 주세요 (연습은 그냥 시작)",2600)}running=true;$("#bGo").textContent="⏸ 멈춤";if(!cells.length)makeRound();tick()}
+function start(){unlock();if(running)return;if(!cur&&teams.length&&!start.warned){start.warned=true;toast("오른쪽에서 도전할 조를 먼저 눌러 주세요 (연습은 그냥 시작)",2600)}running=true;$("#bGo").textContent="⏸ 멈춤";if(!cells.length)makeRound();
+  /* 소리 장치가 완전히 켜진 뒤 첫 박 시작 (처음 한 번만 조금 기다림) */
+  const go=()=>{if(running)tick()};
+  const p=ctx&&ctx.state!=="running"&&ctx.resume?ctx.resume():null;
+  const wait=start.warm?60:350;start.warm=true;
+  (p?p.then(()=>setTimeout(go,wait),()=>setTimeout(go,wait)):setTimeout(go,wait))}
 function pause(){running=false;clearTimeout(timer);$("#bGo").textContent="▶ 계속";$("#ov").classList.add("on");$("#ovBig").textContent="⏸";$("#ovSub").textContent="스페이스바로 계속";}
 function finish(){running=false;clearTimeout(timer);record(cleared,true);if(cur)toast(`🎉 ${cur} 완주! ${cleared}판 + 보너스 ${PTS_FINISH} = ${cleared*PTS_ROUND+PTS_FINISH}점`,3500);cleared=0;$("#bGo").textContent="▶ 다시";$("#ov").classList.add("on");$("#ovBig").textContent="🎉";
   $("#ovSub").textContent=`끝까지 성공! 최고 속도 ${bpm} BPM`;[0,.15,.3].forEach((d,i)=>blip(ctx.currentTime+d,[784,988,1318][i]));round=0;bpm=+$("#selBpm").value;cells=[];step=0}
