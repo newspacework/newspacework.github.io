@@ -276,6 +276,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
   <h1 id="waitTitle">퀴즈 대기 중!</h1>
   <p class="big pulse" id="waitNum">READY</p>
   <div class="card res"><p class="name" id="waitWho"></p><p class="note" id="waitNote" style="font-size:16px">진행자가 시작 버튼을 누르면 자동으로 시작돼요.<br>화면을 끄지 말고 기다려 주세요!</p></div>
+  <button class="btn sub" id="reEdit">✎ 이름·조 고치기 <small style="font-size:14px">(시작 전까지)</small></button>
   <p class="note" id="waitConn" style="text-align:center"></p>
 </section>
 
@@ -465,17 +466,27 @@ $("#goBtn").addEventListener("click",()=>{
   const n=$("#nm").value.trim(),g=normG($("#grp").value);
   const bad=!n?$("#nm"):(!g&&!practice?$("#grp"):null);
   if(bad){bad.focus();bad.classList.add("shake");setTimeout(()=>bad.classList.remove("shake"),300);return}
+  const changed=!!st.name&&(st.name!==n||st.grp!==g);
   st.name=n;st.grp=g;
   try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}
   if(practice){waitScreen();countdown(Date.now()+3000,()=>Date.now()+DUR*1000);return}
   waitScreen();
   post(RES,{t:"j",d:deviceId(),n,g}).catch(()=>{});
+  if(changed)setTimeout(()=>post(RES,{t:"e",d:deviceId(),n,g}).catch(()=>{}),800);   /* 학생이 직접 고친 이름·조 → 큰 화면·관리자에 반영 */
   if(race&&Date.now()<race.endAt&&!store.get(KEYR(race.rid)))joinRace();
 });
+$("#reEdit").addEventListener("click",()=>{
+  if(phase!=="waiting")return;              /* 시작(카운트다운) 후에는 못 고침 */
+  phase="form";show("start");
+  $("#nm").value=st.name;$("#grp").value=st.grp;
+  $("#modeNote").textContent="고친 다음 '준비 완료!'를 다시 눌러 주세요";
+  $("#goBtn").textContent="고친 이름으로 준비 완료!";$("#nm").focus();
+});
 function waitScreen(){
-  phase="waiting";show("wait");
+  phase="waiting";show("wait");$("#goBtn").textContent="준비 완료!";
   $("#waitTitle").textContent="퀴즈 대기 중!";$("#waitNum").textContent="READY";$("#waitNum").classList.add("pulse");
   $("#waitWho").textContent=st.grp?`${st.name} · ${st.grp}`:st.name;
+  $("#reEdit").style.display=practice?"none":"block";
 }
 function joinRace(){
   const r=race;st.rid=r.rid;
@@ -483,7 +494,7 @@ function joinRace(){
   countdown(r.startAt,()=>r.endAt);
 }
 function countdown(at,endFn){
-  phase="countdown";show("wait");$("#waitNum").classList.remove("pulse");$("#waitTitle").textContent="곧 시작!";
+  phase="countdown";$("#reEdit").style.display="none";show("wait");$("#waitNum").classList.remove("pulse");$("#waitTitle").textContent="곧 시작!";
   clearInterval(cdTimer);
   cdTimer=setInterval(()=>{const l=at-Date.now();if(l<=0){clearInterval(cdTimer);begin(endFn());return}$("#waitNum").textContent=Math.ceil(l/1000)},100);
 }
