@@ -157,7 +157,7 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
     <a href="#" data-qr="race" style="--c:var(--c2)" title="종목 2 · 레이스">🏎️</a><i></i>
     <a href="#" data-qr="mole" style="--c:var(--c3)" title="종목 3 · 두더지">🔨</a><i></i>
     <a href="#" data-qr="quiz" style="--c:var(--c4)" title="종목 4 · 성경 퀴즈">📖</a><i></i>
-    <a href="#" data-qr="tap" style="--c:var(--c5)" title="종목 5 · 줄다리기">👆</a><i></i>
+    <a href="#" data-qr="tap" style="--c:var(--c5)" title="종목 5 · 연타 배틀">👆</a><i></i>
     <a class="fin" href="./total/" title="시상대">🏆</a>
   </nav>
 
@@ -184,9 +184,9 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
       <p>3초 안에 맞히면 +10점! 성경 실력과 순발력을 동시에.</p>
       <div class="acts"><button class="act qrbtn" data-g="quiz">📷 입장 QR</button><a class="act" href="./quiz/#board" target="_blank" rel="noopener">📺 큰 화면</a><a class="act" href="./quiz/#admin" target="_blank" rel="noopener">🛠 관리자</a><a class="act" href="./quiz/#practice" target="_blank" rel="noopener">🎮 연습</a></div></div>
     <div class="ev" style="--c:var(--c5)"><span class="no">종목 5</span><span class="time">30초</span>
-      <div class="head"><span class="emo">👆</span><h3>조 대항<br>연타 줄다리기</h3></div>
+      <div class="head"><span class="emo">👆</span><h3>조 대항<br>연타 배틀</h3></div>
       <div class="tags"><span>조 대항</span><span>💪 마무리</span></div>
-      <p>버튼을 마구마구 두드려 우리 조 쪽으로 줄을 끌어와요!</p>
+      <p>30초 동안 버튼을 마구마구 두드려요! 조원 1인당 평균 연타로 1등 조를 가려요.</p>
       <div class="acts"><button class="act qrbtn" data-g="tap">📷 입장 QR</button><a class="act" href="./tap/#board" target="_blank" rel="noopener">📺 큰 화면</a><a class="act" href="./tap/#admin" target="_blank" rel="noopener">🛠 관리자</a><a class="act" href="./tap/#practice" target="_blank" rel="noopener">🎮 연습</a></div></div>
   </div>
 
@@ -200,7 +200,7 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
   </a>
 
   <div class="rules">
-    <div class="rule"><b>👥 조별 점수</b><span>종목마다 조원 점수를 모두 더해요. <em>줄다리기</em> 승부만 조원 1인당 평균으로 겨뤄요.</span></div>
+    <div class="rule"><b>👥 조별 점수</b><span>종목마다 조원 점수를 모두 더해요. <em>연타 배틀</em> 승부만 조원 1인당 평균으로 겨뤄요.</span></div>
     <div class="rule"><b>🥇 개인 보너스</b><span>종목마다 개인 1·2·3등은 우리 조에 <em>+20 / +10 / +5점</em>을 더 가져다줘요.</span></div>
     <div class="rule"><b>📱 같은 폰으로</b><span>모든 종목을 <em>같은 폰</em>으로 해야 점수가 한 사람으로 합쳐져요. 조는 <em>숫자</em>로!</span></div>
   </div>
@@ -218,7 +218,7 @@ footer small{display:block;font:700 12px "Noto Sans KR",sans-serif}
 {
 const $=q=>document.querySelector(q);
 const PIN="7777";                    /* 진행자 PIN — 게임 관리자 화면과 같게 */
-const NAMES={ten:["종목 1","정확히 10초 맞히기",1],race:["종목 2","1분 챌린지 레이스",2],mole:["종목 3","두더지 잡기",3],quiz:["종목 4","성경 스피드 퀴즈",4],tap:["종목 5","조 대항 연타 줄다리기",5]};
+const NAMES={ten:["종목 1","정확히 10초 맞히기",1],race:["종목 2","1분 챌린지 레이스",2],mole:["종목 3","두더지 잡기",3],quiz:["종목 4","성경 스피드 퀴즈",4],tap:["종목 5","조 대항 연타 배틀",5]};
 const base=location.origin+location.pathname.replace(/index\.html$/,"");
 /* PIN 잠금 */
 const OK="nsw-host-ok";

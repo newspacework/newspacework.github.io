@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
-/* 단합대회 종합 순위 — 레이스·두더지·성경 퀴즈·줄다리기·10초 맞히기 점수를 모아 조별·개인별 합산 */
+/* 단합대회 종합 순위 — 레이스·두더지·성경 퀴즈·연타 배틀·10초 맞히기 점수를 모아 조별·개인별 합산 */
 :root{--bg:#1d1f24;--panel:#2a2d34;--line:#4a4d55;--ink:#fff;--mut:#9aa0ad;--gold:#ffd23f;--pink:#ff2e88;
   --race:#e9ff3b;--mole:#ffb547;--quiz:#b9a4ff;--tug:#6ee7b7;--ten:#7dd3fc}
 *{box-sizing:border-box;min-width:0}
@@ -88,7 +88,7 @@ const GAMES=[
   {id:"race",name:"레이스",base:ROOT,salt:"RETREAT-2026",sec:60},
   {id:"mole",name:"두더지",base:ROOT+"-mole",salt:"RETREAT-2026-MOLE",sec:60},
   {id:"quiz",name:"성경퀴즈",base:ROOT+"-quiz",salt:"RETREAT-2026-QUIZ",sec:180},
-  {id:"tug",name:"줄다리기",base:ROOT+"-tug",salt:"RETREAT-2026-TUG",sec:30},
+  {id:"tug",name:"연타 배틀",base:ROOT+"-tug",salt:"RETREAT-2026-TUG",sec:30},
   {id:"ten",name:"10초",base:ROOT+"-ten",salt:"RETREAT-2026-TEN",sec:60}
 ];
 const COUNT=5,BONUS=[20,10,5];
@@ -159,7 +159,7 @@ function peopleTable(list){
 }
 let last={kind:"all",ts:[],ps:[]};
 const gname=id=>(GAMES.find(g=>g.id===id)||{}).name;
-/* 한 게임만 보기: 조별(점수합+보너스, 줄다리기는 1인 평균도)·개인 순위 */
+/* 한 게임만 보기: 조별(점수합+보너스, 연타 배틀은 1인 평균도)·개인 순위 */
 function computeGame(g){
   const list=gameResult(g),tm=new Map();
   for(const x of list){const k=x.g||"조 없음";const T=tm.get(k)||{k,n:0,s:0,bo:0};T.n++;T.s+=x.s;T.bo+=x.bo;tm.set(k,T)}
@@ -202,7 +202,7 @@ function render(){
   const isTap=g.id==="tug";
   $("#mainH").innerHTML=`<em>${esc(g.name)}</em> 성적`;
   $("#tH").textContent=`👥 조별 순위 · ${g.name}`;
-  $("#tSub").textContent=isTap?"총점 = 조원 점수 합 + 개인 1·2·3등 보너스 (종합에 들어가는 점수) · 줄다리기 승부는 1인 평균":"총점 = 조원 점수 합 + 개인 1·2·3등 보너스 (종합에 들어가는 점수)";
+  $("#tSub").textContent=isTap?"총점 = 조원 점수 합 + 개인 1·2·3등 보너스 (종합에 들어가는 점수) · 연타 배틀 승부는 1인 평균":"총점 = 조원 점수 합 + 개인 1·2·3등 보너스 (종합에 들어가는 점수)";
   $("#pH").textContent=`🏅 개인 순위 · ${g.name} TOP 10`;$("#pSub").textContent="이 게임의 가장 최근 판 기록";
   $("#aH").textContent=`📋 ${g.name} 개인 전체 순위`;
   const ts=R.ts,ps=R.ps;

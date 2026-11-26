@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>조 대항 연타 줄다리기</title>
+<title>조 대항 연타 배틀</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -226,12 +226,12 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 <div class="ptoast" id="ptoast"></div>
 <section class="scr on" id="start">
   <div class="tape"></div>
-  <h1>조 대항<br><em>연타</em> 줄다리기</h1>
+  <h1>조 대항<br><em>연타</em> 배틀</h1>
   <div class="card">
     <ol class="rules">
       <li><b>30초</b> 동안 가운데 큰 <b>👆 두드려!</b> 버튼을 <b>최대한 빨리 연타</b>하세요!</li>
       <li>한 번 두드릴 때마다 <b>+1점</b> — 우리 조 줄이 끌려와요</li>
-      <li>줄다리기 승부는 <b>조원 1인당 평균 연타</b>로 정해요 (인원 많은 조가 유리하지 않게)</li>
+      <li>조 승부는 <b>조원 1인당 평균 연타</b>로 정해요 (인원 많은 조가 유리하지 않게)</li>
       <li>개인 연타왕 1·2·3등은 따로 발표!</li>
       <li>진행자가 <b>시작!</b>을 누르면 모두 동시에 시작해요</li>
     </ol>
@@ -311,7 +311,7 @@ table.gs th:first-child,table.gs td:first-child{text-align:left}
 
 <section class="scr" id="board">
   <header class="bhead">
-    <h1>조 대항 <em>연타</em> 줄다리기</h1>
+    <h1>조 대항 <em>연타</em> 배틀</h1>
     <div class="bclock"><small id="bLabel">게임 대기</small><span id="bBig">READY</span></div>
     <div class="bcount"><b id="bWait">0</b> 대기 중<br><b id="bRun">0</b> 게임 중 · <b id="bFin">0</b> 완료</div>
     <div class="bqr"><div class="qr" id="qr"></div><p class="url" id="bUrl"></p></div>
@@ -534,7 +534,7 @@ function bad(){
   pop("−2");
 }
 const guard=fn=>(...a)=>{if(st.frozen||Date.now()>=st.endAt)return;fn(...a)};
-/* ---- 연타 줄다리기 ---- */
+/* ---- 연타 배틀 ---- */
 document.head.insertAdjacentHTML("beforeend",`<style>
 #stage{align-items:center;justify-content:center}
 .tapbtn{appearance:none;border:5px solid var(--line);background:var(--pink);color:#fff;width:min(78vw,340px);aspect-ratio:1;border-radius:50%;box-shadow:0 12px 0 var(--line);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -551,7 +551,7 @@ const rowInfo=x=>`연타 ${x.ok} · 최고 초당 ${x.no}`;
 const TAP_MAX=20;          /* 1초에 20번 넘게 누른 건 안 셈 (오토클릭 방지) */
 let tapLog=[],tpsT=null;
 function playStart(){
-  $("#stage").innerHTML=`<p class="q">버튼을 마구마구 두드리세요! 👆👆👆</p><button class="tapbtn" id="tapBtn"><i class="tapico">👆</i><span>두드려!</span><small id="tapN">0</small></button><p class="note" style="text-align:center">손가락 두 개로 번갈아 두드리면 더 빨라요 💪</p>`;
+  $("#stage").innerHTML=`<p class="q">우리 조를 위해 마구마구 두드리세요! 👆👆👆</p><button class="tapbtn" id="tapBtn"><i class="tapico">👆</i><span>두드려!</span><small id="tapN">0</small></button><p class="note" style="text-align:center">손가락 두 개로 번갈아 두드리면 더 빨라요 💪</p>`;
   tapLog=[];
   const b=$("#tapBtn");
   b.addEventListener("pointerdown",e=>{e.preventDefault();tap()});
@@ -646,7 +646,7 @@ function initBoard(){
     for(const [d,j] of joins)if(j.t>=since&&!rows.has(d))out.push({d,...j});
     return out;
   }
-  /* 줄다리기: 조 승부 = 조원 1인당 평균 연타 */
+  /* 연타 배틀: 조 승부 = 조원 1인당 평균 연타 */
   function renderTeams(list){
     const box=$("#teams"),viz=$("#tugviz");
     if(!list.length){box.innerHTML="";viz.innerHTML="";viz.dataset.k="";$(".bmain").classList.add("solo");return}
@@ -655,7 +655,7 @@ function initBoard(){
     for(const g of gm.values())g.avg=Math.round(g.s/g.n);
     const gs=[...gm.values()].sort((a,b)=>b.avg-a.avg||b.s-a.s||byK(a,b));
     const fin=cur&&Date.now()>=cur.endAt;
-    const head=`<h3>🪢 줄다리기${fin?" · 결과":" · 실시간"}<small>조원 1인당 평균 연타로 겨뤄요</small></h3>`;
+    const head=`<h3>👆 조 대항 연타 배틀${fin?" · 결과":" · 실시간"}<small>조원 1인당 평균 연타로 겨뤄요</small></h3>`;
     if(gs.length===2){
       const [A,B]=[...gs].sort(byK),tot=Math.max(1,A.avg+B.avg);
       const pos=50-Math.max(-44,Math.min(44,(A.avg-B.avg)/tot*300));
@@ -669,7 +669,7 @@ function initBoard(){
       viz.dataset.k="";const top=Math.max(1,gs[0].avg);
       viz.innerHTML=head+`<div class="tbars">${gs.map((g,i)=>`<div><span>${i===0&&fin?"🏆":""}${esc(g.k)}</span><span><b style="width:${Math.max(3,g.avg/top*100)}%"></b></span><span>${g.avg}</span></div>`).join("")}</div>`;
     }
-    box.innerHTML=`<h2>조별 순위${fin?" · 최종":""}</h2><ol class="tlist">${gs.map((g,i)=>`<li><span class="r">${i&&g.avg===gs[i-1].avg?"":i+1}</span><span class="t">${esc(g.k)}<small>${g.n}명 · 합계 ${g.s}</small></span><span class="v">${g.avg}</span><span class="bar2"><i style="width:${Math.max(3,g.avg/Math.max(1,gs[0].avg)*100)}%"></i></span></li>`).join("")}</ol><p class="tnote">큰 숫자 = 조원 1인당 평균 연타 (줄다리기 승부)<br>종합 대시보드에는 다른 게임처럼 합계 + 개인 보너스가 들어가요</p>`+
+    box.innerHTML=`<h2>조별 순위${fin?" · 최종":""}</h2><ol class="tlist">${gs.map((g,i)=>`<li><span class="r">${i&&g.avg===gs[i-1].avg?"":i+1}</span><span class="t">${esc(g.k)}<small>${g.n}명 · 합계 ${g.s}</small></span><span class="v">${g.avg}</span><span class="bar2"><i style="width:${Math.max(3,g.avg/Math.max(1,gs[0].avg)*100)}%"></i></span></li>`).join("")}</ol><p class="tnote">큰 숫자 = 조원 1인당 평균 연타 (조 승부)<br>종합 대시보드에는 다른 게임처럼 합계 + 개인 보너스가 들어가요</p>`+
       `<h2 style="margin-top:20px">💪 연타왕 TOP 3${fin?" · 개인상":""}</h2><ol class="tlist">${list.filter(x=>x.rk<=3).slice(0,5).map(x=>`<li><span class="r">${["🥇","🥈","🥉"][x.rk-1]}</span><span class="t">${esc(x.n)}<small>${esc(x.g||"")} · 최고 초당 ${x.no}</small></span><span class="v">${x.s}</span></li>`).join("")}</ol>`;
     $(".bmain").classList.remove("solo");
   }
