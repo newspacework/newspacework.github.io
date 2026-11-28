@@ -1193,7 +1193,7 @@ function boardTick(){
   tl.textContent=Math.max(0,Math.ceil(left/1000));$("#bTb").style.width=Math.max(0,left/(B.q.s*1000)*100)+"%";$("#bBar").classList.toggle("hurryb",left<=5000);
 }
 const dname=g=>esc(B.depts[g]||"");
-function bFoot(){return `<div class="bfoot"><span>${esc(B.title||"")}</span><span><span id="bConn">● 연결됨</span> · <a href="./">학생 화면</a></span></div>`}
+function bFoot(){return `<div class="bfoot"><span>${esc(B.title||"")}</span><span><span id="bConn">● 연결됨</span> · <a href="./" target="_blank" rel="noopener">학생 화면</a> · <a href="#admin" target="_blank" rel="noopener">🛠 진행자 화면</a></span></div>`}
 function rankRows(top,max){return (top||[]).slice(0,max).map((r,k)=>`<div class="${B.elim&&r[3]===0?"dead":""}"><b>${k+1}</b><span>${esc(r[0])}<em>${dname(r[1])}</em></span><span class="s">${r[2]}${B.elim&&r[3]===0?" 💀":""}</span></div>`).join("")}
 function renderBoard(){
   const el=$("#board");if(!B.rid)return;
