@@ -153,6 +153,12 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .t10 em{font-style:normal;font-size:12px;color:var(--mut);font-weight:700}
 .t10 .s{font:400 22px "Black Han Sans",sans-serif}
 .t10.dead{opacity:.5}
+.subm{display:flex;flex-direction:column;gap:8px;background:#faf7ea;border-radius:12px;padding:10px}
+.subm b{font-size:14px}.subm b.wait{color:#b45309}.subm b.no{color:var(--no)}.subm b.okb{color:var(--ok)}
+.sbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;max-height:30vh;overflow:auto}
+.sb{border-radius:8px;padding:3px 8px;font-size:13px;font-weight:900;border:2px solid}
+.sb em{font-style:normal;font-weight:700;font-size:11px;margin-left:3px;opacity:.7}
+.sb.ok{border-color:var(--ok);background:#dcfce7}.sb.no{border-color:var(--no);background:#ffe4e6}.sb.wait{border-color:#f59e0b;background:#fff7e0}
 .modal{position:fixed;inset:0;background:rgba(28,29,63,.55);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
 .modal .card{width:min(440px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .dist{display:flex;flex-direction:column;gap:5px}
@@ -202,6 +208,7 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .bbar .tl{font:400 7vh/1 "Black Han Sans",sans-serif;width:12vh;text-align:center}
 .bbar .sub{font:900 3vh "Noto Sans KR",sans-serif;color:#c9c6ff;white-space:nowrap}
 .hurryb .tb i{background:var(--no)}.hurryb .tl{color:#ff6b81}
+.bwait{margin:0;text-align:center;font:700 2.6vh "Noto Sans KR",sans-serif;color:#ffd77a;min-height:3vh}
 .bans{background:var(--gold);color:var(--ink);border-radius:2vh;padding:2vh 2vw;text-align:center;font:400 7vh/1.15 "Black Han Sans",sans-serif;word-break:keep-all}
 .bans small{display:block;font:900 2.6vh "Noto Sans KR",sans-serif}
 .bex{text-align:center;font:700 3vh "Noto Sans KR",sans-serif;color:#e6e4ff;margin:0}
@@ -247,7 +254,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
     <ul class="note" style="font-size:14px;padding-left:1.2em;margin:6px 0 0">
       <li>진행자가 문제를 내면 내 폰에 바로 떠요</li>
       <li>4지선다 · O/X · 주관식 · 😆 넌센스까지!</li>
-      <li>맞히면 100점, 빨리 맞힐수록 보너스 최대 +50점</li>
+      <li>한 문제 맞힐 때마다 1점! 다 맞히면 100점 만점으로 계산해요</li>
+      <li>점수가 같으면 더 빨리 답한 사람이 위예요</li>
       <li>답은 한 번만 낼 수 있어요. 신중하게!</li>
     </ul>
   </div>
@@ -313,6 +321,7 @@ const show=id=>{document.querySelectorAll(".scr").forEach(s=>s.classList.toggle(
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 let toastT=null;const toast=t=>{const el=$("#toast");el.textContent=t;el.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("on"),3200)};
 const LET=["①","②","③","④"];
+const fmt1=n=>Math.round((+n||0)*10)/10;
 const TYPE_NAME={mc:"4지선다",ox:"O/X",sa:"주관식"};
 function deviceId(){let d=store.get("bell-did");if(!d){d=Math.random().toString(36).slice(2,10);store.set("bell-did",d)}return d}
 const newId=()=>Math.random().toString(36).slice(2,8);
@@ -648,7 +657,7 @@ function renderPlayer(){
   if(P.phase==="rv"){
     const R=P.rv;let ok=false;
     if(my){if(q.t==="sa")ok=(R.acc||[]).includes(norm(my.a));else ok=my.a===R.cor}
-    const gain=Math.max(0,P.lastS-P.prevS);
+    const gain=fmt1(Math.max(0,P.lastS-P.prevS));
     const ansTxt=q.t==="mc"?`${LET[R.cor]} ${esc(q.o[R.cor])}`:esc(R.ans);
     const verdict=!my&&dead?`<p class="resbig">📣</p><p class="status">탈락했지만 응원 중!</p>`:!my?`<p class="resbig no">🙊</p><p class="status">답을 내지 못했어요</p>`:ok?`<p class="resbig ok">⭕ 정답!</p><p class="status" style="color:var(--ok)">+${gain}점</p>`:`<p class="resbig no">❌</p><p class="status">아쉬워요!</p>`;
     const m=P.me;
@@ -671,7 +680,7 @@ function answer(a){
 /* ======================= 진행자 ======================= */
 const AKEY="bell-admin";
 const DEF_CFG={title:DEFAULT_TITLE,cmode:"grade",cdeps:DEFAULT_DEPTS.join(", "),grades:3,rg:DEF_RG,depts:"중1-1반, 중2-1반, 중3-1반, 고1-1반, 고2-1반, 고3-1반",range:"전체",total:20,mcOn:true,oxOn:true,oxN:4,saOn:true,saN:3,gkOn:false,gkN:2,nsOn:true,nsN:2,myOn:false,myN:3,custom:"",
-  secMC:20,secOX:12,secSA:30,speed:true,elim:false,last2:true,fill:true,autoClose:true};
+  secMC:20,secOX:12,secSA:30,speed:false,elim:false,last2:false,fill:true,autoClose:true};
 let A=null;            /* 저장되는 진행 상태 */
 let L={players:new Map(),ans:new Map(),srv:{q:{},cl:{},rv:{}},resConn:false,ctlConn:false,unsubRes:null,closeT:null,tick:null};
 function saveA(){store.set(AKEY,A)}
@@ -741,7 +750,7 @@ function activeIds(i){const qs=L.srv.q[i]||((A.qT&&A.qT[i])||Date.now());const a
 function computeStandings(){
   /* 점수·생존을 처음부터 다시 계산 */
   const res=new Map();const alive=new Map();
-  for(const [d,p] of L.players){if(excluded(d))continue;res.set(d,{d,n:p.n,g:p.g,s:0,ok:0,ms:0,a:true});alive.set(d,{})}
+  for(const [d,p] of L.players){if(excluded(d))continue;res.set(d,{d,n:p.n,g:p.g,s:0,pts:0,ok:0,ms:0,a:true});alive.set(d,{})}
   const revs=new Set(A.revives||[]);
   for(let i=0;i<A.deck.length;i++){
     for(const [d,r] of res){alive.get(d)[i]=r.a}
@@ -752,18 +761,19 @@ function computeStandings(){
       if(A.cfg.elim&&!r.a)continue;
       const v=validAns(i,d);
       if(v&&isCorrect(q,i,v.a)){
-        const bonus=A.cfg.speed?Math.round(50*Math.max(0,1-v.ms/(q.s*1000))):0;
-        r.s+=(100+bonus)*(q.x||1);r.ok++;r.ms+=v.ms;
+        r.pts+=(q.x||1);r.ok++;r.ms+=v.ms;   /* 한 문제 1점 (마지막 문제 2배면 2점) */
       }else if(A.cfg.elim&&p.jt<=qs+1500)r.a=false;
     }
     if(revs.has(i))for(const r of res.values())r.a=true;
   }
-  const list=[...res.values()].sort((a,b)=>(A.cfg.elim?(b.a-a.a):0)||b.s-a.s||b.ok-a.ok||a.ms-b.ms||a.n.localeCompare(b.n));
+  const maxPts=A.deck.reduce((t,q,i)=>t+(q.x||((A.cfg.last2&&i===A.deck.length-1)?2:1)),0)||1;
+  for(const r of res.values())r.s=fmt1(r.pts/maxPts*100);
+  const list=[...res.values()].sort((a,b)=>(A.cfg.elim?(b.a-a.a):0)||b.pts-a.pts||b.ok-a.ok||a.ms-b.ms||a.n.localeCompare(b.n));
   return {list,alive};
 }
 function scString(list,max=2600){let s=list.map(r=>`${r.d},${r.s},${r.a?1:0},${r.g}`).join(";");while(s.length>max){list=list.slice(0,Math.floor(list.length*.85));s=list.map(r=>`${r.d},${r.s},${r.a?1:0},${r.g}`).join(";")}return s}
 function deptSummary(list){
-  const ds=deptsOf(A.cfg);return ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);const avg=m.length?Math.round(m.reduce((a,r)=>a+r.s,0)/m.length):0;
+  const ds=deptsOf(A.cfg);return ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);const avg=m.length?fmt1(m.reduce((a,r)=>a+r.s,0)/m.length):0;
     return {g:gi,avg,cnt:m.length,top:m.slice(0,ds.length>6?1:ds.length>3?3:5).map(r=>[r.n,r.s,r.a?1:0])}}).filter(x=>x.cnt>0);
 }
 /* ---- 진행 동작 ---- */
@@ -892,8 +902,8 @@ function renderSetup(el){
       <span>O/X 제한 시간</span><span class="row" style="justify-content:flex-start">${numIn("cSecOX",C.secOX,5,120)}<span class="unit">초</span></span>
       <span>주관식 제한 시간</span><span class="row" style="justify-content:flex-start">${numIn("cSecSA",C.secSA,5,180)}<span class="unit">초</span></span>
     </div>
-    <label class="tog"><input type="checkbox" id="cSpeed" ${C.speed?"checked":""}>⚡ 빨리 맞힐수록 보너스 (최대 +50점)</label>
-    <label class="tog"><input type="checkbox" id="cLast2" ${C.last2?"checked":""}>🔥 마지막 문제는 점수 2배</label>
+    <p class="note" style="font-size:14px">📏 점수: 한 문제 1점 → <b>다 맞히면 100점 만점</b>으로 환산 (예: 20문제 중 15개 = 75점) · 같은 점수면 빨리 답한 사람이 위</p>
+    <label class="tog"><input type="checkbox" id="cLast2" ${C.last2?"checked":""}>🔥 마지막 문제는 2점 (2문제 몫)</label>
     <label class="tog"><input type="checkbox" id="cElim" ${C.elim?"checked":""}>🔔 골든벨 탈락제 (틀리면 탈락 · 패자부활 가능)</label>
     <label class="tog"><input type="checkbox" id="cAuto" ${C.autoClose?"checked":""}>모두 답하면 바로 마감</label>
   </div>
@@ -930,7 +940,7 @@ function renderSetup(el){
     c.oxN=Math.max(0,+$("#cOxN").value||0);c.saN=Math.max(0,+$("#cSaN").value||0);c.gkN=Math.max(0,+$("#cGkN").value||0);c.nsN=Math.max(0,+$("#cNsN").value||0);c.myN=Math.max(0,+$("#cMyN").value||0);
     c.custom=$("#cCustom").value;
     c.secMC=Math.max(5,+$("#cSecMC").value||20);c.secOX=Math.max(5,+$("#cSecOX").value||12);c.secSA=Math.max(5,+$("#cSecSA").value||30);
-    c.speed=$("#cSpeed").checked;c.last2=$("#cLast2").checked;c.elim=$("#cElim").checked;c.autoClose=$("#cAuto").checked;
+    c.speed=false;c.last2=$("#cLast2").checked;c.elim=$("#cElim").checked;c.autoClose=$("#cAuto").checked;
     saveA();info();};
   const info=()=>{const c=C2();
     const R=parseRange(c.range);const P=poolsFor(R.books);
@@ -984,6 +994,17 @@ function fillShort(kind){
   const left=(A.want||0)-A.deck.length;
   toast(add.length?`${add.length}문제를 채웠어요${left>0?` (아직 ${left}개 모자라요)`:""}`:"그 종류는 남은 문제가 없어요. 다른 걸로 채워 주세요");
   saveA();drawDeck();
+}
+/* 이 문제 제출 현황: 미제출은 마감되면 오답 */
+function submList(i,q,st,act,m){
+  const ds=deptsOf(A.cfg);const nm=d=>{const p=L.players.get(d);return p?`${esc(p.n)}<em>${esc(ds[p.g]||"")}</em>`:"?"};
+  const open=st==="live";
+  const not=act.filter(d=>!m.has(d)),done=act.filter(d=>m.has(d));
+  const doneChip=d=>{let c="ok",ic="✅";if(st==="revealed"){const v=validAns(i,d);const good=v&&isCorrect(q,i,v.a);c=good?"ok":"no";ic=good?"⭕":"❌"}return `<span class="sb ${c}">${ic} ${nm(d)}</span>`};
+  return `<div class="subm">
+    ${not.length?`<div><b class="${open?"wait":"no"}">${open?"⏳ 아직 안 냄":"❌ 미제출 = 오답"} ${not.length}명</b><div class="sbs">${not.map(d=>`<span class="sb ${open?"wait":"no"}">${open?"⏳":"❌"} ${nm(d)}</span>`).join("")}</div></div>`:(act.length?`<div><b class="okb">🎉 모두 제출했어요</b></div>`:"")}
+    ${done.length?`<div><b class="okb">✅ 제출 ${done.length}명</b>${st==="revealed"?' <span class="note">(⭕ 정답 · ❌ 오답)</span>':""}<div class="sbs">${done.map(doneChip).join("")}</div></div>`:""}
+  </div>`;
 }
 function flash(i){const r=document.querySelector(`.dq[data-i="${i}"]`);if(!r)return;r.style.background="#fff3c4";r.scrollIntoView({block:"nearest"});setTimeout(()=>{r.style.background=""},600)}
 function drawDeck(){
@@ -1055,17 +1076,17 @@ function renderRun(el){
       <p class="qtext" style="font-size:20px">${qTextHtml(q)}</p>
       ${q.t==="mc"?`<div class="note" style="font-size:15px">${q.o.map((o,k)=>`${LET[k]} ${esc(o)}`).join(" &nbsp; ")}</div>`:""}
       <div class="keyans ${keyHidden&&st!=="revealed"?"hide":""}" id="aKey">🔑 정답: <span>${esc(keyTxt)}</span> <small class="note">(눌러서 ${keyHidden?"보이기":"가리기"})</small></div>
-      ${st!=="ready"?`<p style="margin:0;font-weight:900;text-align:center;font-size:20px">제출 ${nAns} / ${act.length}명 ${st==="revealed"?"· 공개 완료":st==="closed"?"· 마감":""}</p>`:""}
+      ${st!=="ready"?`<p style="margin:0;font-weight:900;text-align:center;font-size:20px">제출 ${nAns} / ${act.length}명 ${st==="revealed"?"· 공개 완료":st==="closed"?"· 마감":""}</p>${submList(i,q,st,act,m)}`:""}
       ${dist}${btns}
       ${st==="ready"&&i>0?"":""}
     </div>`;
   }
   const filt=L.filt;const shown=list.map((r,k)=>[r,k]).filter(([r])=>filt==null||r.g===filt);
-  const rows=shown.map(([r,k])=>`<tr class="${r.a?"":"dead"}"><td>${k+1}</td><td>${esc(r.n)}</td><td>${esc(ds[r.g]||"?")}</td><td class="r">${r.s}</td><td>${C.elim?(r.a?"🟢":"💀"):""}</td><td style="white-space:nowrap"><button class="mini" data-ed="${esc(r.d)}">✏️ 수정</button> <button class="mini" data-ex="${esc(r.d)}">제외</button></td></tr>`).join("");
+  const rows=shown.map(([r,k])=>`<tr class="${r.a?"":"dead"}"><td>${k+1}</td><td>${esc(r.n)}</td><td>${esc(ds[r.g]||"?")}</td><td class="r">${r.s}<small class="note" style="display:block;font-weight:700">${r.ok}개 정답</small></td><td>${C.elim?(r.a?"🟢":"💀"):""}</td><td style="white-space:nowrap"><button class="mini" data-ed="${esc(r.d)}">✏️ 수정</button> <button class="mini" data-ex="${esc(r.d)}">제외</button></td></tr>`).join("");
   const clsCards=ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);return `<button class="cls ${filt===gi?"on":""} ${m.length?"":"zero"}" data-cf="${gi}"><b><span>${esc(g)}</span><span>${m.length}명</span></b><div class="nm">${m.length?m.map(r=>esc(r.n)).join(", "):"아직 없음"}</div></button>`}).join("");
   const medal=k=>["🥇","🥈","🥉"][k]||(k+1);
-  const top10=list.slice(0,10).map((r,k)=>`<div class="t10 ${r.a?"":"dead"}"><b>${medal(k)}</b><span>${esc(r.n)} <em>${esc(ds[r.g]||"")}</em></span><span class="s">${r.s}${C.elim&&!r.a?" 💀":""}</span></div>`).join("");
-  const clsAvg=ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);return {g,cnt:m.length,avg:m.length?Math.round(m.reduce((a,r)=>a+r.s,0)/m.length):0}}).filter(x=>x.cnt).sort((a,b)=>b.avg-a.avg);
+  const top10=list.slice(0,10).map((r,k)=>`<div class="t10 ${r.a?"":"dead"}"><b>${medal(k)}</b><span>${esc(r.n)} <em>${esc(ds[r.g]||"")}</em></span><span class="s">${r.s}<small style="font:700 11px 'Noto Sans KR';color:var(--mut)"> 점 · ${r.ok}개</small>${C.elim&&!r.a?" 💀":""}</span></div>`).join("");
+  const clsAvg=ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);return {g,cnt:m.length,avg:m.length?fmt1(m.reduce((a,r)=>a+r.s,0)/m.length):0}}).filter(x=>x.cnt).sort((a,b)=>b.avg-a.avg);
   const topCard=`<div class="card sec"><div class="row" style="justify-content:space-between;flex-wrap:wrap"><h3 style="flex:none">🏆 실시간 순위 TOP 10</h3><span class="note" style="flex:none">${Object.keys(A.rvd||{}).length}문제 공개 후</span></div>
     ${list.length?`<div class="t10s">${top10}</div>`:'<p class="note">아직 참가자가 없어요</p>'}
     ${clsAvg.length>1?`<p class="note" style="margin-top:4px"><b>반별 평균</b> · ${clsAvg.map((x,k)=>`${k+1}. ${esc(x.g)} ${x.avg}점(${x.cnt}명)`).join(" · ")}</p>`:""}</div>`;
@@ -1183,7 +1204,7 @@ function onBoardCtl(x,t){
 function onBoardRes(x,t){
   if(x.r!==B.rid||typeof x.d!=="string")return;
   if(x.t==="j"){B.joins.set(x.d,{n:String(x.n||"").slice(0,10),g:+x.g||0});if(Date.now()-t<10000){B.newest=x.d;B.newAt=Date.now()}if(B.view==="lobby")bSoon()}
-  else if(x.t==="a"){const i=+x.i;if(!B.ans.has(i))B.ans.set(i,new Set());B.ans.get(i).add(x.d);if(B.view==="q"){const el=$("#bNa");if(el)el.textContent=B.ans.get(i).size}}
+  else if(x.t==="a"){const i=+x.i;if(!B.ans.has(i))B.ans.set(i,new Set());B.ans.get(i).add(x.d);if(B.view==="q"){const el=$("#bNa");if(el)el.textContent=B.ans.get(i).size;const w=$("#bWait");if(w)w.innerHTML=boardWait(i)}}
 }
 let brq=0;function bSoon(){if(brq)return;brq=requestAnimationFrame(()=>{brq=0;renderBoard()})}
 function boardTick(){
@@ -1194,6 +1215,9 @@ function boardTick(){
 }
 const dname=g=>esc(B.depts[g]||"");
 function bFoot(){return `<div class="bfoot"><span>${esc(B.title||"")}</span><span><span id="bConn">● 연결됨</span> · <a href="./" target="_blank" rel="noopener">학생 화면</a> · <a href="#admin" target="_blank" rel="noopener">🛠 진행자 화면</a></span></div>`}
+function boardWait(i){const got=B.ans.get(i)||new Set();const left=[...B.joins.entries()].filter(([d])=>!got.has(d)).map(([,j])=>j.n);
+  if(!B.joins.size)return "";if(!left.length)return "🎉 모두 제출했어요!";
+  return `⏳ 아직 안 낸 사람 ${left.length}명${left.length<=15?": "+left.map(esc).join(", "):""}`}
 function rankRows(top,max){return (top||[]).slice(0,max).map((r,k)=>`<div class="${B.elim&&r[3]===0?"dead":""}"><b>${k+1}</b><span>${esc(r[0])}<em>${dname(r[1])}</em></span><span class="s">${r[2]}${B.elim&&r[3]===0?" 💀":""}</span></div>`).join("")}
 function renderBoard(){
   const el=$("#board");if(!B.rid)return;
@@ -1242,7 +1266,7 @@ function renderBoard(){
   if(!R){
     const na=(B.ans.get(q.i)||new Set()).size;
     el.innerHTML=`<div class="bwrap">${qhead}<p class="bq">${qTextHtml(q)}</p>${area}
-      <div class="bbar" id="bBar"><span class="tl" id="bTl">${q.s}</span><div class="tb"><i id="bTb"></i></div><span class="sub">제출 <b id="bNa">${na}</b>명</span></div>${bFoot()}</div>
+      <div class="bbar" id="bBar"><span class="tl" id="bTl">${q.s}</span><div class="tb"><i id="bTb"></i></div><span class="sub">제출 <b id="bNa">${na}</b> / ${B.joins.size}명</span></div><p class="bwait" id="bWait">${boardWait(q.i)}</p>${bFoot()}</div>
       <div class="bclose ${B.closed?"on":""}">⏰ 마감!</div>`;
     boardTick();return;
   }
