@@ -711,7 +711,7 @@ function renderPlayer(){
     if(my){if(q.t==="sa")ok=(R.acc||[]).includes(norm(my.a));else ok=my.a===R.cor}
     const gain=fmt1(Math.max(0,P.lastS-P.prevS));
     const ansTxt=q.t==="mc"?`${LET[R.cor]} ${esc(q.o[R.cor])}`:esc(R.ans);
-    const verdict=!my&&dead?`<p class="resbig">📣</p><p class="status">${funOn()?"탈락했지만 응원은 계속! 📣":"탈락했어요. 함께 응원해 주세요"}</p>`:!my?`<p class="resbig no">⏰</p><p class="status">${pickFun(FUN_LATE,q.i)}</p>`:ok?`<p class="resbig ok pop">⭕ 정답!</p><p class="status" style="color:var(--ok)">${funOn()?pickFun(FUN_OK,q.i)+" · ":""}+${gain}점</p>`:`<p class="resbig no">❌</p><p class="status">${pickFun(FUN_NO,q.i)}</p>`;
+    const verdict=!my&&dead?`<p class="resbig">📣</p><p class="status">${funOn()?"탈락했지만 응원은 계속! 📣":"탈락했어요. 함께 응원해 주세요"}</p>`:!my?`<p class="resbig no">⏰</p><p class="status">${pickFun(FUN_LATE,q.i)}</p>`:ok?`<p class="resbig ok pop">⭕ 정답!</p>${funOn()?`<p class="status" style="color:var(--ok)">${pickFun(FUN_OK,q.i)}</p>`:""}`:`<p class="resbig no">❌</p><p class="status">${pickFun(FUN_NO,q.i)}</p>`;
     const m=P.me;
     const stand=phoneTop10(R.top)+phoneCls3(R.dt);
     const deadMsg=dead?`<div class="out"><b>탈락 😢</b>남은 문제는 응원해 주세요!</div>`:"";
