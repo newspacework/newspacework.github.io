@@ -178,7 +178,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 #board.on{display:flex}
 .bwrap{flex:1;display:flex;flex-direction:column;padding:3vh 4vw;gap:2.4vh}
 .btop{display:flex;justify-content:space-between;align-items:center;font:900 2.2vh "Noto Sans KR",sans-serif;color:#c9c6ff}
-.btitle{font:400 7vh/1.1 "Black Han Sans",sans-serif;margin:0;color:var(--gold)}
+.btitle{font:400 7vh/1.1 "Black Han Sans",sans-serif;margin:0;color:var(--gold);word-break:keep-all}
+.btitle em{font-style:normal;color:#fff}
 .blob{display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;flex:1;align-items:center}
 .qrbox{background:#fff;padding:2.2vh;border-radius:2vh;width:min(42vh,36vw);aspect-ratio:1;justify-self:center}
 .qrbox img,.qrbox canvas{width:100%!important;height:100%!important}
@@ -255,8 +256,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 <!-- ============ 학생: 입장 ============ -->
 <section class="scr" id="join">
   <div class="stripe"></div>
-  <h1><span class="bell">🔔</span> 성경<br><em>골든벨</em></h1>
-  <p class="note" id="jTitle"></p>
+  <h1 id="jH1"><span class="bell">🔔</span> 성경<br><em>골든벨</em></h1>
+  <p class="note" id="jTitle" style="display:none"></p>
   <div class="card sec">
     <div id="jDept"></div>
     <div><label for="jName">내 이름</label><input id="jName" maxlength="10" autocomplete="off" placeholder="이름을 써요 (예: 김은혜)"></div>
@@ -339,6 +340,10 @@ let toastT=null;const toast=t=>{const el=$("#toast");el.textContent=t;el.classLi
 const LET=["①","②","③","④"];
 const fmt1=n=>Math.round((+n||0)*10)/10;
 const TYPE_NAME={mc:"4지선다",ox:"O/X",sa:"주관식"};
+/* 대회 이름: 진행자가 준비 화면에서 쓴 이름이 학생 화면·큰 화면에 바로 보여요 */
+let INFO={title:store.get("bell-title")||DEFAULT_TITLE,t:0};
+function titleHtml(t){t=esc(t||DEFAULT_TITLE);return t.includes("골든벨")?t.replace("골든벨","<em>골든벨</em>"):t}
+function showTitle(t){const h=document.getElementById("jH1");if(h){h.innerHTML=`<span class="bell">🔔</span> ${titleHtml(t)}`;h.style.wordBreak="keep-all";h.style.fontSize=String(t||"").length>12?"clamp(28px,8.5vw,40px)":""}document.title="🔔 "+(t||DEFAULT_TITLE)}
 function deviceId(){let d=store.get("bell-did");if(!d){d=Math.random().toString(36).slice(2,10);store.set("bell-did",d)}return d}
 const newId=()=>Math.random().toString(36).slice(2,8);
 
@@ -536,7 +541,7 @@ const mineKey=()=>"bell-ans-"+P.rid;
 const mine=()=>store.get(mineKey())||{};
 let pickedDept=null,jsel={};
 function initPlayer(){
-  show("join");
+  show("join");showTitle(INFO.title);
   const me=store.get(ME_KEY);if(me){$("#jName").value=me.n||"";pickedDept=me.g||null}
   drawPick();
   $("#jGo").addEventListener("click",doJoin);
@@ -588,6 +593,7 @@ function sendJoin(){
 }
 const joined=()=>P.rid&&store.get(JOINED_KEY)===P.rid&&store.get(ME_KEY);
 function onCtl(x,t){
+  if(x.k==="info"){if(t>=INFO.t&&typeof x.title==="string"){INFO={title:x.title.slice(0,30),t};store.set("bell-title",INFO.title);if(P.rid&&t>=P.openT)P.title=INFO.title;if(!joined())showTitle(P.rid?P.title:INFO.title)}return}
   if(x.k==="open"){if(t<P.openT)return;P=freshP(x,t);if(P.cm){store.set("bell-cm",P.cm);store.del("bell-cmoff")}else{store.del("bell-cm");store.set("bell-cmoff",1)}jsel={};
     if(store.get(JOINED_KEY)!==P.rid&&store.get(ME_KEY)&&document.visibilityState!=="hidden"&&Date.now()-t<6*3600e3){
       const me=store.get(ME_KEY);if(P.depts.includes(me.g))sendJoin()}
@@ -629,7 +635,8 @@ function tickPlayer(){
 function renderPlayer(){
   if(!joined()){
     show("join");
-    if(P.rid){$("#jTitle").textContent=P.title;drawPick();
+    showTitle(P.rid?P.title:INFO.title);
+    if(P.rid){drawPick();
       $("#jNote").textContent=P.phase==="end"?"대회가 끝났어요. 다음 대회를 기다려요":(P.q?"대회 진행 중! 지금 입장하면 다음 문제부터 함께해요":"대회가 열렸어요! 반을 고르고 이름을 쓰고 입장하세요")}
     else $("#jNote").textContent=store.get(ME_KEY)?"✅ 저장 완료! 진행자가 대회를 열면 자동으로 입장해요":"진행자가 대회를 열면 입장할 수 있어요";
     return;
@@ -710,10 +717,11 @@ function gate(fn){
   const go=()=>{if($("#pin").value!==ADMIN_PIN){$("#pinMsg").textContent="PIN이 달라요";$("#pin").select();return}store.set("bell-admin-ok",ADMIN_PIN);fn()};
   $("#pinGo").addEventListener("click",go);$("#pin").addEventListener("keydown",e=>{if(e.key==="Enter")go()});
 }
+let ptT=null;function pushTitle(t){clearTimeout(ptT);ptT=setTimeout(()=>{if(store.get("bell-pubtitle")===t)return;post(CTL,{k:"info",title:t}).then(ok=>{if(ok)store.set("bell-pubtitle",t)})},1200)}
 function initAdmin(){
   document.title="🛠 진행자 · 성경 골든벨";
   A=store.get(AKEY)||{cfg:{...DEF_CFG},deck:[],warn:[],phase:"setup"};
-  A.cfg={...DEF_CFG,...A.cfg};
+  A.cfg={...DEF_CFG,...A.cfg};pushTitle(A.cfg.title);
   show("admin");
   if(A.rid&&A.phase!=="setup")startListening();
   renderAdmin();
@@ -952,7 +960,7 @@ function renderSetup(el){
     $("#cRg").querySelectorAll("input").forEach(i=>i.addEventListener("input",()=>upd()));};
   const C2=()=>A.cfg;
   const upd=()=>{const c=C2();
-    c.title=$("#cTitle").value.trim()||DEFAULT_TITLE;c.depts=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value.trim()).filter(Boolean).join(", ")||DEFAULT_DEPTS.join(", ");
+    c.title=$("#cTitle").value.trim()||DEFAULT_TITLE;pushTitle(c.title);c.depts=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value.trim()).filter(Boolean).join(", ")||DEFAULT_DEPTS.join(", ");
     c.cdeps=$("#cDeps").value;c.grades=Math.max(1,Math.min(6,+$("#cGrades").value||1));
     {const rg=(c.rg||[]).map(r=>r.slice());document.querySelectorAll("#cRg [data-rg]").forEach(i=>{const [di,g]=i.dataset.rg.split(",").map(Number);rg[di]=rg[di]||[];rg[di][g]=Math.max(1,Math.min(15,+i.value||1))});c.rg=rg}
     delete c.lbl;c.range=$("#cRange").value;c.fill=$("#cFill").checked;
@@ -1229,8 +1237,9 @@ function initBoard(){
   subscribe(CTL,"all",onBoardCtl,ok=>{const c=$("#bConn");if(c)c.textContent=ok?"● 연결됨":"○ 연결 중…"});
   setInterval(boardTick,200);
 }
-const boardIdle=()=>{$("#board").innerHTML=`<div class="bwrap"><p class="btitle" style="margin:auto;text-align:center"><span class="bell">🔔</span> 성경 골든벨</p><p class="bex">진행자가 대회를 열면 여기에 입장 QR이 떠요</p></div>`};
+const boardIdle=()=>{$("#board").innerHTML=`<div class="bwrap" style="justify-content:center;align-items:center;gap:4vh"><p class="btitle" style="text-align:center;font-size:9vh;line-height:1.2"><span class="bell">🔔</span> ${titleHtml(INFO.title)}</p><p class="bex" style="font-size:3.4vh">진행자가 대회를 열면 여기에 입장 QR이 떠요</p></div>`};
 function onBoardCtl(x,t){
+  if(x.k==="info"){if(t>=INFO.t&&typeof x.title==="string"){INFO={title:x.title.slice(0,30),t};if(!B.rid)boardIdle();else if(t>=B.openT){B.title=INFO.title;bSoon()}}return}
   if(x.k==="reset"){if(B.rid&&x.r===B.rid){B={rid:null,openT:t};if(bUnsub){bUnsub();bUnsub=null}const c=document.querySelector(".confetti");if(c)c.remove();boardIdle()}return}
   if(x.k==="open"){if(t<B.openT)return;B=freshB(x,t);if(bUnsub)bUnsub();bUnsub=subscribe(RES,Math.floor(t/1000)-30,onBoardRes);bSoon();return}
   if(!B.rid||x.r!==B.rid)return;
