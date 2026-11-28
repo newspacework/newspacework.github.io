@@ -84,6 +84,9 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .ansbox small{display:block;font-weight:700;color:var(--mut);font-size:13px}
 .out{background:var(--ink);color:#fff;border-radius:16px;padding:16px;text-align:center}
 .out b{font:400 34px/1.2 "Black Han Sans",sans-serif;display:block}
+.ptop{display:flex;flex-direction:column;gap:4px}
+.ptop div{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:6px;font-weight:900;font-size:15px;padding:3px 2px;border-bottom:1px dashed #e6dfc5}
+.ptop b{text-align:center;font:400 17px "Black Han Sans",sans-serif}.ptop em{font-style:normal;font-size:12px;color:var(--mut);font-weight:700}.ptop i{font-style:normal}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:15px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
 .conn{font-size:12px;color:var(--mut);text-align:center;margin:0}
@@ -677,13 +680,9 @@ function renderPlayer(){
   }
   if(P.phase==="end"){
     const E=P.end,m=P.me;
-    const top=(E.top||[]).slice(0,3).map((r,k)=>`<div class="row" style="font-weight:900"><span style="flex:none;font-size:26px">${["🥇","🥈","🥉"][k]}</span><span>${esc(r[0])} <span class="note">${esc(P.depts[r[1]]||"")}</span></span><span style="flex:none">${r[2]}점</span></div>`).join("");
     el.innerHTML=`${head}<div class="stripe"></div><h1 style="text-align:center">🏆 최종 결과</h1>
-      ${m?`<div class="card" style="text-align:center"><p class="note">나의 최종 순위</p><p class="resbig" style="color:var(--gold2)">${m.rank}등</p><div class="stat3"><div><b>${m.s}</b><span>최종 점수</span></div><div><b>${m.rank}</b><span>전체 ${m.of}명 중</span></div><div><b>${m.grank}</b><span>${esc(me.g)} ${m.gof}명 중</span></div></div></div>`:`<div class="card"><p class="status">이번 대회 기록이 없어요</p></div>`}
-      ${(()=>{const gi=P.depts.indexOf(me.g);const d=(E.dep||[]);const k=d.findIndex(x=>x.g===gi);if(k<0)return "";
-        return `<div class="card" style="text-align:center"><p class="note">🏫 우리 반 순위 (${esc(me.g)})</p><p class="resbig" style="font-size:56px;color:var(--ink)">${k+1}등</p><p class="status">반 평균 ${d[k].avg}점 · ${d[k].cnt}명</p></div>`})()}
-      <div class="card sec"><h3>👑 퀴즈왕</h3>${top||'<p class="note">-</p>'}</div>
-      ${(E.dep||[]).length>1?`<div class="card sec"><h3>🏫 반별 순위 TOP 3</h3>${E.dep.slice(0,3).map((d,k)=>`<div class="row" style="font-weight:900"><span style="flex:none;font-size:26px">${["🥇","🥈","🥉"][k]}</span><span>${esc(P.depts[d.g]||"")}</span><span style="flex:none">평균 ${d.avg}점</span></div>`).join("")}</div>`:""}
+      ${m?`<div class="card" style="text-align:center"><p class="note">나의 최종 점수</p><p class="resbig" style="color:var(--gold2)">${m.s}점</p></div>`:`<div class="card"><p class="status">이번 대회 기록이 없어요</p></div>`}
+      ${phoneTop10(E.top)}${phoneCls3(E.dep)}
       <p class="note" style="text-align:center">수고했어요! 🙌</p>`;
     return;
   }
@@ -714,13 +713,18 @@ function renderPlayer(){
     const ansTxt=q.t==="mc"?`${LET[R.cor]} ${esc(q.o[R.cor])}`:esc(R.ans);
     const verdict=!my&&dead?`<p class="resbig">📣</p><p class="status">${funOn()?"탈락했지만 응원은 계속! 📣":"탈락했어요. 함께 응원해 주세요"}</p>`:!my?`<p class="resbig no">⏰</p><p class="status">${pickFun(FUN_LATE,q.i)}</p>`:ok?`<p class="resbig ok pop">⭕ 정답!</p><p class="status" style="color:var(--ok)">${funOn()?pickFun(FUN_OK,q.i)+" · ":""}+${gain}점</p>`:`<p class="resbig no">❌</p><p class="status">${pickFun(FUN_NO,q.i)}</p>`;
     const m=P.me;
-    const stand=m?`<div class="stat3"><div><b>${m.s}</b><span>내 점수</span></div><div><b>${m.rank}등</b><span>전체 ${m.of}명</span></div><div><b>${m.grank}등</b><span>${esc(me.g)}</span></div></div>`:"";
+    const stand=phoneTop10(R.top)+phoneCls3(R.dt);
     const deadMsg=dead?`<div class="out"><b>탈락 😢</b>남은 문제는 응원해 주세요!</div>`:"";
     el.innerHTML=`${head}${qhd}${verdict}<div class="ansbox"><small>정답</small>${ansTxt}${R.ex?`<small style="margin-top:4px">${esc(R.ex)}</small>`:""}</div>${my&&!ok?`<p class="note" style="text-align:center">내 답: ${q.t==="mc"?esc(myTxt):myTxt}</p>`:""}${stand}${deadMsg}<p class="status" style="font-size:15px;color:var(--mut)">${q.i+1<q.n?"다음 문제를 기다려요…":"최종 발표를 기다려요…"}</p>`;
     if(my&&P.buzzedI!==q.i){P.buzzedI=q.i;buzz(ok?[30,40,30]:[120])}
     return;
   }
 }
+/* 폰에는 자기 순위 대신 TOP 10과 반 TOP 3만 */
+function phoneTop10(top){const t=(top||[]).slice(0,10);if(!t.length)return "";
+  return `<div class="card sec" style="padding:12px"><h3>👑 TOP 10</h3><div class="ptop">${t.map((r,k)=>`<div><b>${["🥇","🥈","🥉"][k]||k+1}</b><span>${esc(r[0])} <em>${esc(P.depts[r[1]]||"")}</em></span><i>${r[2]}점</i></div>`).join("")}</div></div>`}
+function phoneCls3(dep){const d=(dep||[]).slice(0,3);if(d.length<2)return "";
+  return `<div class="card sec" style="padding:12px"><h3>🏫 반별 TOP 3 <span class="note">(반 평균)</span></h3><div class="ptop">${d.map((x,k)=>`<div><b>${["🥇","🥈","🥉"][k]}</b><span>${esc(P.depts[x.g]||"")}</span><i>${x.avg}점</i></div>`).join("")}</div></div>`}
 function answer(a){
   const q=P.q;if(!q||P.phase!=="q")return;if(P.elim&&!P.alive)return;
   const all=mine();if(all[q.i])return;
@@ -867,7 +871,7 @@ async function revealQ(){
   if(q.t==="sa")(q.alts||[q.ans]).forEach(a=>accSet.add(norm(a)));
   const msg={k:"rv",r:A.rid,i,t:q.t,cor:q.t==="mc"?q.cor:q.t==="ox"?q.ox:undefined,ans:q.t==="mc"?q.o[q.cor]:q.ans,acc:q.t==="sa"?[...accSet].slice(0,60):undefined,ex:q.ex||"",
     dist:q.t==="mc"?dist:q.t==="ox"?dist.slice(0,2):undefined,na,ok:okN,nj:list.length,surv:A.cfg.elim?list.filter(r=>r.a).length:undefined,
-    top:list.slice(0,5).map(r=>[r.n,r.g,r.s,r.a?1:0]),sc:scString(list)};
+    top:list.slice(0,10).map(r=>[r.n,r.g,r.s,r.a?1:0]),dt:deptSummary(list).slice(0,3).map(d=>({g:d.g,avg:d.avg})),sc:scString(list)};
   renderAdmin();
   await ctl(msg);
 }
