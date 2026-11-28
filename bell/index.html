@@ -87,6 +87,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .ptop{display:flex;flex-direction:column;gap:4px}
 .ptop div{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:6px;font-weight:900;font-size:15px;padding:3px 2px;border-bottom:1px dashed #e6dfc5}
 .ptop b{text-align:center;font:400 17px "Black Han Sans",sans-serif}.ptop em{font-style:normal;font-size:12px;color:var(--mut);font-weight:700}.ptop i{font-style:normal}
+.scorebox{background:#fff3c4;border:2px dashed var(--gold2);border-radius:12px;padding:10px 12px;font-size:15px;line-height:1.5;text-align:center;margin:4px 0}
+.scorebox small{display:block;color:var(--mut);font-size:12.5px;margin-top:3px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:15px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
 .conn{font-size:12px;color:var(--mut);text-align:center;margin:0}
@@ -278,6 +280,7 @@ body.fun .btitle.glow em{color:transparent}
     <div id="jDept"></div>
     <div><label for="jName">내 이름</label><input id="jName" maxlength="10" autocomplete="off" placeholder="이름을 써요 (예: 김은혜)"></div>
     <button class="btn" id="jGo">입장하기!</button>
+    <div class="scorebox">📏 <b>점수 계산</b><br>한 문제 맞히면 <b>1점</b> · 최종 결과에서 <b>100점 만점</b>으로 환산해서 보여 줘요<small>예) 20문제 중 15개 정답 → 75점 · 점수가 같으면 더 빨리 답한 사람이 위</small></div>
     <p class="note" id="jNote">진행자가 대회를 열면 입장할 수 있어요</p>
   </div>
   <div class="card">
@@ -285,8 +288,6 @@ body.fun .btitle.glow em{color:transparent}
     <ul class="note" style="font-size:14px;padding-left:1.2em;margin:6px 0 0">
       <li>진행자가 문제를 내면 내 폰에 바로 떠요</li>
       <li>4지선다 · O/X · 주관식 · 😆 넌센스까지!</li>
-      <li>한 문제 맞힐 때마다 1점! 다 맞히면 100점 만점으로 계산해요</li>
-      <li>점수가 같으면 더 빨리 답한 사람이 위예요</li>
       <li>답은 한 번만 낼 수 있어요. 신중하게!</li>
     </ul>
   </div>
@@ -673,7 +674,7 @@ function renderPlayer(){
   const dead=P.elim&&!P.alive;
   if(P.phase==="lobby"){
     el.innerHTML=`${head}<div class="stripe"></div><h1 style="text-align:center"><span class="bell">🔔</span><br>입장 완료${funOn()?"! 🙌":"!"}</h1>
-      <div class="card" style="text-align:center"><h2>${esc(P.title)}</h2><p class="note" style="margin-top:6px">총 ${P.n}문제 ${P.elim?"· 🔔 틀리면 탈락하는 골든벨 방식":""}</p><p class="status" style="margin-top:12px">${funOn()?"곧 첫 문제가 나와요! 화면 끄지 말고 대기 📱✨":"곧 첫 문제가 나옵니다. 화면을 켜 두세요"}</p><p class="note" style="margin-top:8px">${pickFun(FUN_WAIT,Math.floor(Date.now()/4000))}</p></div>
+      <div class="card" style="text-align:center"><h2>${esc(P.title)}</h2><div class="scorebox">📏 <b>점수 계산</b><br>한 문제 맞히면 <b>1점</b> · 최종 결과에서 <b>100점 만점</b>으로 환산해서 보여 줘요<small>예) ${P.n}문제 중 ${Math.round(P.n*.75)}개 정답 → ${Math.round(Math.round(P.n*.75)/Math.max(1,P.n)*1000)/10}점 · 점수가 같으면 더 빨리 답한 사람이 위</small></div><p class="note" style="margin-top:6px">총 ${P.n}문제 ${P.elim?"· 🔔 틀리면 탈락하는 골든벨 방식":""}</p><p class="status" style="margin-top:12px">${funOn()?"곧 첫 문제가 나와요! 화면 끄지 말고 대기 📱✨":"곧 첫 문제가 나옵니다. 화면을 켜 두세요"}</p><p class="note" style="margin-top:8px">${pickFun(FUN_WAIT,Math.floor(Date.now()/4000))}</p></div>
       <button class="btn sub" id="pEdit">이름·반 고치기</button>`;
     $("#pEdit").addEventListener("click",()=>{store.del(JOINED_KEY);$("#jName").value=me.n;pickedDept=me.g;jsel={};renderPlayer()});
     return;
