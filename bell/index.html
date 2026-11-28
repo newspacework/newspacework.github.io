@@ -174,16 +174,17 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .dist i{display:block;height:20px;border-radius:5px;min-width:3px}
 
 /* ---------- 큰 화면 ---------- */
-#board{max-width:none;padding:0;min-height:100vh;gap:0;color:#fff;position:relative;
-  background:linear-gradient(125deg,#1b0f4d,#4a1170 35%,#0f2a6b 70%,#1b0f4d);background-size:300% 300%;animation:bgmove 18s ease-in-out infinite}
+#board{max-width:none;padding:0;min-height:100vh;gap:0;color:#fff;position:relative;background:#14153a}
+body.fun #board{background:linear-gradient(125deg,#1b0f4d,#4a1170 35%,#0f2a6b 70%,#1b0f4d);background-size:300% 300%;animation:bgmove 18s ease-in-out infinite}
+.floaty,.hype{display:none}body.fun .floaty{display:block}body.fun .hype{display:block}
 @keyframes bgmove{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 #board .bwrap{position:relative;z-index:1}
 .floaty{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
 .floaty span{position:absolute;bottom:-10vh;font-size:5vh;opacity:.22;animation:floatup linear infinite}
 @keyframes floatup{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(-120vh) rotate(360deg)}}
 .hype{font:900 3.6vh "Noto Sans KR",sans-serif;color:#ffe27a;text-align:center;min-height:4.5vh;transition:opacity .4s}
-.btitle.glow{background:linear-gradient(90deg,#ffd43b,#ff7ab8,#7ad7ff,#ffd43b);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
-.btitle.glow em{color:transparent}
+body.fun .btitle.glow{background:linear-gradient(90deg,#ffd43b,#ff7ab8,#7ad7ff,#ffd43b);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+body.fun .btitle.glow em{color:transparent}
 @keyframes shine{to{background-position:300% 0}}
 .pop{animation:popn .5s ease-out}
 @media (prefers-reduced-motion:reduce){#board,.floaty span,.btitle.glow{animation:none}}
@@ -362,7 +363,10 @@ const FUN_NO=["아깝다 😭","괜찮아, 다음 문제 있잖아 💪","헉 �
 const FUN_LATE=["앗, 시간 초과 ⏰","손이 느렸다… 다음엔 빠르게 ⚡","생각하다 끝나 버림 😵"];
 const FUN_WAIT=["📶 와이파이 끄고 LTE 켜기!","🔋 배터리 충분하지?","👀 옆 친구 답 훔쳐보기 금지!","🙏 시작 전에 짧게 기도 한 번?","🏆 오늘의 퀴즈왕은 바로 너!"];
 const HYPE=["오늘의 퀴즈왕은 누구? 👑","폰 배터리 충전했지? 🔋","와이파이 끄고 LTE로 입장! 📶","성경 좀 읽었다는 사람 손 🙋","틀려도 괜찮아, 재밌으면 장땡 😎","우리 반이 1등 먹자 🔥","QR 찍고 바로 입장! 📷"];
-const pickFun=(arr,seed)=>arr[Math.abs(seed|0)%arr.length];
+const CALM={ok:["정답입니다!"],no:["아쉽네요. 다음 문제에서 만회해요"],late:["시간이 지났어요"],wait:["와이파이보다 LTE(데이터)가 더 안정적이에요"]};
+const funOn=()=>!!(document.body&&document.body.classList.contains("fun"));
+const pickFun=(arr,seed)=>{if(!funOn()){const m=arr===FUN_OK?CALM.ok:arr===FUN_NO?CALM.no:arr===FUN_LATE?CALM.late:CALM.wait;return m[0]}return arr[Math.abs(seed|0)%arr.length]};
+function setFun(on){document.body.classList.toggle("fun",!!on)}
 function deviceId(){let d=store.get("bell-did");if(!d){d=Math.random().toString(36).slice(2,10);store.set("bell-did",d)}return d}
 const newId=()=>Math.random().toString(36).slice(2,8);
 
@@ -612,8 +616,8 @@ function sendJoin(){
 }
 const joined=()=>P.rid&&store.get(JOINED_KEY)===P.rid&&store.get(ME_KEY);
 function onCtl(x,t){
-  if(x.k==="info"){if(t>=INFO.t&&typeof x.title==="string"){INFO={title:x.title.slice(0,30),t};store.set("bell-title",INFO.title);if(P.rid&&t>=P.openT)P.title=INFO.title;if(!joined())showTitle(P.rid?P.title:INFO.title)}return}
-  if(x.k==="open"){if(t<P.openT)return;P=freshP(x,t);if(P.cm){store.set("bell-cm",P.cm);store.del("bell-cmoff")}else{store.del("bell-cm");store.set("bell-cmoff",1)}jsel={};
+  if(x.k==="info"){if(t>=INFO.t&&typeof x.title==="string"){INFO={title:x.title.slice(0,30),t,fun:!!x.fun};store.set("bell-title",INFO.title);if(!P.rid||t>=P.openT)setFun(INFO.fun);if(P.rid&&t>=P.openT)P.title=INFO.title;if(!joined())showTitle(P.rid?P.title:INFO.title)}return}
+  if(x.k==="open"){if(t<P.openT)return;P=freshP(x,t);setFun(x.fun);if(P.cm){store.set("bell-cm",P.cm);store.del("bell-cmoff")}else{store.del("bell-cm");store.set("bell-cmoff",1)}jsel={};
     if(store.get(JOINED_KEY)!==P.rid&&store.get(ME_KEY)&&document.visibilityState!=="hidden"&&Date.now()-t<6*3600e3){
       const me=store.get(ME_KEY);if(P.depts.includes(me.g))sendJoin()}
     renderSoon();return}
@@ -665,8 +669,8 @@ function renderPlayer(){
   const head=`<div class="row" style="justify-content:space-between"><span class="tag">${esc(me.g)}</span><b style="flex:none">${esc(me.n)}</b><span class="tag g" style="flex:none">${P.lastS}점</span></div>`;
   const dead=P.elim&&!P.alive;
   if(P.phase==="lobby"){
-    el.innerHTML=`${head}<div class="stripe"></div><h1 style="text-align:center"><span class="bell">🔔</span><br>입장 완료! 🙌</h1>
-      <div class="card" style="text-align:center"><h2>${esc(P.title)}</h2><p class="note" style="margin-top:6px">총 ${P.n}문제 ${P.elim?"· 🔔 틀리면 탈락하는 골든벨 방식":""}</p><p class="status" style="margin-top:12px">곧 첫 문제가 나와요! 화면 끄지 말고 대기 📱✨</p><p class="note" style="margin-top:8px">${pickFun(FUN_WAIT,Math.floor(Date.now()/4000))}</p></div>
+    el.innerHTML=`${head}<div class="stripe"></div><h1 style="text-align:center"><span class="bell">🔔</span><br>입장 완료${funOn()?"! 🙌":"!"}</h1>
+      <div class="card" style="text-align:center"><h2>${esc(P.title)}</h2><p class="note" style="margin-top:6px">총 ${P.n}문제 ${P.elim?"· 🔔 틀리면 탈락하는 골든벨 방식":""}</p><p class="status" style="margin-top:12px">${funOn()?"곧 첫 문제가 나와요! 화면 끄지 말고 대기 📱✨":"곧 첫 문제가 나옵니다. 화면을 켜 두세요"}</p><p class="note" style="margin-top:8px">${pickFun(FUN_WAIT,Math.floor(Date.now()/4000))}</p></div>
       <button class="btn sub" id="pEdit">이름·반 고치기</button>`;
     $("#pEdit").addEventListener("click",()=>{store.del(JOINED_KEY);$("#jName").value=me.n;pickedDept=me.g;jsel={};renderPlayer()});
     return;
@@ -700,7 +704,7 @@ function renderPlayer(){
   if(P.phase==="q"||P.phase==="cl"){
     const msg=dead?`<div class="out"><b>탈락 😢</b>이번엔 응원해 주세요! 패자부활이 있을지도…</div>`:
       my?`<div class="ansbox"><small>내가 낸 답</small>${q.t==="mc"?esc(myTxt):myTxt}</div>`:`<div class="ansbox"><small>시간 초과</small>답을 내지 못했어요</div>`;
-    el.innerHTML=`${head}${qhd}<p class="qtext" style="font-size:19px">${qTextHtml(q)}</p>${msg}<p class="status">${P.phase==="q"&&!dead?"✅ 제출 완료! 두근두근 💓 친구들 기다리는 중…":"⏰ 마감! 정답 공개까지 숨 참기 😤"}</p>`;
+    el.innerHTML=`${head}${qhd}<p class="qtext" style="font-size:19px">${qTextHtml(q)}</p>${msg}<p class="status">${P.phase==="q"&&!dead?(funOn()?"✅ 제출 완료! 두근두근 💓 친구들 기다리는 중…":"✅ 제출 완료! 결과를 기다려 주세요"):(funOn()?"⏰ 마감! 정답 공개까지 숨 참기 😤":"⏰ 마감! 정답 공개를 기다려 주세요")}</p>`;
     return;
   }
   if(P.phase==="rv"){
@@ -708,7 +712,7 @@ function renderPlayer(){
     if(my){if(q.t==="sa")ok=(R.acc||[]).includes(norm(my.a));else ok=my.a===R.cor}
     const gain=fmt1(Math.max(0,P.lastS-P.prevS));
     const ansTxt=q.t==="mc"?`${LET[R.cor]} ${esc(q.o[R.cor])}`:esc(R.ans);
-    const verdict=!my&&dead?`<p class="resbig">📣</p><p class="status">탈락했지만 응원은 계속! 📣</p>`:!my?`<p class="resbig no">⏰</p><p class="status">${pickFun(FUN_LATE,q.i)}</p>`:ok?`<p class="resbig ok pop">⭕ 정답!</p><p class="status" style="color:var(--ok)">${pickFun(FUN_OK,q.i)} · +${gain}점</p>`:`<p class="resbig no">❌</p><p class="status">${pickFun(FUN_NO,q.i)}</p>`;
+    const verdict=!my&&dead?`<p class="resbig">📣</p><p class="status">${funOn()?"탈락했지만 응원은 계속! 📣":"탈락했어요. 함께 응원해 주세요"}</p>`:!my?`<p class="resbig no">⏰</p><p class="status">${pickFun(FUN_LATE,q.i)}</p>`:ok?`<p class="resbig ok pop">⭕ 정답!</p><p class="status" style="color:var(--ok)">${funOn()?pickFun(FUN_OK,q.i)+" · ":""}+${gain}점</p>`:`<p class="resbig no">❌</p><p class="status">${pickFun(FUN_NO,q.i)}</p>`;
     const m=P.me;
     const stand=m?`<div class="stat3"><div><b>${m.s}</b><span>내 점수</span></div><div><b>${m.rank}등</b><span>전체 ${m.of}명</span></div><div><b>${m.grank}등</b><span>${esc(me.g)}</span></div></div>`:"";
     const deadMsg=dead?`<div class="out"><b>탈락 😢</b>남은 문제는 응원해 주세요!</div>`:"";
@@ -729,7 +733,7 @@ function answer(a){
 /* ======================= 진행자 ======================= */
 const AKEY="bell-admin";
 const DEF_CFG={title:DEFAULT_TITLE,cmode:"grade",cdeps:DEFAULT_DEPTS.join(", "),grades:3,rg:DEF_RG,depts:"중1-1반, 중2-1반, 중3-1반, 고1-1반, 고2-1반, 고3-1반",range:"전체",total:20,mcOn:true,oxOn:true,oxN:4,saOn:true,saN:3,gkOn:false,gkN:2,nsOn:true,nsN:2,myOn:false,myN:3,custom:"",
-  secMC:20,secOX:12,secSA:30,speed:false,elim:false,last2:false,fill:true,autoClose:true};
+  fun:false,secMC:20,secOX:12,secSA:30,speed:false,elim:false,last2:false,fill:true,autoClose:true};
 let A=null;            /* 저장되는 진행 상태 */
 let L={players:new Map(),ans:new Map(),srv:{q:{},cl:{},rv:{}},resConn:false,ctlConn:false,unsubRes:null,closeT:null,tick:null};
 function saveA(){store.set(AKEY,A)}
@@ -739,7 +743,7 @@ function gate(fn){
   const go=()=>{if($("#pin").value!==ADMIN_PIN){$("#pinMsg").textContent="PIN이 달라요";$("#pin").select();return}store.set("bell-admin-ok",ADMIN_PIN);fn()};
   $("#pinGo").addEventListener("click",go);$("#pin").addEventListener("keydown",e=>{if(e.key==="Enter")go()});
 }
-let ptT=null;function pushTitle(t){clearTimeout(ptT);ptT=setTimeout(()=>{if(store.get("bell-pubtitle")===t)return;post(CTL,{k:"info",title:t}).then(ok=>{if(ok)store.set("bell-pubtitle",t)})},1200)}
+let ptT=null;function pushTitle(t){clearTimeout(ptT);ptT=setTimeout(()=>{const fun=!!A.cfg.fun,key=t+"|"+fun;if(store.get("bell-pubtitle")===key)return;post(CTL,{k:"info",title:t,fun}).then(ok=>{if(ok)store.set("bell-pubtitle",key)})},1200)}
 function initAdmin(){
   document.title="🛠 진행자 · 성경 골든벨";
   A=store.get(AKEY)||{cfg:{...DEF_CFG},deck:[],warn:[],phase:"setup"};
@@ -835,7 +839,7 @@ async function openContest(){
   A.rid=newId();A.openT=Date.now();A.phase="lobby";A.cur=-1;A.qT={};A.clT={};A.rvd={};A.ovr={};A.revives=[];A.excl=[];
   const C=A.cfg;A.deck.forEach((q,i)=>{q.s=q.t==="mc"?C.secMC:q.t==="ox"?C.secOX:C.secSA;q.x=(C.last2&&i===A.deck.length-1)?2:1});
   saveA();startListening();
-  const ok=await ctl({k:"open",r:A.rid,title:C.title,depts:deptsOf(C),cm:cmOf(C)||undefined,n:A.deck.length,elim:!!C.elim});
+  const ok=await ctl({k:"open",r:A.rid,title:C.title,fun:!!C.fun,depts:deptsOf(C),cm:cmOf(C)||undefined,n:A.deck.length,elim:!!C.elim});
   if(ok)toast("대회를 열었어요! 학생들이 입장할 수 있어요");
   renderAdmin();
 }
@@ -968,6 +972,7 @@ function renderSetup(el){
     <label class="tog"><input type="checkbox" id="cLast2" ${C.last2?"checked":""}>🔥 마지막 문제는 2점 (2문제 몫)</label>
     <label class="tog"><input type="checkbox" id="cElim" ${C.elim?"checked":""}>🔔 골든벨 탈락제 (틀리면 탈락 · 패자부활 가능)</label>
     <label class="tog"><input type="checkbox" id="cAuto" ${C.autoClose?"checked":""}>모두 답하면 바로 마감</label>
+    <label class="tog"><input type="checkbox" id="cFun" ${C.fun?"checked":""}>🎉 청소년 감성 화면 (움직이는 배경·재미있는 문구) — 장년부면 끄세요</label>
   </div>
   <button class="btn" id="cBuild">🎲 문제 뽑기</button>
   <div id="cDeck"></div>`;
@@ -1002,7 +1007,7 @@ function renderSetup(el){
     c.oxN=Math.max(0,+$("#cOxN").value||0);c.saN=Math.max(0,+$("#cSaN").value||0);c.gkN=Math.max(0,+$("#cGkN").value||0);c.nsN=Math.max(0,+$("#cNsN").value||0);c.myN=parseCustom($("#cCustom").value).length;
     c.custom=$("#cCustom").value;
     c.secMC=Math.max(5,+$("#cSecMC").value||20);c.secOX=Math.max(5,+$("#cSecOX").value||12);c.secSA=Math.max(5,+$("#cSecSA").value||30);
-    c.speed=false;c.last2=$("#cLast2").checked;c.elim=$("#cElim").checked;c.autoClose=$("#cAuto").checked;
+    c.speed=false;c.last2=$("#cLast2").checked;c.elim=$("#cElim").checked;c.autoClose=$("#cAuto").checked;c.fun=$("#cFun").checked;pushTitle(c.title);
     saveA();info();};
   const info=()=>{const c=C2();
     const R=parseRange(c.range);const P=poolsFor(R.books);
@@ -1282,9 +1287,9 @@ function boardFx(){if(document.querySelector(".floaty"))return;const f=document.
   for(let k=0;k<18;k++){const e=document.createElement("span");e.textContent=em[k%em.length];e.style.left=(Math.random()*96)+"vw";e.style.animationDuration=(14+Math.random()*16)+"s";e.style.animationDelay=(-Math.random()*25)+"s";e.style.fontSize=(3+Math.random()*4)+"vh";f.appendChild(e)}
   document.body.appendChild(f);let h=0;setInterval(()=>{const el=$("#bHype");if(!el)return;h++;el.style.opacity=0;setTimeout(()=>{el.textContent=HYPE[h%HYPE.length];el.style.opacity=1},400)},3500)}
 function onBoardCtl(x,t){
-  if(x.k==="info"){if(t>=INFO.t&&typeof x.title==="string"){INFO={title:x.title.slice(0,30),t};if(!B.rid)boardIdle();else if(t>=B.openT){B.title=INFO.title;bSoon()}}return}
+  if(x.k==="info"){if(t>=INFO.t&&typeof x.title==="string"){INFO={title:x.title.slice(0,30),t,fun:!!x.fun};if(!B.rid||t>=B.openT)setFun(INFO.fun);if(!B.rid)boardIdle();else if(t>=B.openT){B.title=INFO.title;bSoon()}}return}
   if(x.k==="reset"){if(B.rid&&x.r===B.rid){B={rid:null,openT:t};if(bUnsub){bUnsub();bUnsub=null}const c=document.querySelector(".confetti");if(c)c.remove();boardIdle()}return}
-  if(x.k==="open"){if(t<B.openT)return;B=freshB(x,t);if(bUnsub)bUnsub();bUnsub=subscribe(RES,Math.floor(t/1000)-30,onBoardRes);bSoon();return}
+  if(x.k==="open"){if(t<B.openT)return;B=freshB(x,t);setFun(x.fun);if(bUnsub)bUnsub();bUnsub=subscribe(RES,Math.floor(t/1000)-30,onBoardRes);bSoon();return}
   if(!B.rid||x.r!==B.rid)return;
   if(x.k==="q"){const fresh=Date.now()-t<8000;B.q=x;B.qStart=fresh?Date.now():t;B.dl=B.qStart+x.s*1000;B.closed=Date.now()>=B.dl;B.rv=null;B.view="q"}
   else if(x.k==="cl"){if(B.q&&x.i===B.q.i)B.closed=true}
@@ -1385,7 +1390,7 @@ function renderBoard(){
     <div class="bsplit"><div style="display:flex;flex-direction:column;gap:2vh;justify-content:center">
       <div class="bans"><small>정답</small>${ansTxt}</div>${R.ex?`<p class="bex">${esc(R.ex)}</p>`:""}
       ${q.t==="sa"?"":area}
-      <p class="bex" style="font-size:3.6vh;color:#fff">${rate>=80?"다들 성경 좀 읽었네? 😎":rate>=50?"오~ 반 이상 맞혔다! 👏":rate>=20?"이건 좀 어려웠지? 🤯":"역대급 난이도 💀 다음 문제로 만회하자!"}</p>
+      ${funOn()?`<p class="bex" style="font-size:3.6vh;color:#fff">${rate>=80?"다들 성경 좀 읽었네? 😎":rate>=50?"오~ 반 이상 맞혔다! 👏":rate>=20?"이건 좀 어려웠지? 🤯":"역대급 난이도 💀 다음 문제로 만회하자!"}</p>`:""}
       <p class="bex">정답자 <b style="color:var(--gold)">${R.ok}</b>명 / 제출 ${R.na}명 (${rate}%)${B.elim?` · 🔔 생존 <b style="color:var(--gold)">${R.surv}</b>명`:""}</p>
     </div><div><h2 style="font-size:4vh;margin-bottom:1.4vh">🏅 TOP 5</h2><div class="brank">${rankRows(R.top,5)}</div></div></div>${bFoot()}</div>`;
 }
