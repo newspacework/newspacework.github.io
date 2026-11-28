@@ -526,6 +526,7 @@ function onCtl(x,t){
     if(store.get(JOINED_KEY)!==P.rid&&store.get(ME_KEY)&&document.visibilityState!=="hidden"&&Date.now()-t<6*3600e3){
       const me=store.get(ME_KEY);if(P.depts.includes(me.g))sendJoin()}
     renderSoon();return}
+  if(x.k==="reset"){if(P.rid&&x.r===P.rid){P={rid:null,openT:t};store.del(JOINED_KEY);if(Date.now()-t<15000)toast("🔄 진행자가 게임을 리셋했어요");renderSoon()}return}
   if(!P.rid||x.r!==P.rid)return;
   if(x.k==="q"){
     const fresh=Date.now()-t<8000;
@@ -924,7 +925,7 @@ function drawDeck(){
 function renderRun(el){
   const C=A.cfg,ds=deptsOf(C);const S=computeStandings();const list=S.list;
   const counts=ds.map((g,gi)=>`${esc(g)} ${list.filter(r=>r.g===gi).length}`).join(" · ");
-  const links=`<div class="alinks"><a href="#board" target="_blank" rel="noopener">📺 큰 화면 열기</a><button id="aCopy">🔗 학생 주소 복사</button><button id="aNew">✨ 새 대회 준비</button><button id="aOut">나가기</button><span id="aConn" class="note" style="align-self:center">${L.resConn&&L.ctlConn?"● 연결됨":"○ 연결 중…"}</span></div>`;
+  const links=`<div class="alinks"><a href="#board" target="_blank" rel="noopener">📺 큰 화면 열기</a><button id="aCopy">🔗 학생 주소 복사</button><button id="aNew" style="background:#ffe4e6">🔄 게임 리셋</button><button id="aOut">나가기</button><span id="aConn" class="note" style="align-self:center">${L.resConn&&L.ctlConn?"● 연결됨":"○ 연결 중…"}</span></div>`;
   let main="";
   if(A.phase==="lobby"){
     main=`<div class="card sec" style="text-align:center"><h2>🔔 학생 입장 중</h2><p class="prog">${list.length}명</p><p class="note">${counts||"아직 아무도 없어요"}</p>
@@ -993,7 +994,7 @@ function renderRun(el){
   on("#aKey",()=>{keyHidden=!keyHidden;store.set("bell-keyhide",keyHidden);renderAdmin()});
   on("#aCopy",()=>{try{navigator.clipboard.writeText(joinUrl());toast("학생 접속 주소를 복사했어요")}catch(e){toast(joinUrl())}});
   on("#aOut",()=>{store.del("bell-admin-ok");location.hash=""});
-  on("#aNew",()=>{if(!confirm("지금 대회를 끝내고 새 대회를 준비할까요? (진행 기록은 사라져요)"))return;A={cfg:A.cfg,deck:A.deck,warn:A.warn,phase:"setup"};saveA();if(L.unsubRes)L.unsubRes();renderAdmin()});
+  on("#aNew",resetMenu);
   el.querySelectorAll("[data-cf]").forEach(b=>b.addEventListener("click",()=>{const g=+b.dataset.cf;L.filt=L.filt===g?null:g;renderAdmin(true)}));
   on("#aFiltOff",e=>{e.preventDefault();L.filt=null;renderAdmin(true)});
   on("#aCls",editClasses);
@@ -1003,6 +1004,27 @@ function renderRun(el){
   adminTick();
 }
 
+/* 게임 리셋: 학생 폰·큰 화면까지 함께 초기화 */
+function resetMenu(){
+  const m=document.createElement("div");m.className="modal";
+  m.innerHTML=`<div class="card"><h2>🔄 게임 리셋</h2><p class="note">점수와 답은 모두 지워져요. 학생 폰과 큰 화면도 함께 초기화돼요.</p>
+    <button class="btn" data-rs="same" style="font-size:19px">🔁 같은 문제로 처음부터<small style="display:block;font:700 13px 'Noto Sans KR'">입장한 학생은 자동으로 다시 들어와요</small></button>
+    <button class="btn sub" data-rs="new">🎲 문제 새로 뽑아 처음부터<small style="display:block;font:700 13px 'Noto Sans KR';color:var(--mut)">같은 설정으로 문제만 다시 뽑아요 · 학생 자동 재입장</small></button>
+    <button class="btn red" data-rs="all" style="font-size:19px">🗑 완전 리셋 (설정 화면으로)<small style="display:block;font:700 13px 'Noto Sans KR'">학생은 입장 화면으로 돌아가요</small></button>
+    <button class="btn sub" data-rs="no">취소</button></div>`;
+  document.body.appendChild(m);
+  m.addEventListener("click",e=>{if(e.target===m)m.remove()});
+  m.querySelectorAll("[data-rs]").forEach(b=>b.addEventListener("click",async()=>{
+    const k=b.dataset.rs;m.remove();if(k==="no")return;
+    const old=A.rid;
+    if(old)await ctl({k:"reset",r:old});
+    if(L.unsubRes){L.unsubRes();L.unsubRes=null}
+    clearTimeout(L.closeT);L.filt=null;
+    if(k==="all"){A={cfg:A.cfg,deck:A.deck,warn:A.warn,phase:"setup"};saveA();renderAdmin();toast("완전히 리셋했어요");return}
+    if(k==="new"){const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn}
+    await sleep(600);await openContest();toast(k==="new"?"문제를 새로 뽑아 다시 시작해요":"처음부터 다시 시작해요");
+  }));
+}
 function modal(html,onSave){
   const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card">${html}<div class="big2"><button class="btn" id="mOk" style="font-size:20px">저장</button><button class="btn sub" id="mNo">취소</button></div></div>`;
   document.body.appendChild(m);const close=()=>m.remove();
@@ -1044,11 +1066,13 @@ let B={rid:null,openT:0};let bUnsub=null;
 function freshB(x,t){return {rid:x.r,openT:t,title:x.title||DEFAULT_TITLE,depts:x.depts||DEFAULT_DEPTS,n:x.n||0,elim:!!x.elim,joins:new Map(),ans:new Map(),view:"lobby",q:null,qStart:0,dl:0,closed:false,rv:null,rk:null,end:null}}
 function initBoard(){
   show("board");document.title="📺 성경 골든벨";
-  $("#board").innerHTML=`<div class="bwrap"><p class="btitle" style="margin:auto;text-align:center"><span class="bell">🔔</span> 성경 골든벨</p><p class="bex">진행자가 대회를 열면 여기에 입장 QR이 떠요</p></div>`;
+  boardIdle();
   subscribe(CTL,"all",onBoardCtl,ok=>{const c=$("#bConn");if(c)c.textContent=ok?"● 연결됨":"○ 연결 중…"});
   setInterval(boardTick,200);
 }
+const boardIdle=()=>{$("#board").innerHTML=`<div class="bwrap"><p class="btitle" style="margin:auto;text-align:center"><span class="bell">🔔</span> 성경 골든벨</p><p class="bex">진행자가 대회를 열면 여기에 입장 QR이 떠요</p></div>`};
 function onBoardCtl(x,t){
+  if(x.k==="reset"){if(B.rid&&x.r===B.rid){B={rid:null,openT:t};if(bUnsub){bUnsub();bUnsub=null}const c=document.querySelector(".confetti");if(c)c.remove();boardIdle()}return}
   if(x.k==="open"){if(t<B.openT)return;B=freshB(x,t);if(bUnsub)bUnsub();bUnsub=subscribe(RES,Math.floor(t/1000)-30,onBoardRes);bSoon();return}
   if(!B.rid||x.r!==B.rid)return;
   if(x.k==="q"){const fresh=Date.now()-t<8000;B.q=x;B.qStart=fresh?Date.now():t;B.dl=B.qStart+x.s*1000;B.closed=Date.now()>=B.dl;B.rv=null;B.view="q"}
