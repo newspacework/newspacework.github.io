@@ -168,6 +168,16 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .blob{display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;flex:1;align-items:center}
 .qrbox{background:#fff;padding:2.2vh;border-radius:2vh;width:min(42vh,36vw);aspect-ratio:1;justify-self:center}
 .qrbox img,.qrbox canvas{width:100%!important;height:100%!important}
+.blob2{display:grid;grid-template-columns:1fr auto;gap:3vw;flex:1;min-height:0}
+.bcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(15vw,1fr));gap:1.2vh 1vw;align-content:start;overflow:hidden}
+.bct{background:#25275e;border-radius:1.4vh;padding:.9vh 1vw 1.1vh;min-height:9vh}
+.bct.zero{opacity:.45}
+.bch{display:flex;justify-content:space-between;align-items:baseline;font:900 2.8vh "Noto Sans KR",sans-serif;border-bottom:2px solid #3a3d86;padding-bottom:.5vh;margin-bottom:.7vh}
+.bch b{color:var(--gold);font:400 3vh "Black Han Sans",sans-serif}
+.bcn{display:flex;flex-wrap:wrap;gap:.6vh .5vw}
+.bcn span{background:#3a3d86;border-radius:.8vh;padding:.2vh .7vw;font:700 2.1vh "Noto Sans KR",sans-serif}
+.bcn span.new{background:var(--gold);color:var(--ink);animation:popn .6s ease-out}
+@keyframes popn{0%{transform:scale(.4)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
 .burl{font:900 3.4vh "Noto Sans KR",sans-serif;text-align:center;color:#fff;margin:1.4vh 0 0}
 .bcount{font:400 16vh/1 "Black Han Sans",sans-serif;color:var(--gold);margin:0}
 .bdepts{display:flex;gap:2vw;flex-wrap:wrap;font:900 3.2vh "Noto Sans KR",sans-serif}
@@ -1172,7 +1182,7 @@ function onBoardCtl(x,t){
 }
 function onBoardRes(x,t){
   if(x.r!==B.rid||typeof x.d!=="string")return;
-  if(x.t==="j"){B.joins.set(x.d,{n:String(x.n||"").slice(0,10),g:+x.g||0});if(B.view==="lobby")bSoon()}
+  if(x.t==="j"){B.joins.set(x.d,{n:String(x.n||"").slice(0,10),g:+x.g||0});if(Date.now()-t<10000){B.newest=x.d;B.newAt=Date.now()}if(B.view==="lobby")bSoon()}
   else if(x.t==="a"){const i=+x.i;if(!B.ans.has(i))B.ans.set(i,new Set());B.ans.get(i).add(x.d);if(B.view==="q"){const el=$("#bNa");if(el)el.textContent=B.ans.get(i).size}}
 }
 let brq=0;function bSoon(){if(brq)return;brq=requestAnimationFrame(()=>{brq=0;renderBoard()})}
@@ -1190,12 +1200,15 @@ function renderBoard(){
   if(B.view!=="end"){const c=document.querySelector(".confetti");if(c)c.remove()}
   const head=`<div class="btop"><span>🔔 ${esc(B.title)}</span><span>참가 ${B.joins.size}명</span></div>`;
   if(B.view==="lobby"){
-    const per=B.depts.map((d,gi)=>`<span>${esc(d)} ${[...B.joins.values()].filter(j=>j.g===gi).length}명</span>`).join("");
-    const names=[...B.joins.values()].slice(-80).map(j=>`<span>${esc(j.n)}</span>`).join("");
-    el.innerHTML=`<div class="bwrap">${head}<div class="blob"><div><p class="btitle"><span class="bell">🔔</span> ${esc(B.title)}</p>
-      <p class="bex" style="text-align:left;margin-top:1vh">총 ${B.n}문제 · 4지선다 · O/X · 주관식 · 😆 넌센스${B.elim?" · 틀리면 탈락!":""}</p>
-      <p class="bcount" style="margin-top:3vh">${B.joins.size}<span style="font-size:5vh;color:#fff"> 명 입장</span></p><div class="bdepts">${per}</div><div class="bnames">${names}</div></div>
-      <div><div class="qrbox" id="bQr"></div><p class="burl">${esc(prettyUrl())}</p></div></div>${bFoot()}</div>`;
+    const all=[...B.joins.entries()];
+    const tiles=B.depts.map((d,gi)=>{const m=all.filter(([,j])=>j.g===gi);
+      return `<div class="bct ${m.length?"":"zero"}"><div class="bch"><span>${esc(d)}</span><b>${m.length}명</b></div><div class="bcn">${m.map(([id,j])=>`<span class="${id===B.newest&&Date.now()-B.newAt<4000?"new":""}">${esc(j.n)}</span>`).join("")}</div></div>`}).join("");
+    el.innerHTML=`<div class="bwrap">${head}<div class="blob2"><div style="display:flex;flex-direction:column;gap:1.6vh;min-height:0">
+      <div class="row" style="align-items:flex-end;gap:3vw"><div style="flex:1"><p class="btitle" style="font-size:6vh"><span class="bell">🔔</span> ${esc(B.title)}</p>
+      <p class="bex" style="text-align:left;margin-top:.6vh">총 ${B.n}문제 · 4지선다 · O/X · 주관식 · 😆 넌센스${B.elim?" · 틀리면 탈락!":""}</p></div>
+      <p class="bcount" style="flex:none;font-size:11vh">${B.joins.size}<span style="font-size:4vh;color:#fff"> 명 입장</span></p></div>
+      <div class="bcg">${tiles}</div></div>
+      <div><div class="qrbox" id="bQr" style="width:min(34vh,26vw)"></div><p class="burl" style="font-size:2.6vh">${esc(prettyUrl())}</p></div></div>${bFoot()}</div>`;
     qrInto($("#bQr"),joinUrl(),512);return;
   }
   if(B.view==="end"){
