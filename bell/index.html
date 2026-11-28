@@ -115,6 +115,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .bk.on{background:var(--ink);color:#fff}.bk.on small{color:var(--gold)}
 .booklist span.zero{background:#eee;color:#999;border-color:#bbb}
 .deck{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto;padding-right:4px}
+.dq .mv{display:flex;flex-direction:column;gap:4px}.dq .mv .mini{padding:4px 9px}.dq .mv .mini:disabled{opacity:.3}
+.dq[draggable]{cursor:grab;transition:background .3s}
 .dq{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:start;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px}
 .dq .n{font:400 20px "Black Han Sans",sans-serif;text-align:center}
 .dq .t{font-size:15px;font-weight:700;word-break:keep-all}
@@ -973,6 +975,7 @@ function fillShort(kind){
   toast(add.length?`${add.length}문제를 채웠어요${left>0?` (아직 ${left}개 모자라요)`:""}`:"그 종류는 남은 문제가 없어요. 다른 걸로 채워 주세요");
   saveA();drawDeck();
 }
+function flash(i){const r=document.querySelector(`.dq[data-i="${i}"]`);if(!r)return;r.style.background="#fff3c4";r.scrollIntoView({block:"nearest"});setTimeout(()=>{r.style.background=""},600)}
 function drawDeck(){
   const box=$("#cDeck");if(!box)return;
   if(!A.deck.length){box.innerHTML="";return}
@@ -982,11 +985,24 @@ function drawDeck(){
     ${(A.warn||[]).map(w=>`<p class="warn">⚠️ ${esc(w)}</p>`).join("")}
     ${(A.want||0)>A.deck.length?`<div class="compose" style="background:#fff3c4;color:var(--ink);border:3px solid var(--gold2)"><b style="color:var(--no)">⚠️ ${A.want-A.deck.length}문제가 모자라요</b> (목표 ${A.want}문제 · 지금 ${A.deck.length}문제)<br>무엇으로 채울까요?
       <div class="chips" style="margin-top:8px"><button class="chip" data-fill="mc">📖 성경 4지선다로</button><button class="chip" data-fill="ns">😆 넌센스로</button><button class="chip" data-fill="gk">🌏 상식으로</button></div></div>`:""}
-    <p class="note">마음에 안 드는 문제는 🔁 로 바꿀 수 있어요. 정답은 진행자에게만 보여요.</p>
-    <div class="deck">${A.deck.map((q,i)=>`<div class="dq"><span class="n">${i+1}</span><div><div class="m">${q.ns?"😆 넌센스":esc(q.c)} · ${TYPE_NAME[q.t]}</div><div class="t">${qTextHtml(q)}</div><div class="a">정답: ${esc(q.t==="mc"?q.o[q.cor]:q.ans)}${q.t==="mc"?` <span class="m">(${q.o.map(esc).join(" / ")})</span>`:""}</div></div><button class="mini" data-sw="${i}">🔁</button></div>`).join("")}</div>
+    <p class="note">▲▼ 로 순서를 옮기고(컴퓨터에선 끌어다 놓기도 돼요), 🔁 로 다른 문제로 바꿔요. 정답은 진행자에게만 보여요.</p>
+    <div class="deck" id="dList">${A.deck.map((q,i)=>`<div class="dq" draggable="true" data-i="${i}"><span class="n">${i+1}</span><div><div class="m">${q.ns?"😆 넌센스":esc(q.c)} · ${TYPE_NAME[q.t]}</div><div class="t">${qTextHtml(q)}</div><div class="a">정답: ${esc(q.t==="mc"?q.o[q.cor]:q.ans)}${q.t==="mc"?` <span class="m">(${q.o.map(esc).join(" / ")})</span>`:""}</div></div><div class="mv"><button class="mini" data-up="${i}" ${i===0?"disabled":""} title="위로">▲</button><button class="mini" data-sw="${i}" title="다른 문제로 바꾸기">🔁</button><button class="mini" data-dn="${i}" ${i===A.deck.length-1?"disabled":""} title="아래로">▼</button></div></div>`).join("")}</div>
     <button class="btn dark" id="dOpen">🔔 대회 열기 (학생 입장 시작)</button>
   </div>`;
-  box.querySelectorAll("[data-sw]").forEach(b=>b.addEventListener("click",()=>{const i=+b.dataset.sw;const n=swapOne(A.deck,i,A.cfg);if(!n){toast("바꿀 문제가 없어요");return}A.deck[i]=n;saveA();drawDeck()}));
+  box.querySelectorAll("[data-sw]").forEach(b=>b.addEventListener("click",()=>{const i=+b.dataset.sw;const n=swapOne(A.deck,i,A.cfg);if(!n){toast("바꿀 문제가 없어요");return}A.deck[i]=n;const l=$("#dList"),st=l?l.scrollTop:0;saveA();drawDeck();const l2=$("#dList");if(l2)l2.scrollTop=st;flash(i)}));
+  const keep=fn=>{const l=$("#dList");const st=l?l.scrollTop:0;fn();saveA();drawDeck();const l2=$("#dList");if(l2)l2.scrollTop=st};
+  const move=(i,j)=>{if(j<0||j>=A.deck.length||i===j)return;const [q]=A.deck.splice(i,1);A.deck.splice(j,0,q)};
+  box.querySelectorAll("[data-up]").forEach(b=>b.addEventListener("click",()=>{const i=+b.dataset.up;keep(()=>move(i,i-1));flash(i-1)}));
+  box.querySelectorAll("[data-dn]").forEach(b=>b.addEventListener("click",()=>{const i=+b.dataset.dn;keep(()=>move(i,i+1));flash(i+1)}));
+  /* 끌어다 놓기 (컴퓨터) */
+  let dragI=null;
+  box.querySelectorAll(".dq[draggable]").forEach(r=>{
+    r.addEventListener("dragstart",e=>{dragI=+r.dataset.i;r.style.opacity=".4";e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",String(dragI))}catch(_){}});
+    r.addEventListener("dragend",()=>{r.style.opacity=""});
+    r.addEventListener("dragover",e=>{e.preventDefault();r.style.borderColor="var(--gold2)"});
+    r.addEventListener("dragleave",()=>{r.style.borderColor=""});
+    r.addEventListener("drop",e=>{e.preventDefault();const j=+r.dataset.i;if(dragI==null)return;const from=dragI;dragI=null;keep(()=>move(from,j));flash(j)});
+  });
   box.querySelectorAll("[data-fill]").forEach(b=>b.addEventListener("click",()=>fillShort(b.dataset.fill)));
   $("#dReroll").addEventListener("click",()=>{const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn;A.info=r.info;A.want=r.want;saveA();drawDeck()});
   $("#dOpen").addEventListener("click",openContest);
