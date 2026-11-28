@@ -539,12 +539,16 @@ function buildDeck(cfg){
   const C2=composition(cfg);const want=C2.bible+C2.gk+C2.ns+C2.my;const info=[];
   let need=want-deck.length;
   if(need>0){
-    const fills=[["범위 안 성경 4지선다",()=>pickType(P,"mc",need,used)],["다른 성경 책 4지선다",()=>pickType(ALL,"mc",need,used)],["성경 O/X",()=>pickOX(ALL,need,used)],
-      ["넌센스",()=>pickType(poolsFor(["넌센스"]),"mc",need,used).map(q=>({...q,ns:true}))],["상식",()=>pickType(poolsFor(["상식"]),"mc",need,used)]];
+    const fills=[["범위 안 성경 4지선다",()=>pickType(P,"mc",need,used)],["범위 안 성경 O/X",()=>pickOX(P,need,used)],["범위 안 성경 주관식",()=>pickType(P,"sa",need,used)],
+      ...(cfg.fill?[["다른 성경 책 4지선다",()=>pickType(ALL,"mc",need,used)],["다른 성경 책 O/X",()=>pickOX(ALL,need,used)]]:[]),
+      ["넌센스·상식",()=>{/* 넌센스와 상식을 번갈아 섞어서 */const ns=pickType(poolsFor(["넌센스"]),"mc",need,used).map(q=>({...q,ns:true}));
+        const gk=pickType(poolsFor(["상식"]),"mc",need,used).concat(pickOX(poolsFor(["상식"]),need,used));const out=[];
+        for(let k=0;out.length<need&&(k<ns.length||k<gk.length);k++){if(k<ns.length&&out.length<need)out.push(ns[k]);if(k<gk.length&&out.length<need)out.push(gk[k])}
+        return out}]];
     for(const [nm,fn] of fills){if(need<=0)break;const add=fn();if(!add.length)continue;
       add.forEach(q=>{const pos=deck.length>1?1+rnd(deck.length-1):deck.length;deck.splice(pos,0,q)});need-=add.length;info.push(`${nm} ${add.length}문제`)}
   }
-  const filled=info.length?[`모자란 문제를 자동으로 채웠어요: ${info.join(", ")}`]:[];
+  const filled=info.length?[`모자란 문제를 자동으로 채웠어요: ${info.join(", ")}`+(!cfg.fill&&info.some(x=>/넌센스|상식/.test(x))?` · 고른 범위 문제가 모자라서예요. 범위 안 문제만 내려면 총 문제 수를 ${P.all.length}개 이하로 줄이세요`:"")]:[];
   deck.forEach(q=>q.uid=newId());
   return {deck,warn:need>0?warn:[],info:filled,want};
 }
@@ -738,7 +742,7 @@ function answer(a){
 /* ======================= 진행자 ======================= */
 const AKEY="bell-admin";
 const DEF_CFG={title:DEFAULT_TITLE,cmode:"grade",cdeps:DEFAULT_DEPTS.join(", "),grades:3,rg:DEF_RG,depts:"중1-1반, 중2-1반, 중3-1반, 고1-1반, 고2-1반, 고3-1반",range:"전체",total:20,mcOn:true,oxOn:true,oxN:4,saOn:true,saN:3,gkOn:false,gkN:2,nsOn:true,nsN:2,myOn:false,myN:3,custom:"",
-  fun:false,secMC:20,secOX:12,secSA:30,speed:false,elim:false,last2:false,fill:true,autoClose:true};
+  fun:false,secMC:20,secOX:12,secSA:30,speed:false,elim:false,last2:false,fill:false,autoClose:true};
 let A=null;            /* 저장되는 진행 상태 */
 let L={players:new Map(),ans:new Map(),srv:{q:{},cl:{},rv:{}},resConn:false,ctlConn:false,unsubRes:null,closeT:null,tick:null};
 function saveA(){store.set(AKEY,A)}
@@ -752,7 +756,7 @@ let ptT=null;function pushTitle(t){clearTimeout(ptT);ptT=setTimeout(()=>{const f
 function initAdmin(){
   document.title="🛠 진행자 · 성경 골든벨";
   A=store.get(AKEY)||{cfg:{...DEF_CFG},deck:[],warn:[],phase:"setup"};
-  A.cfg={...DEF_CFG,...A.cfg};pushTitle(A.cfg.title);
+  A.cfg={...DEF_CFG,...A.cfg};if(A.cfg.fillMig!==1){A.cfg.fill=false;A.cfg.fillMig=1}pushTitle(A.cfg.title);
   show("admin");
   if(A.rid&&A.phase!=="setup")startListening();
   renderAdmin();
@@ -946,7 +950,7 @@ function renderSetup(el){
     <div class="chips">${["전체","구약","신약"].map(t=>`<button class="chip sm" data-r="${esc(t)}">${esc(t)}</button>`).join("")}<button class="chip sm" data-r="">모두 해제</button></div>
     <div class="booklist" id="cBooks"></div>
     <div class="bgrid" id="cGrid"></div>
-    <label class="tog"><input type="checkbox" id="cFill" ${C.fill?"checked":""}>범위 안 문제가 모자라면 다른 성경 책에서 채우기</label>
+    <label class="tog"><input type="checkbox" id="cFill" ${C.fill?"checked":""}>범위 안 문제가 모자라면 다른 성경 책에서 채우기 (기본은 꺼짐 → 넌센스·상식으로 채워요)</label>
   </div>
   <div class="card sec">
     <h2>3. 문제 수 · 형식</h2>
@@ -1025,14 +1029,19 @@ function renderSetup(el){
     const parts=[];if(K.mc)parts.push(`4지선다 <b>${K.mc}</b>`);if(K.ox)parts.push(`O/X <b>${K.ox}</b>`);if(K.sa)parts.push(`주관식 <b>${K.sa}</b>`);
     const sp=[];if(K.gk)sp.push(`상식 <b>${K.gk}</b>`);if(K.ns)sp.push(`넌센스 <b>${K.ns}</b>`);if(K.my)sp.push(`직접 <b>${K.my}</b>`);
     let w="";const need={mc:K.mc,ox:K.ox,sa:K.sa};
-    if(K.mc>P.mc.length)w+=`<br>⚠️ 범위 안 4지선다가 ${P.mc.length}개뿐이에요`;
-    if(K.sa>P.sa.length)w+=`<br>⚠️ 범위 안 주관식이 ${P.sa.length}개뿐이에요`;
-    if(K.mc+K.ox+K.sa>P.mc.length+P.ox.length)w+=`<br>⚠️ 범위 안 문제(${P.mc.length+P.ox.length}개)보다 많이 뽑아요`;
-    if(w)w+=c.fill?" → 다른 책에서 채워요":" → 모자란 만큼 빠져요";
+    if(K.bible>P.all.length){w+=`<br>⚠️ 고른 범위에는 성경 문제가 <b>${P.all.length}개</b>뿐이에요. ${c.fill?"나머지는 다른 성경 책에서":"나머지는 넌센스·상식으로"} 채워요 <button class="mini" id="cFit" style="margin-left:4px">총 ${P.all.length+K.gk+K.ns+K.my}문제로 맞추기</button>`}
+    else if(K.mc>P.mc.length||K.sa>P.sa.length)w+=`<br>ℹ️ 범위 안 ${K.mc>P.mc.length?`4지선다(${P.mc.length}개)`:`주관식(${P.sa.length}개)`}가 모자라 다른 형식으로 섞어 채워요`;
+
+
+
     const myN=parseCustom(c.custom).length;$("#cMyCnt").textContent=`인식한 문제 ${myN}개`;
     $("#cMyN").value=myN;
     $("#cMyBox").style.display=c.myOn?"block":"none";
+
     $("#cCompose").innerHTML=`📖 성경 ${K.bible}문제: ${parts.join(" · ")||"-"}${sp.length?`<br>➕ ${sp.join(" · ")}`:""}<br>= 총 <b>${K.bible+K.gk+K.ns+K.my}</b>문제${w}`;
+    {const fb=$("#cFit");if(fb)fb.addEventListener("click",()=>{const n=P.all.length+K.gk+K.ns+K.my;$("#cTotal").value=n;
+      $("#cOxN").value=Math.min(+$("#cOxN").value,P.ox.length+Math.floor(P.mc.length/3));$("#cSaN").value=Math.min(+$("#cSaN").value,P.sa.length);
+      el.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",+x.dataset.t===n));upd()})}
   };
   el.querySelectorAll("input,textarea").forEach(i=>i.addEventListener("input",upd));
   el.querySelectorAll("input[type=checkbox]").forEach(i=>i.addEventListener("change",upd));
