@@ -162,6 +162,11 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .sb{border-radius:8px;padding:3px 8px;font-size:13px;font-weight:900;border:2px solid}
 .sb em{font-style:normal;font-weight:700;font-size:11px;margin-left:3px;opacity:.7}
 .sb.ok{border-color:var(--ok);background:#dcfce7}.sb.no{border-color:var(--no);background:#ffe4e6}.sb.wait{border-color:#f59e0b;background:#fff7e0}
+#abar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -4px 0 var(--gold)}
+#abar span{flex:none;font-weight:900;font-size:14px;max-width:42%}
+#abar .btn{flex:1;font-size:20px;padding:10px;box-shadow:3px 3px 0 #000}
+#admin{padding-bottom:96px}
+#netw{position:fixed;left:10px;right:10px;top:10px;z-index:60;background:var(--no);color:#fff;border:3px solid var(--line);border-radius:14px;padding:12px;text-align:center;font-weight:700;box-shadow:4px 4px 0 var(--line)}
 .modal{position:fixed;inset:0;background:rgba(28,29,63,.55);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
 .modal .card{width:min(440px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .dist{display:flex;flex-direction:column;gap:5px}
@@ -177,14 +182,18 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .blob{display:grid;grid-template-columns:1.1fr .9fr;gap:4vw;flex:1;align-items:center}
 .qrbox{background:#fff;padding:2.2vh;border-radius:2vh;width:min(42vh,36vw);aspect-ratio:1;justify-self:center}
 .qrbox img,.qrbox canvas{width:100%!important;height:100%!important}
-.blob2{display:grid;grid-template-columns:1fr auto;gap:3vw;flex:1;min-height:0}
-.bcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(15vw,1fr));gap:1.2vh 1vw;align-content:start;overflow:hidden}
+.blob2{display:grid;grid-template-columns:1fr auto;grid-template-rows:minmax(0,1fr);gap:3vw;flex:1;min-height:0}
+#board.on{height:100vh;overflow:hidden}
+#board .bwrap{min-height:0}
+.bcg{display:grid;grid-template-columns:repeat(auto-fill,minmax(15vw,1fr));gap:1vh .8vw;align-content:start;overflow:hidden;min-height:0;flex:1}
 .bct{background:#25275e;border-radius:1.4vh;padding:.9vh 1vw 1.1vh;min-height:9vh}
 .bct.zero{opacity:.45}
 .bch{display:flex;justify-content:space-between;align-items:baseline;font:900 2.8vh "Noto Sans KR",sans-serif;border-bottom:2px solid #3a3d86;padding-bottom:.5vh;margin-bottom:.7vh}
 .bch b{color:var(--gold);font:400 3vh "Black Han Sans",sans-serif}
 .bcn{display:flex;flex-wrap:wrap;gap:.6vh .5vw}
-.bcn span{background:#3a3d86;border-radius:.8vh;padding:.2vh .7vw;font:700 2.1vh "Noto Sans KR",sans-serif}
+.bcn span{background:#3a3d86;border-radius:.8vh;padding:.15vh .6vw;font:700 var(--nf,2.1vh) "Noto Sans KR",sans-serif}
+.bcg.many{grid-template-columns:repeat(auto-fill,minmax(12.4vw,1fr))}
+.bcg .bct{min-height:auto}.bcg .bch{font-size:calc(var(--nf,2.1vh) * 1.25)}
 .bcn span.new{background:var(--gold);color:var(--ink);animation:popn .6s ease-out}
 @keyframes popn{0%{transform:scale(.4)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
 .burl{font:900 3.4vh "Noto Sans KR",sans-serif;text-align:center;color:#fff;margin:1.4vh 0 0}
@@ -294,6 +303,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="bank.js"></script>
+<script src="bank_ot.js"></script>
+<script src="bank_nt.js"></script>
 <script>
 {
 /* ======================= 공통 ======================= */
@@ -486,7 +497,7 @@ function buildDeck(cfg){
   const specials=[];
   if(C.gk){const G=poolsFor(["상식"]);let g=pickType(G,"mc",Math.ceil(C.gk*.7),used);if(cfg.oxOn)g=g.concat(pickOX(G,C.gk-g.length,used));else g=g.concat(pickType(G,"mc",C.gk-g.length,used));if(g.length<C.gk)warn.push(`상식 문제가 ${C.gk-g.length}개 모자라요`);specials.push(...g)}
   if(C.ns){const N=poolsFor(["넌센스"]);const g=pickType(N,"mc",C.ns,used).map(q=>({...q,ns:true}));if(g.length<C.ns)warn.push(`넌센스 문제가 ${C.ns-g.length}개 모자라요`);specials.push(...g)}
-  if(C.my){const my=shuffle(parseCustom(cfg.custom)).slice(0,C.my);if(my.length<C.my)warn.push(`직접 만든 문제가 ${C.my-my.length}개 모자라요`);specials.push(...my)}
+  if(C.my){const my=shuffle(parseCustom(cfg.custom));if(my.length<C.my)warn.push(`직접 만든 문제가 ${C.my-my.length}개 모자라요`);specials.push(...my)}
   shuffle(specials);
   const deck=bible.slice();
   specials.forEach((s,k)=>{const pos=Math.min(deck.length,Math.round((k+1)*(bible.length+specials.length)/(specials.length+1)));deck.splice(pos,0,s)});
@@ -530,12 +541,16 @@ function initPlayer(){
   drawPick();
   $("#jGo").addEventListener("click",doJoin);
   $("#jName").addEventListener("keydown",e=>{if(e.key==="Enter")doJoin()});
-  subscribe(CTL,"all",onCtl,ok=>{$("#jConn").textContent=ok?"● 진행자와 연결됨":"○ 연결 다시 시도 중…"});
+  let opened=false;setTimeout(()=>{if(!opened)netWarn(true)},9000);
+  subscribe(CTL,"all",onCtl,ok=>{$("#jConn").textContent=ok?"● 진행자와 연결됨":"○ 연결 다시 시도 중…";if(ok){opened=true;netWarn(false)}});
   setInterval(tickPlayer,200);
 }
 /* 입장 화면: 부서 → 학년 → 반 고르기 (진행자가 '반 이름 직접'으로 정했으면 반 목록에서 고르기) */
 function curCm(){if(P.rid)return P.cm;return validCm(store.get("bell-cm"))||(store.get("bell-cmoff")?null:DEF_CM)}
 function curDepts(){if(P.rid)return P.depts;const cm=curCm();return cm?classLabels(cm):DEFAULT_DEPTS}
+/* 같은 와이파이에 너무 많이 붙으면 연결이 막혀요 → LTE 안내 */
+function netWarn(on){let el=document.getElementById("netw");if(!on){if(el)el.remove();return}
+  if(!el){el=document.createElement("div");el.id="netw";el.innerHTML="📶 연결이 안 돼요!<br><b>와이파이를 끄고 LTE(데이터)로</b> 다시 접속해 주세요";document.body.appendChild(el)}}
 function drawPick(){
   const box=$("#jDept"),cm=curCm(),ds=curDepts();
   if(!cm){
@@ -569,7 +584,7 @@ function sendJoin(){
   const me=store.get(ME_KEY);if(!me||!P.rid)return;
   const g=Math.max(0,P.depts.indexOf(me.g));
   store.set(JOINED_KEY,P.rid);
-  post(RES,{t:"j",r:P.rid,d:deviceId(),n:me.n,g}).then(ok=>{if(!ok)toast("입장 신호를 못 보냈어요. 다시 눌러 주세요")});
+  post(RES,{t:"j",r:P.rid,d:deviceId(),n:me.n,g}).then(ok=>{if(!ok)toast("입장 신호를 못 보냈어요. 와이파이를 끄고 LTE로 다시 눌러 주세요")});
 }
 const joined=()=>P.rid&&store.get(JOINED_KEY)===P.rid&&store.get(ME_KEY);
 function onCtl(x,t){
@@ -679,7 +694,7 @@ function answer(a){
   const ms=Math.max(0,Date.now()-P.qStart);
   all[q.i]={a,ms};store.set(mineKey(),all);buzz(20);
   renderPlayer();
-  post(RES,{t:"a",r:P.rid,i:q.i,d:deviceId(),a,ms}).then(ok=>{if(!ok){toast("답을 보내지 못했어요 😥 인터넷을 확인해 주세요")}});
+  post(RES,{t:"a",r:P.rid,i:q.i,d:deviceId(),a,ms}).then(ok=>{if(!ok){toast("답을 보내지 못했어요 😥 와이파이를 끄고 LTE로 바꿔 주세요");netWarn(true)}});
 }
 
 /* ======================= 진행자 ======================= */
@@ -841,13 +856,14 @@ function adminTick(){
   if(!A||A.phase!=="run")return;const i=A.cur;if(qState(i)!=="live")return;
   const q=A.deck[i];const left=A.qT[i]+q.s*1000-Date.now();
   const el=$("#aTl");if(el)el.textContent=Math.max(0,Math.ceil(left/1000))+"초";
+  const e2=$("#aTl2");if(e2)e2.textContent=Math.max(0,Math.ceil(left/1000))+"초";
   if(left<-1500)closeQ();
 }
 /* ---- 진행자 화면 ---- */
 let keyHidden=store.get("bell-keyhide")||false;
 function renderAdmin(soft){
   const el=$("#admin");
-  if(A.phase==="setup"){if(soft)return;renderSetup(el);return}
+  if(A.phase==="setup"){const bar=document.getElementById("abar");if(bar)bar.remove();if(soft)return;renderSetup(el);return}
   const sy=window.scrollY;
   renderRun(el);
   if(soft)window.scrollTo(0,sy);
@@ -884,17 +900,17 @@ function renderSetup(el){
   </div>
   <div class="card sec">
     <h2>3. 문제 수 · 형식</h2>
-    <div><label>총 문제 수</label><div class="chips" style="margin-top:6px">${[10,20,30,40,50].map(n=>`<button class="chip ${C.total===n?"on":""}" data-t="${n}">${n}문제</button>`).join("")}<span class="row" style="flex:none;gap:6px">${numIn("cTotal",C.total,1,100)}<span class="unit">문제</span></span></div></div>
+    <div><label>총 문제 수</label><div class="chips" style="margin-top:6px">${[10,20,30,40,50].map(n=>`<button class="chip ${C.total===n?"on":""}" data-t="${n}">${n}문제</button>`).join("")}<span class="row" style="flex:none;gap:6px">${numIn("cTotal",C.total,1,300)}<span class="unit">문제</span></span></div></div>
     <div>
       <div class="trow"><label class="tog"><input type="checkbox" id="cMc" ${C.mcOn?"checked":""}>📖 성경 4지선다</label><span class="unit">나머지 전부 · 프리셋을 누르면 비율 자동</span></div>
       <div class="trow"><label class="tog"><input type="checkbox" id="cOx" ${C.oxOn?"checked":""}>⭕ 성경 O/X</label>${numIn("cOxN",C.oxN,0,100)}<span class="unit">문제</span></div>
       <div class="trow"><label class="tog"><input type="checkbox" id="cSa" ${C.saOn?"checked":""}>✍️ 성경 주관식</label>${numIn("cSaN",C.saN,0,100)}<span class="unit">문제</span></div>
       <div class="trow"><label class="tog"><input type="checkbox" id="cGk" ${C.gkOn?"checked":""}>🌏 상식</label>${numIn("cGkN",C.gkN,0,50)}<span class="unit">문제</span></div>
       <div class="trow"><label class="tog"><input type="checkbox" id="cNs" ${C.nsOn?"checked":""}>😆 넌센스 (중간중간)</label>${numIn("cNsN",C.nsN,0,29)}<span class="unit">문제</span></div>
-      <div class="trow"><label class="tog"><input type="checkbox" id="cMy" ${C.myOn?"checked":""}>✏️ 직접 만든 문제</label>${numIn("cMyN",C.myN,0,100)}<span class="unit">문제</span></div>
+      <div class="trow"><label class="tog"><input type="checkbox" id="cMy" ${C.myOn?"checked":""}>✏️ 직접 만든 문제</label><input class="num" id="cMyN" value="${C.myN}" readonly tabindex="-1" style="background:#f3f0e2"><span class="unit">문제 (쓴 만큼 전부)</span></div>
     </div>
     <div id="cMyBox" style="display:${C.myOn?"block":"none"}">
-      <label for="cCustom">직접 만든 문제 (한 줄에 한 문제)</label>
+      <label for="cCustom">직접 만든 문제 (한 줄에 한 문제 · 개수 제한 없음 · 쓴 문제는 모두 출제돼요)</label>
       <textarea id="cCustom" placeholder="4지선다:  문제 | 정답 | 오답1 | 오답2 | 오답3&#10;O/X:     문제 | O   (또는 X)&#10;주관식:   문제 | 정답/다른정답&#10;&#10;예) 우리 교회 담임목사님 성함은? | 김OO&#10;예) 올해 여름 수련회 장소는 강원도였다. | O">${esc(C.custom)}</textarea>
       <p class="note" id="cMyCnt"></p>
     </div>
@@ -940,9 +956,9 @@ function renderSetup(el){
     c.cdeps=$("#cDeps").value;c.grades=Math.max(1,Math.min(6,+$("#cGrades").value||1));
     {const rg=(c.rg||[]).map(r=>r.slice());document.querySelectorAll("#cRg [data-rg]").forEach(i=>{const [di,g]=i.dataset.rg.split(",").map(Number);rg[di]=rg[di]||[];rg[di][g]=Math.max(1,Math.min(15,+i.value||1))});c.rg=rg}
     delete c.lbl;c.range=$("#cRange").value;c.fill=$("#cFill").checked;
-    c.total=Math.max(1,Math.min(100,+$("#cTotal").value||1));
+    c.total=Math.max(1,Math.min(300,+$("#cTotal").value||1));
     c.mcOn=$("#cMc").checked;c.oxOn=$("#cOx").checked;c.saOn=$("#cSa").checked;c.gkOn=$("#cGk").checked;c.nsOn=$("#cNs").checked;c.myOn=$("#cMy").checked;
-    c.oxN=Math.max(0,+$("#cOxN").value||0);c.saN=Math.max(0,+$("#cSaN").value||0);c.gkN=Math.max(0,+$("#cGkN").value||0);c.nsN=Math.max(0,+$("#cNsN").value||0);c.myN=Math.max(0,+$("#cMyN").value||0);
+    c.oxN=Math.max(0,+$("#cOxN").value||0);c.saN=Math.max(0,+$("#cSaN").value||0);c.gkN=Math.max(0,+$("#cGkN").value||0);c.nsN=Math.max(0,+$("#cNsN").value||0);c.myN=parseCustom($("#cCustom").value).length;
     c.custom=$("#cCustom").value;
     c.secMC=Math.max(5,+$("#cSecMC").value||20);c.secOX=Math.max(5,+$("#cSecOX").value||12);c.secSA=Math.max(5,+$("#cSecSA").value||30);
     c.speed=false;c.last2=$("#cLast2").checked;c.elim=$("#cElim").checked;c.autoClose=$("#cAuto").checked;
@@ -963,7 +979,7 @@ function renderSetup(el){
     if(K.mc+K.ox+K.sa>P.mc.length+P.ox.length)w+=`<br>⚠️ 범위 안 문제(${P.mc.length+P.ox.length}개)보다 많이 뽑아요`;
     if(w)w+=c.fill?" → 다른 책에서 채워요":" → 모자란 만큼 빠져요";
     const myN=parseCustom(c.custom).length;$("#cMyCnt").textContent=`인식한 문제 ${myN}개`;
-    if(c.myOn&&myN>0&&c.myN>myN){c.myN=myN;$("#cMyN").value=myN;saveA()}
+    $("#cMyN").value=myN;
     $("#cMyBox").style.display=c.myOn?"block":"none";
     $("#cCompose").innerHTML=`📖 성경 ${K.bible}문제: ${parts.join(" · ")||"-"}${sp.length?`<br>➕ ${sp.join(" · ")}`:""}<br>= 총 <b>${K.bible+K.gk+K.ns+K.my}</b>문제${w}`;
   };
@@ -971,7 +987,7 @@ function renderSetup(el){
   el.querySelectorAll("input[type=checkbox]").forEach(i=>i.addEventListener("change",upd));
   el.querySelectorAll("[data-r]").forEach(b=>b.addEventListener("click",()=>{$("#cRange").value=b.dataset.r;upd()}));
   el.querySelectorAll("[data-t]").forEach(b=>b.addEventListener("click",()=>{const t=+b.dataset.t;$("#cTotal").value=t;
-    $("#cOxN").value=Math.round(t*.2);$("#cSaN").value=Math.round(t*.15);$("#cNsN").value=Math.max(1,Math.round(t*.1));$("#cGkN").value=Math.max(1,Math.round(t*.1));$("#cMyN").value=Math.max(1,Math.round(t*.1));el.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",x===b));upd()}));
+    $("#cOxN").value=Math.round(t*.2);$("#cSaN").value=Math.round(t*.15);$("#cNsN").value=Math.max(1,Math.round(t*.1));$("#cGkN").value=Math.max(1,Math.round(t*.1));el.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",x===b));upd()}));
   $("#cTotal").addEventListener("input",()=>el.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",+x.dataset.t===+$("#cTotal").value)));
   $("#aOut").addEventListener("click",()=>{store.del("bell-admin-ok");location.hash="";});
   $("#cBuild").addEventListener("click",()=>{upd();const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn;A.info=r.info;A.want=r.want;saveA();drawDeck();$("#cDeck").scrollIntoView({behavior:"smooth"})});
@@ -1006,13 +1022,16 @@ function submList(i,q,st,act,m){
   const not=act.filter(d=>!m.has(d)).length,done=act.length-not;
   const stat=d=>{if(!m.has(d))return open?["wait","⏳"]:["no","❌ 미제출"];if(!rv)return ["ok","✅"];const v=validAns(i,d);return v&&isCorrect(q,i,v.a)?["ok","⭕"]:["no","❌"]};
   const groups=ds.map((g,gi)=>({g,ids:act.filter(d=>(L.players.get(d)||{}).g===gi)})).filter(x=>x.ids.length);
+  const compact=act.length>20&&!L.subAll;   /* 인원이 많으면 안 낸 사람만 */
   const rows=groups.map(({g,ids})=>{const sub=ids.filter(d=>m.has(d)).length;const okN=rv?ids.filter(d=>{const v=validAns(i,d);return v&&isCorrect(q,i,v.a)}).length:0;
-    const chips=ids.slice().sort((a,b)=>m.has(a)-m.has(b)).map(d=>{const [c,ic]=stat(d);return `<span class="sb ${c}">${ic} ${esc((L.players.get(d)||{}).n||"?")}</span>`}).join("");
-    return `<div class="sgrp"><div class="sgh"><b>${esc(g)}</b><span>${rv?`⭕ ${okN} / ${ids.length}명`:`제출 ${sub} / ${ids.length}명`}${sub===ids.length?" 🎉":""}</span></div><div class="sbs">${chips}</div></div>`}).join("");
+    const pick=compact?(rv?[]:ids.filter(d=>!m.has(d))):ids.slice().sort((a,b)=>m.has(a)-m.has(b));
+    const chips=pick.map(d=>{const [c,ic]=stat(d);return `<span class="sb ${c}">${ic} ${esc((L.players.get(d)||{}).n||"?")}</span>`}).join("");
+    return `<div class="sgrp"><div class="sgh"><b>${esc(g)}</b><span>${rv?`⭕ ${okN} / ${ids.length}명`:`제출 ${sub} / ${ids.length}명`}${sub===ids.length?" 🎉":""}</span></div>${chips?`<div class="sbs">${chips}</div>`:""}</div>`}).join("");
   const head=open?(not?`<b class="wait">⏳ 아직 안 냄 ${not}명</b> · <b class="okb">✅ 제출 ${done}명</b>`:`<b class="okb">🎉 모두 제출했어요</b>`)
     :rv?`<b class="okb">⭕ 정답</b> · <b class="no">❌ 오답</b>${not?` · <b class="no">미제출 ${not}명은 오답</b>`:""}`
     :(not?`<b class="no">❌ 미제출 ${not}명 = 오답</b> · <b class="okb">✅ 제출 ${done}명</b>`:`<b class="okb">🎉 모두 제출했어요</b>`);
-  return `<div class="subm"><div>${head}</div>${rows}</div>`;
+  const tog=act.length>20?` <button class="mini" id="aSubAll" style="margin-left:6px">${L.subAll?"안 낸 사람만":"전체 이름 보기"}</button>`:"";
+  return `<div class="subm"><div>${head}${tog}</div>${rows}</div>`;
 }
 function flash(i){const r=document.querySelector(`.dq[data-i="${i}"]`);if(!r)return;r.style.background="#fff3c4";r.scrollIntoView({block:"nearest"});setTimeout(()=>{r.style.background=""},600)}
 function drawDeck(){
@@ -1084,9 +1103,9 @@ function renderRun(el){
       <p class="qtext" style="font-size:20px">${qTextHtml(q)}</p>
       ${q.t==="mc"?`<div class="note" style="font-size:15px">${q.o.map((o,k)=>`${LET[k]} ${esc(o)}`).join(" &nbsp; ")}</div>`:""}
       <div class="keyans ${keyHidden&&st!=="revealed"?"hide":""}" id="aKey">🔑 정답: <span>${esc(keyTxt)}</span> <small class="note">(눌러서 ${keyHidden?"보이기":"가리기"})</small></div>
-      ${st!=="ready"?`<p style="margin:0;font-weight:900;text-align:center;font-size:20px">제출 ${nAns} / ${act.length}명 ${st==="revealed"?"· 공개 완료":st==="closed"?"· 마감":""}</p>${submList(i,q,st,act,m)}`:""}
-      ${dist}${btns}
-      ${st==="ready"&&i>0?"":""}
+      ${st!=="ready"?`<p style="margin:0;font-weight:900;text-align:center;font-size:20px">제출 ${nAns} / ${act.length}명 ${st==="revealed"?"· 공개 완료":st==="closed"?"· 마감":""}</p>`:""}
+      ${btns}${dist}
+      ${st!=="ready"?submList(i,q,st,act,m):""}
     </div>`;
   }
   const filt=L.filt;const shown=list.map((r,k)=>[r,k]).filter(([r])=>filt==null||r.g===filt);
@@ -1110,7 +1129,23 @@ function renderRun(el){
     <div class="card sec"><div class="row" style="justify-content:space-between"><h3 style="flex:none">👥 참가자 ${filt!=null?esc(ds[filt]||"")+" ":""}${shown.length}명</h3></div>
       <p class="note">✏️ 수정: 이름·반 고치기 (학생 폰에도 바로 반영) · 연습용 폰·잘못 들어온 사람은 '제외'</p>
       <div style="max-height:50vh;overflow:auto"><table class="ptable"><thead><tr><th>#</th><th>이름</th><th>반</th><th style="text-align:right">점수</th><th></th><th></th></tr></thead><tbody>${rows}${exRows}</tbody></table></div></div>`;
+  /* 화면 아래 고정 진행 버튼 (스크롤 없이 진행) */
+  {let txt="",lab="",act="",cls="";
+    if(A.phase==="lobby"){txt=`🔔 입장 ${list.length}명`;lab="▶ 1번 문제 내기";act="start"}
+    else if(A.phase==="run"){const i=A.cur,st=qState(i),m=L.ans.get(i)||new Map();const n=[...m.keys()].filter(d=>!excluded(d)).length,tot=activeIds(i).length;
+      txt=`Q${i+1}/${A.deck.length} · 제출 ${n}/${tot}`;
+      if(st==="ready"){lab=`▶ ${i+1}번 문제 내기`;act="send"}
+      else if(st==="live"){lab="⏹ 지금 마감";act="close";cls="red";txt+=` · <span id="aTl2"></span>`}
+      else if(st==="closed"){lab="📣 정답 공개";act="reveal"}
+      else if(i>=A.deck.length-1){lab="🏆 최종 결과 발표";act="end";cls="dark"}
+      else{lab=`▶ ${i+2}번 문제 내기`;act="next"}}
+    let bar=document.getElementById("abar");
+    if(act){if(!bar){bar=document.createElement("div");bar.id="abar";document.body.appendChild(bar)}
+      bar.innerHTML=`<span>${txt}</span><button class="btn ${cls}" data-act="${act}">${lab}</button>`;
+      bar.querySelector("[data-act]").addEventListener("click",()=>({start:()=>sendQ(0),send:()=>sendQ(A.cur),close:closeQ,reveal:revealQ,next:()=>sendQ(A.cur+1),end:endContest})[act]());}
+    else if(bar)bar.remove();}
   const on=(id,fn)=>{const b=$(id);if(b)b.addEventListener("click",fn)};
+  on("#aSubAll",()=>{L.subAll=!L.subAll;renderAdmin(true)});
   on("#aStart",()=>sendQ(0));on("#aSend",()=>sendQ(A.cur));on("#aClose",closeQ);on("#aReveal",revealQ);on("#aRank",showRank);on("#aRevive",revive);on("#aEnd",endContest);
   on("#aNext",()=>sendQ(A.cur+1));
   on("#aReEnd",()=>{A.phase="run";endContest()});
@@ -1235,13 +1270,16 @@ function renderBoard(){
     const all=[...B.joins.entries()];
     const tiles=B.depts.map((d,gi)=>{const m=all.filter(([,j])=>j.g===gi);
       return `<div class="bct ${m.length?"":"zero"}"><div class="bch"><span>${esc(d)}</span><b>${m.length}명</b></div><div class="bcn">${m.map(([id,j])=>`<span class="${id===B.newest&&Date.now()-B.newAt<4000?"new":""}">${esc(j.n)}</span>`).join("")}</div></div>`}).join("");
-    el.innerHTML=`<div class="bwrap">${head}<div class="blob2"><div style="display:flex;flex-direction:column;gap:1.6vh;min-height:0">
+    el.innerHTML=`<div class="bwrap">${head}<div class="blob2"><div style="display:flex;flex-direction:column;gap:1.6vh;min-height:0;overflow:hidden">
       <div class="row" style="align-items:flex-end;gap:3vw"><div style="flex:1"><p class="btitle" style="font-size:6vh"><span class="bell">🔔</span> ${esc(B.title)}</p>
       <p class="bex" style="text-align:left;margin-top:.6vh">총 ${B.n}문제 · 4지선다 · O/X · 주관식 · 😆 넌센스${B.elim?" · 틀리면 탈락!":""}</p></div>
       <p class="bcount" style="flex:none;font-size:11vh">${B.joins.size}<span style="font-size:4vh;color:#fff"> 명 입장</span></p></div>
       <div class="bcg">${tiles}</div></div>
       <div><div class="qrbox" id="bQr" style="width:min(34vh,26vw)"></div><p class="burl" style="font-size:2.6vh">${esc(prettyUrl())}</p></div></div>${bFoot()}</div>`;
-    qrInto($("#bQr"),joinUrl(),512);return;
+    qrInto($("#bQr"),joinUrl(),512);
+    {const g=$(".bcg");if(g){g.classList.toggle("many",B.depts.length>12);let f=2.1;g.style.setProperty("--nf",f+"vh");
+      while(g.scrollHeight>g.clientHeight+2&&f>1.1){f-=.1;g.style.setProperty("--nf",f.toFixed(2)+"vh")}}}
+    return;
   }
   if(B.view==="end"){
     const E=B.end;const t=E.top||[];
