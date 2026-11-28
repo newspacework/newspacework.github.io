@@ -40,6 +40,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .chip.sm{font-size:14px;padding:5px 11px;border-width:2px}
 .dept{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:6px}
 .dept .chip{font:400 26px "Black Han Sans",sans-serif;padding:16px 8px;border-radius:16px}
+.dept.many{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}.dept.many .chip{font:900 17px "Noto Sans KR",sans-serif;padding:11px 4px;border-radius:12px}
+.drow{display:flex;gap:8px;align-items:center;margin-top:6px}.drow input{margin:0;padding:9px 12px;font-size:17px}.drow .mini{flex:none}
 .shake{animation:sh .3s}@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 .bell{display:inline-block;transform-origin:50% 10%;animation:ring 2.4s ease-in-out infinite}
 @keyframes ring{0%,70%,100%{transform:rotate(0)}75%{transform:rotate(14deg)}80%{transform:rotate(-12deg)}85%{transform:rotate(8deg)}90%{transform:rotate(-5deg)}}
@@ -127,6 +129,21 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .ptable td.r{text-align:right;font-weight:900}
 .ptable tr.ex td{opacity:.4;text-decoration:line-through}
 .ptable tr.dead td:not(:last-child){color:#999}
+.clsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.cls{appearance:none;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;color:var(--ink);font:inherit}
+.cls.on{background:var(--ink);color:#fff}.cls.on .nm{color:#ddd}
+.cls b{font:400 20px "Black Han Sans",sans-serif;display:flex;justify-content:space-between;gap:6px}
+.cls .nm{font-size:12px;color:var(--mut);line-height:1.4;margin-top:2px;max-height:3.4em;overflow:hidden}
+.cls.zero{opacity:.55}
+.t10s{display:flex;flex-direction:column;gap:5px}
+.t10{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:8px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:6px 10px;font-weight:900}
+.t10:nth-child(-n+3){background:#fff3c4}
+.t10 b{font:400 20px "Black Han Sans",sans-serif;text-align:center}
+.t10 em{font-style:normal;font-size:12px;color:var(--mut);font-weight:700}
+.t10 .s{font:400 22px "Black Han Sans",sans-serif}
+.t10.dead{opacity:.5}
+.modal{position:fixed;inset:0;background:rgba(28,29,63,.55);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
+.modal .card{width:min(440px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .dist{display:flex;flex-direction:column;gap:5px}
 .dist div{display:flex;align-items:center;gap:8px;font-weight:900}
 .dist i{display:block;height:20px;border-radius:5px;min-width:3px}
@@ -199,8 +216,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
   <h1><span class="bell">🔔</span> 성경<br><em>골든벨</em></h1>
   <p class="note" id="jTitle"></p>
   <div class="card sec">
-    <div><label>부서를 골라요</label><div class="dept" id="jDept"></div></div>
-    <div><label for="jName">이름</label><input id="jName" maxlength="10" autocomplete="off" placeholder="예: 김은혜"></div>
+    <div id="jDept"></div>
+    <div><label for="jName">내 이름</label><input id="jName" maxlength="10" autocomplete="off" placeholder="이름을 써요 (예: 김은혜)"></div>
     <button class="btn" id="jGo">입장하기!</button>
     <p class="note" id="jNote">진행자가 대회를 열면 입장할 수 있어요</p>
   </div>
@@ -249,6 +266,12 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 const ADMIN_PIN="7777";              /* 진행자 PIN — 바꾸려면 이 숫자만 수정 */
 const DEFAULT_TITLE="참빛 중고등부 성경 골든벨";
 const DEFAULT_DEPTS=["중등부","고등부"];
+/* 부서·학년·반 → 반 이름 목록 (예: 중등부 1학년 1반 → "중1-1반") */
+const DEF_CM={deps:DEFAULT_DEPTS,grades:3,rooms:3};
+const preOf=d=>{const t=String(d).replace(/등부$|부$/,"");return t.slice(0,1)||String(d).slice(0,1)};
+function classLabels(cm){const out=[];for(const d of cm.deps)for(let g=1;g<=cm.grades;g++)for(let r=1;r<=cm.rooms;r++)out.push(cm.rooms>1?`${preOf(d)}${g}-${r}반`:`${preOf(d)}${g}`);return out}
+const clsIdx=(cm,di,g,r)=>(di*cm.grades+(g-1))*cm.rooms+(r-1);
+function validCm(c){if(!c||!Array.isArray(c.deps)||!c.deps.length)return null;const grades=Math.max(1,Math.min(6,+c.grades||1)),rooms=Math.max(1,Math.min(15,+c.rooms||1));return {deps:c.deps.slice(0,4).map(String),grades,rooms}}
 /* 실시간 연결 채널 (ntfy.sh). 이 게임 전용 채널이라 다른 게임과 섞이지 않아요 */
 const NTFY=(()=>{const q=new URLSearchParams(location.search).get("ntfy");return q&&/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(q)?q:"https://ntfy.sh"})();
 const BASE=NTFY+"/nsw-goldenbell-k4v8q2";
@@ -446,27 +469,45 @@ function swapOne(deck,i,cfg){
 /* ======================= 학생 ======================= */
 const ME_KEY="bell-me",JOINED_KEY="bell-joined";
 let P={rid:null,openT:0};
-function freshP(x,t){return {rid:x.r,openT:t,title:x.title||DEFAULT_TITLE,depts:Array.isArray(x.depts)&&x.depts.length?x.depts.slice(0,6):DEFAULT_DEPTS,n:x.n||0,elim:!!x.elim,
+function freshP(x,t){return {rid:x.r,openT:t,title:x.title||DEFAULT_TITLE,depts:Array.isArray(x.depts)&&x.depts.length?x.depts.slice(0,60):DEFAULT_DEPTS,cm:validCm(x.cm),n:x.n||0,elim:!!x.elim,
   phase:"lobby",q:null,qStart:0,dl:0,rv:null,prevS:0,lastS:0,me:null,alive:true,lastRvI:-1,end:null}}
 const mineKey=()=>"bell-ans-"+P.rid;
 const mine=()=>store.get(mineKey())||{};
-let pickedDept=null;
+let pickedDept=null,jsel={};
 function initPlayer(){
   show("join");
   const me=store.get(ME_KEY);if(me){$("#jName").value=me.n||"";pickedDept=me.g||null}
-  drawDepts(DEFAULT_DEPTS);
+  drawPick();
   $("#jGo").addEventListener("click",doJoin);
   $("#jName").addEventListener("keydown",e=>{if(e.key==="Enter")doJoin()});
   subscribe(CTL,"all",onCtl,ok=>{$("#jConn").textContent=ok?"● 진행자와 연결됨":"○ 연결 다시 시도 중…"});
   setInterval(tickPlayer,200);
 }
-function drawDepts(ds){
-  $("#jDept").innerHTML=ds.map(d=>`<button class="chip ${d===pickedDept?"on":""}" data-d="${esc(d)}">${esc(d)}</button>`).join("");
-  $("#jDept").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{pickedDept=b.dataset.d;drawDepts(ds)}));
+/* 입장 화면: 부서 → 학년 → 반 고르기 (진행자가 '반 이름 직접'으로 정했으면 반 목록에서 고르기) */
+function curCm(){if(P.rid)return P.cm;return validCm(store.get("bell-cm"))||(store.get("bell-cmoff")?null:DEF_CM)}
+function curDepts(){if(P.rid)return P.depts;const cm=curCm();return cm?classLabels(cm):DEFAULT_DEPTS}
+function drawPick(){
+  const box=$("#jDept"),cm=curCm(),ds=curDepts();
+  if(!cm){
+    box.innerHTML=`<label>내 반을 골라요</label><div class="dept ${ds.length>4?"many":""}">${ds.map(d=>`<button class="chip ${d===pickedDept?"on":""}" data-d="${esc(d)}">${esc(d)}</button>`).join("")}</div>`;
+    box.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{pickedDept=b.dataset.d;drawPick()}));return;
+  }
+  /* 저장된 반 이름에서 부서·학년·반 되살리기 */
+  if(jsel.di==null&&pickedDept){const k=ds.indexOf(pickedDept);if(k>=0){const per=cm.grades*cm.rooms;jsel={di:Math.floor(k/per),gr:Math.floor(k%per/cm.rooms)+1,rm:k%cm.rooms+1}}}
+  if(cm.rooms===1&&jsel.gr)jsel.rm=1;
+  const row=(lab,key,items)=>`<div style="margin-top:8px"><label>${lab}</label><div class="dept ${items.length>3?"many":""}">${items.map(([v,t])=>`<button class="chip ${jsel[key]===v?"on":""}" data-k="${key}" data-v="${v}">${esc(t)}</button>`).join("")}</div></div>`;
+  let h=row("① 부서","di",cm.deps.map((d,i)=>[i,d]));
+  h+=row("② 학년","gr",Array.from({length:cm.grades},(_,i)=>[i+1,`${i+1}학년`]));
+  if(cm.rooms>1)h+=row("③ 반","rm",Array.from({length:cm.rooms},(_,i)=>[i+1,`${i+1}반`]));
+  const ready=jsel.di!=null&&jsel.gr&&jsel.rm;
+  pickedDept=ready?ds[clsIdx(cm,jsel.di,jsel.gr,jsel.rm)]:null;
+  h+=`<p class="note" style="margin-top:8px;font-size:15px">${pickedDept?`👉 <b style="color:var(--ink)">${esc(pickedDept)}</b>`:"부서·학년·반을 차례로 눌러 주세요"}</p>`;
+  box.innerHTML=h;
+  box.querySelectorAll("[data-k]").forEach(b=>b.addEventListener("click",()=>{jsel[b.dataset.k]=+b.dataset.v;drawPick()}));
 }
 function doJoin(){
   const n=$("#jName").value.trim().slice(0,10);
-  if(!pickedDept){const el=$("#jDept");el.classList.add("shake");setTimeout(()=>el.classList.remove("shake"),300);toast("부서를 먼저 골라 주세요");return}
+  if(!pickedDept){const el=$("#jDept");el.classList.add("shake");setTimeout(()=>el.classList.remove("shake"),300);toast("부서·학년·반을 먼저 골라 주세요");return}
   if(!n){const el=$("#jName");el.focus();el.classList.add("shake");setTimeout(()=>el.classList.remove("shake"),300);return}
   store.set(ME_KEY,{n,g:pickedDept});
   try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}
@@ -481,7 +522,7 @@ function sendJoin(){
 }
 const joined=()=>P.rid&&store.get(JOINED_KEY)===P.rid&&store.get(ME_KEY);
 function onCtl(x,t){
-  if(x.k==="open"){if(t<P.openT)return;P=freshP(x,t);
+  if(x.k==="open"){if(t<P.openT)return;P=freshP(x,t);if(P.cm){store.set("bell-cm",P.cm);store.del("bell-cmoff")}else{store.del("bell-cm");store.set("bell-cmoff",1)}jsel={};
     if(store.get(JOINED_KEY)!==P.rid&&store.get(ME_KEY)&&document.visibilityState!=="hidden"&&Date.now()-t<6*3600e3){
       const me=store.get(ME_KEY);if(P.depts.includes(me.g))sendJoin()}
     renderSoon();return}
@@ -501,6 +542,10 @@ function onCtl(x,t){
     P.lastRvI=x.i;P.rv=x;if(P.q&&x.i===P.q.i)P.phase="rv";
     else P.phase="rv";
   }
+  else if(x.k==="ed"){if(x.d===deviceId()){const me=store.get(ME_KEY)||{};const g=P.depts[x.g]||me.g;const n=String(x.n||me.n).slice(0,10);
+      if(me.n!==n||me.g!==g){store.set(ME_KEY,{n,g});if(Date.now()-t<15000)toast(`📢 진행자가 「${n} · ${g}」(으)로 고쳤어요`)}}}
+  else if(x.k==="dp"){if(Array.isArray(x.depts)&&x.depts.length){const old=P.depts;P.depts=x.depts.slice(0,60);const me=store.get(ME_KEY);
+      if(me){const k=old.indexOf(me.g);if(k>=0&&P.depts[k]&&P.depts[k]!==me.g){store.set(ME_KEY,{n:me.n,g:P.depts[k]});if(Date.now()-t<15000)toast(`📢 반 이름이 「${P.depts[k]}」(으)로 바뀌었어요`)}}}}
   else if(x.k==="rev"){P.alive=true;if(P.phase==="rv"||P.phase==="lobby")renderSoon()}
   else if(x.k==="end"){P.end=x;P.phase="end";const sc=parseSc(x.sc);const me=sc.findIndex(e=>e.d===deviceId());
     if(me>=0){const e=sc[me];const sameG=sc.filter(z=>z.g===e.g);P.me={rank:me+1,of:sc.length,grank:sameG.findIndex(z=>z.d===e.d)+1,gof:sameG.length,s:e.s}}}
@@ -517,8 +562,8 @@ function tickPlayer(){
 function renderPlayer(){
   if(!joined()){
     show("join");
-    if(P.rid){$("#jTitle").textContent=P.title;drawDepts(P.depts);
-      $("#jNote").textContent=P.phase==="end"?"대회가 끝났어요. 다음 대회를 기다려요":(P.q?"대회 진행 중! 지금 입장하면 다음 문제부터 함께해요":"대회가 열렸어요! 부서와 이름을 쓰고 입장하세요")}
+    if(P.rid){$("#jTitle").textContent=P.title;drawPick();
+      $("#jNote").textContent=P.phase==="end"?"대회가 끝났어요. 다음 대회를 기다려요":(P.q?"대회 진행 중! 지금 입장하면 다음 문제부터 함께해요":"대회가 열렸어요! 반을 고르고 이름을 쓰고 입장하세요")}
     else $("#jNote").textContent=store.get(ME_KEY)?"✅ 저장 완료! 진행자가 대회를 열면 자동으로 입장해요":"진행자가 대회를 열면 입장할 수 있어요";
     return;
   }
@@ -529,8 +574,8 @@ function renderPlayer(){
   if(P.phase==="lobby"){
     el.innerHTML=`${head}<div class="stripe"></div><h1 style="text-align:center"><span class="bell">🔔</span><br>입장 완료!</h1>
       <div class="card" style="text-align:center"><h2>${esc(P.title)}</h2><p class="note" style="margin-top:6px">총 ${P.n}문제 ${P.elim?"· 🔔 틀리면 탈락하는 골든벨 방식":""}</p><p class="status" style="margin-top:12px">곧 첫 문제가 나와요! 화면을 켜 두세요</p></div>
-      <button class="btn sub" id="pEdit">이름·부서 고치기</button>`;
-    $("#pEdit").addEventListener("click",()=>{store.del(JOINED_KEY);$("#jName").value=me.n;pickedDept=me.g;renderPlayer()});
+      <button class="btn sub" id="pEdit">이름·반 고치기</button>`;
+    $("#pEdit").addEventListener("click",()=>{store.del(JOINED_KEY);$("#jName").value=me.n;pickedDept=me.g;jsel={};renderPlayer()});
     return;
   }
   if(P.phase==="end"){
@@ -587,7 +632,7 @@ function answer(a){
 
 /* ======================= 진행자 ======================= */
 const AKEY="bell-admin";
-const DEF_CFG={title:DEFAULT_TITLE,depts:DEFAULT_DEPTS.join(", "),range:"전체",total:20,mcOn:true,oxOn:true,oxN:4,saOn:true,saN:3,gkOn:false,gkN:2,nsOn:true,nsN:2,myOn:false,myN:3,custom:"",
+const DEF_CFG={title:DEFAULT_TITLE,cmode:"grade",cdeps:DEFAULT_DEPTS.join(", "),grades:3,rooms:3,depts:"중1-1반, 중2-1반, 중3-1반, 고1-1반, 고2-1반, 고3-1반",range:"전체",total:20,mcOn:true,oxOn:true,oxN:4,saOn:true,saN:3,gkOn:false,gkN:2,nsOn:true,nsN:2,myOn:false,myN:3,custom:"",
   secMC:20,secOX:12,secSA:30,speed:true,elim:false,last2:true,fill:true,autoClose:true};
 let A=null;            /* 저장되는 진행 상태 */
 let L={players:new Map(),ans:new Map(),srv:{q:{},cl:{},rv:{}},resConn:false,ctlConn:false,unsubRes:null,closeT:null,tick:null};
@@ -607,7 +652,9 @@ function initAdmin(){
   renderAdmin();
   L.tick=setInterval(adminTick,250);
 }
-const deptsOf=cfg=>String(cfg.depts||"").split(/[,，]/).map(s=>s.trim()).filter(Boolean).slice(0,6);
+const cmOf=cfg=>cfg.cmode==="grade"?validCm({deps:String(cfg.cdeps||"").split(/[,，]/).map(s=>s.trim()).filter(Boolean),grades:cfg.grades,rooms:cfg.rooms})||DEF_CM:null;
+const deptsOf=cfg=>{if(Array.isArray(cfg.lbl)&&cfg.lbl.length)return cfg.lbl.slice(0,60);const cm=cmOf(cfg);if(cm)return classLabels(cm).slice(0,60);
+  return String(cfg.depts||"").split(/[,，]/).map(s=>s.trim()).filter(Boolean).slice(0,60)};
 function startListening(){
   if(L.unsubRes)L.unsubRes();
   L.players=new Map();L.ans=new Map();L.srv={q:{},cl:{},rv:{}};
@@ -620,7 +667,9 @@ function connLabel(){const el=$("#aConn");if(el)el.textContent=L.resConn&&L.ctlC
 function onAdminCtl(x,t){if(x.r!==A.rid)return;if(x.k==="q")L.srv.q[x.i]=t;if(x.k==="cl")L.srv.cl[x.i]=L.srv.cl[x.i]||t;if(x.k==="rv")L.srv.rv[x.i]=L.srv.rv[x.i]||t}
 function onRes(x,t){
   if(x.r!==A.rid||typeof x.d!=="string")return;const d=x.d.slice(0,12);
-  if(x.t==="j"){const n=String(x.n||"").slice(0,10);if(!n)return;const old=L.players.get(d);L.players.set(d,{n,g:Math.max(0,Math.min(5,+x.g||0)),jt:old?old.jt:t});aRenderSoon();return}
+  if(x.t==="j"){let n=String(x.n||"").slice(0,10);if(!n)return;let g=Math.max(0,Math.min(59,+x.g||0));const old=L.players.get(d);
+    const e=A.edits&&A.edits[d];if(e&&e.t>t){n=e.n;g=e.g}   /* 진행자가 고친 이름·반이 우선 */
+    L.players.set(d,{n,g,jt:old?old.jt:t});aRenderSoon();return}
   if(x.t==="a"){const i=+x.i;if(!(i>=0&&i<A.deck.length))return;
     if(!L.ans.has(i))L.ans.set(i,new Map());const m=L.ans.get(i);if(m.has(d))return;
     const q=A.deck[i];let a=x.a;if(q.t==="mc"){a=+a;if(!(a>=0&&a<4))return}else if(q.t==="ox"){if(a!=="O"&&a!=="X")return}else a=String(a||"").slice(0,30);
@@ -674,10 +723,10 @@ function computeStandings(){
   const list=[...res.values()].sort((a,b)=>(A.cfg.elim?(b.a-a.a):0)||b.s-a.s||b.ok-a.ok||a.ms-b.ms||a.n.localeCompare(b.n));
   return {list,alive};
 }
-function scString(list){let s=list.map(r=>`${r.d},${r.s},${r.a?1:0},${r.g}`).join(";");while(s.length>2600){list=list.slice(0,Math.floor(list.length*.85));s=list.map(r=>`${r.d},${r.s},${r.a?1:0},${r.g}`).join(";")}return s}
+function scString(list,max=2600){let s=list.map(r=>`${r.d},${r.s},${r.a?1:0},${r.g}`).join(";");while(s.length>max){list=list.slice(0,Math.floor(list.length*.85));s=list.map(r=>`${r.d},${r.s},${r.a?1:0},${r.g}`).join(";")}return s}
 function deptSummary(list){
   const ds=deptsOf(A.cfg);return ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);const avg=m.length?Math.round(m.reduce((a,r)=>a+r.s,0)/m.length):0;
-    return {g:gi,avg,cnt:m.length,top:m.slice(0,5).map(r=>[r.n,r.s,r.a?1:0])}}).filter(x=>x.cnt>0);
+    return {g:gi,avg,cnt:m.length,top:m.slice(0,ds.length>6?1:ds.length>3?3:5).map(r=>[r.n,r.s,r.a?1:0])}}).filter(x=>x.cnt>0);
 }
 /* ---- 진행 동작 ---- */
 async function ctl(obj){const ok=await post(CTL,obj);if(!ok)toast("⚠️ 신호를 못 보냈어요. 인터넷을 확인하고 다시 눌러 주세요");return ok}
@@ -686,7 +735,7 @@ async function openContest(){
   A.rid=newId();A.openT=Date.now();A.phase="lobby";A.cur=-1;A.qT={};A.clT={};A.rvd={};A.ovr={};A.revives=[];A.excl=[];
   const C=A.cfg;A.deck.forEach((q,i)=>{q.s=q.t==="mc"?C.secMC:q.t==="ox"?C.secOX:C.secSA;q.x=(C.last2&&i===A.deck.length-1)?2:1});
   saveA();startListening();
-  const ok=await ctl({k:"open",r:A.rid,title:C.title,depts:deptsOf(C),n:A.deck.length,elim:!!C.elim});
+  const ok=await ctl({k:"open",r:A.rid,title:C.title,depts:deptsOf(C),cm:cmOf(C)||undefined,n:A.deck.length,elim:!!C.elim});
   if(ok)toast("대회를 열었어요! 학생들이 입장할 수 있어요");
   renderAdmin();
 }
@@ -719,7 +768,8 @@ async function revealQ(){
 }
 async function showRank(){
   const list=computeStandings().list;
-  await ctl({k:"rk",r:A.rid,top:list.slice(0,10).map(r=>[r.n,r.g,r.s,r.a?1:0]),dep:deptSummary(list),elim:!!A.cfg.elim});
+  let dep=deptSummary(list);while(JSON.stringify(dep).length>2400)dep=dep.sort((a,b)=>b.avg-a.avg).slice(0,Math.floor(dep.length*.8));
+  await ctl({k:"rk",r:A.rid,top:list.slice(0,10).map(r=>[r.n,r.g,r.s,r.a?1:0]),dep,elim:!!A.cfg.elim});
   toast("큰 화면에 순위를 띄웠어요");
 }
 async function revive(){
@@ -730,7 +780,8 @@ async function revive(){
 async function endContest(){
   if(!confirm("최종 결과를 발표할까요?"))return;
   const list=computeStandings().list;A.phase="end";saveA();
-  await ctl({k:"end",r:A.rid,top:list.slice(0,10).map(r=>[r.n,r.g,r.s,r.a?1:0]),dep:deptSummary(list),sc:scString(list),elim:!!A.cfg.elim});
+  let dep=deptSummary(list);while(JSON.stringify(dep).length>1000)dep=dep.sort((a,b)=>b.avg-a.avg).slice(0,Math.floor(dep.length*.8));
+  await ctl({k:"end",r:A.rid,top:list.slice(0,10).map(r=>[r.n,r.g,r.s,r.a?1:0]),dep,sc:scString(list,2000),elim:!!A.cfg.elim});
   renderAdmin();
 }
 function adminTick(){
@@ -757,7 +808,17 @@ function renderSetup(el){
   <div class="card sec">
     <h2>1. 대회 정보</h2>
     <div><label for="cTitle">대회 이름</label><input id="cTitle" maxlength="30" value="${esc(C.title)}"></div>
-    <div><label for="cDepts">부서(반) — 쉼표로 구분</label><input id="cDepts" maxlength="60" value="${esc(C.depts)}"></div>
+    <div><label>입장할 때 반 고르는 방식</label>
+      <div class="chips" style="margin-top:6px"><button class="chip ${C.cmode==="grade"?"on":""}" data-cm="grade">부서 → 학년 → 반</button><button class="chip ${C.cmode!=="grade"?"on":""}" data-cm="list">반 이름 직접 정하기</button></div></div>
+    <div id="cmGrade" style="display:${C.cmode==="grade"?"flex":"none"};flex-direction:column;gap:10px">
+      <div><label for="cDeps">부서 (쉼표로 구분)</label><input id="cDeps" maxlength="30" value="${esc(C.cdeps)}" placeholder="중등부, 고등부"></div>
+      <div class="kv"><span>학년 수</span><span class="row" style="justify-content:flex-start">${numIn("cGrades",C.grades,1,6)}<span class="unit">학년</span></span>
+        <span>학년마다 반 수</span><span class="row" style="justify-content:flex-start">${numIn("cRooms",C.rooms,1,15)}<span class="unit">반 (반 구분 없으면 1)</span></span></div>
+    </div>
+    <div id="cmList" style="display:${C.cmode!=="grade"?"block":"none"}"><label>반 이름 — 칸마다 하나씩</label><div id="cDeptList"></div>
+      <div class="row" style="margin-top:8px;justify-content:flex-start"><button class="mini" id="cDeptAdd" style="flex:none">➕ 반 추가</button></div>
+      <p class="note" style="margin-top:6px">예: 중1-1반, 고1-1반, 교사 … (최대 60개)</p></div>
+    <p class="note" id="cClsPrev"></p>
   </div>
   <div class="card sec">
     <h2>2. 성경 범위</h2>
@@ -800,7 +861,8 @@ function renderSetup(el){
   <div id="cDeck"></div>`;
   const C2=()=>A.cfg;
   const upd=()=>{const c=C2();
-    c.title=$("#cTitle").value.trim()||DEFAULT_TITLE;c.depts=$("#cDepts").value;c.range=$("#cRange").value;c.fill=$("#cFill").checked;
+    c.title=$("#cTitle").value.trim()||DEFAULT_TITLE;c.depts=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value.trim()).filter(Boolean).join(", ")||DEFAULT_DEPTS.join(", ");
+    c.cdeps=$("#cDeps").value;c.grades=Math.max(1,Math.min(6,+$("#cGrades").value||1));c.rooms=Math.max(1,Math.min(15,+$("#cRooms").value||1));delete c.lbl;c.range=$("#cRange").value;c.fill=$("#cFill").checked;
     c.total=Math.max(1,Math.min(100,+$("#cTotal").value||1));
     c.mcOn=$("#cMc").checked;c.oxOn=$("#cOx").checked;c.saOn=$("#cSa").checked;c.gkOn=$("#cGk").checked;c.nsOn=$("#cNs").checked;c.myOn=$("#cMy").checked;
     c.oxN=Math.max(0,+$("#cOxN").value||0);c.saN=Math.max(0,+$("#cSaN").value||0);c.gkN=Math.max(0,+$("#cGkN").value||0);c.nsN=Math.max(0,+$("#cNsN").value||0);c.myN=Math.max(0,+$("#cMyN").value||0);
@@ -813,6 +875,7 @@ function renderSetup(el){
     const counts=R.books.map(b=>{const n=ITEMS.filter(it=>it.cat===b).length;return `<span class="${n?"":"zero"}">${esc(b)} ${n}</span>`}).join("");
     $("#cBooks").innerHTML=(R.books.length?`<b>${R.books.length}권 선택</b> · 문제 ${P.all.length}개 (4지선다 ${P.mc.length} · O/X ${P.ox.length}+자동 · 주관식 가능 ${P.sa.length})<br>${R.books.length<=20?counts:""}`:'<span class="warn">책을 찾지 못했어요</span>')+
       (R.unknown.length?`<p class="warn">알아보지 못한 말: ${R.unknown.map(esc).join(", ")}</p>`:"");
+    {const L2=deptsOf(c);$("#cClsPrev").innerHTML=`🏫 반 ${L2.length}개: ${L2.slice(0,8).map(esc).join(", ")}${L2.length>8?` … ${esc(L2[L2.length-1])}`:""}${L2.length>=60?' <span class="warn">(60개까지만)</span>':""}`;}
     const K=composition(c);
     const parts=[];if(K.mc)parts.push(`4지선다 <b>${K.mc}</b>`);if(K.ox)parts.push(`O/X <b>${K.ox}</b>`);if(K.sa)parts.push(`주관식 <b>${K.sa}</b>`);
     const sp=[];if(K.gk)sp.push(`상식 <b>${K.gk}</b>`);if(K.ns)sp.push(`넌센스 <b>${K.ns}</b>`);if(K.my)sp.push(`직접 <b>${K.my}</b>`);
@@ -833,6 +896,15 @@ function renderSetup(el){
   $("#cTotal").addEventListener("input",()=>el.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",+x.dataset.t===+$("#cTotal").value)));
   $("#aOut").addEventListener("click",()=>{store.del("bell-admin-ok");location.hash="";});
   $("#cBuild").addEventListener("click",()=>{upd();const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn;saveA();drawDeck();$("#cDeck").scrollIntoView({behavior:"smooth"})});
+  const drawDeptList=list=>{
+    $("#cDeptList").innerHTML=list.map((d,k)=>`<div class="drow"><input value="${esc(d)}" maxlength="12" placeholder="예: 중1-1반"><button class="mini" data-dx="${k}">✕</button></div>`).join("");
+    $("#cDeptList").querySelectorAll("input").forEach(i=>i.addEventListener("input",upd));
+    $("#cDeptList").querySelectorAll("[data-dx]").forEach(bt=>bt.addEventListener("click",()=>{const cur=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value);if(cur.length<=1)return;cur.splice(+bt.dataset.dx,1);drawDeptList(cur);upd()}));
+  };
+  drawDeptList(String(C.depts||"").split(/[,，]/).map(x=>x.trim()).filter(Boolean));
+  el.querySelectorAll("[data-cm]").forEach(b=>b.addEventListener("click",()=>{A.cfg.cmode=b.dataset.cm;el.querySelectorAll("[data-cm]").forEach(x=>x.classList.toggle("on",x===b));
+    $("#cmGrade").style.display=A.cfg.cmode==="grade"?"flex":"none";$("#cmList").style.display=A.cfg.cmode==="grade"?"none":"block";upd()}));
+  $("#cDeptAdd").addEventListener("click",()=>{const cur=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value);if(cur.length>=60){toast("반은 60개까지예요");return}cur.push("");drawDeptList(cur);const ins=document.querySelectorAll("#cDeptList input");ins[ins.length-1].focus()});
   info();drawDeck();
 }
 function drawDeck(){
@@ -892,15 +964,27 @@ function renderRun(el){
       ${st==="ready"&&i>0?"":""}
     </div>`;
   }
-  const rows=list.map((r,k)=>`<tr class="${r.a?"":"dead"}"><td>${k+1}</td><td>${esc(r.n)}</td><td>${esc(ds[r.g]||"")}</td><td class="r">${r.s}</td><td>${C.elim?(r.a?"🟢":"💀"):""}</td><td><button class="mini" data-ex="${esc(r.d)}">제외</button></td></tr>`).join("");
+  const filt=L.filt;const shown=list.map((r,k)=>[r,k]).filter(([r])=>filt==null||r.g===filt);
+  const rows=shown.map(([r,k])=>`<tr class="${r.a?"":"dead"}"><td>${k+1}</td><td>${esc(r.n)}</td><td>${esc(ds[r.g]||"?")}</td><td class="r">${r.s}</td><td>${C.elim?(r.a?"🟢":"💀"):""}</td><td style="white-space:nowrap"><button class="mini" data-ed="${esc(r.d)}">✏️ 수정</button> <button class="mini" data-ex="${esc(r.d)}">제외</button></td></tr>`).join("");
+  const clsCards=ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);return `<button class="cls ${filt===gi?"on":""} ${m.length?"":"zero"}" data-cf="${gi}"><b><span>${esc(g)}</span><span>${m.length}명</span></b><div class="nm">${m.length?m.map(r=>esc(r.n)).join(", "):"아직 없음"}</div></button>`}).join("");
+  const medal=k=>["🥇","🥈","🥉"][k]||(k+1);
+  const top10=list.slice(0,10).map((r,k)=>`<div class="t10 ${r.a?"":"dead"}"><b>${medal(k)}</b><span>${esc(r.n)} <em>${esc(ds[r.g]||"")}</em></span><span class="s">${r.s}${C.elim&&!r.a?" 💀":""}</span></div>`).join("");
+  const clsAvg=ds.map((g,gi)=>{const m=list.filter(r=>r.g===gi);return {g,cnt:m.length,avg:m.length?Math.round(m.reduce((a,r)=>a+r.s,0)/m.length):0}}).filter(x=>x.cnt).sort((a,b)=>b.avg-a.avg);
+  const topCard=`<div class="card sec"><div class="row" style="justify-content:space-between;flex-wrap:wrap"><h3 style="flex:none">🏆 실시간 순위 TOP 10</h3><span class="note" style="flex:none">${Object.keys(A.rvd||{}).length}문제 공개 후</span></div>
+    ${list.length?`<div class="t10s">${top10}</div>`:'<p class="note">아직 참가자가 없어요</p>'}
+    ${clsAvg.length>1?`<p class="note" style="margin-top:4px"><b>반별 평균</b> · ${clsAvg.map((x,k)=>`${k+1}. ${esc(x.g)} ${x.avg}점(${x.cnt}명)`).join(" · ")}</p>`:""}</div>`;
+  const clsCard=`<div class="card sec"><div class="row" style="justify-content:space-between;flex-wrap:wrap"><h3 style="flex:none">🏫 반별 입장 현황 · 총 ${list.length}명</h3><button class="mini" id="aCls" style="flex:none">✏️ 반 이름 고치기</button></div>
+    <p class="note">반을 누르면 아래 참가자 목록이 그 반만 보여요${filt!=null?` · <a href="#" id="aFiltOff">전체 보기</a>`:""}</p><div class="clsg">${clsCards}</div></div>`;
   const exRows=(A.excl||[]).filter(d=>L.players.has(d)).map(d=>{const p=L.players.get(d);return `<tr class="ex"><td>-</td><td>${esc(p.n)}</td><td>${esc(ds[p.g]||"")}</td><td class="r">-</td><td></td><td><button class="mini on" data-ex="${esc(d)}">복귀</button></td></tr>`}).join("");
   el.innerHTML=`<div class="stripe"></div>
     <div class="row" style="justify-content:space-between;flex-wrap:wrap"><h2 style="flex:none">🛠 ${esc(C.title)}</h2></div>
     ${links}
     ${main}
-    <div class="card sec"><div class="row" style="justify-content:space-between"><h3 style="flex:none">👥 참가자 ${list.length}명 <span class="note">${counts}</span></h3></div>
-      <p class="note">연습용 폰·잘못 들어온 사람은 '제외'를 누르면 순위에서 빠져요</p>
-      <div style="max-height:50vh;overflow:auto"><table class="ptable"><thead><tr><th>#</th><th>이름</th><th>부서</th><th style="text-align:right">점수</th><th></th><th></th></tr></thead><tbody>${rows}${exRows}</tbody></table></div></div>`;
+    ${topCard}
+    ${clsCard}
+    <div class="card sec"><div class="row" style="justify-content:space-between"><h3 style="flex:none">👥 참가자 ${filt!=null?esc(ds[filt]||"")+" ":""}${shown.length}명</h3></div>
+      <p class="note">✏️ 수정: 이름·반 고치기 (학생 폰에도 바로 반영) · 연습용 폰·잘못 들어온 사람은 '제외'</p>
+      <div style="max-height:50vh;overflow:auto"><table class="ptable"><thead><tr><th>#</th><th>이름</th><th>반</th><th style="text-align:right">점수</th><th></th><th></th></tr></thead><tbody>${rows}${exRows}</tbody></table></div></div>`;
   const on=(id,fn)=>{const b=$(id);if(b)b.addEventListener("click",fn)};
   on("#aStart",()=>sendQ(0));on("#aSend",()=>sendQ(A.cur));on("#aClose",closeQ);on("#aReveal",revealQ);on("#aRank",showRank);on("#aRevive",revive);on("#aEnd",endContest);
   on("#aNext",()=>sendQ(A.cur+1));
@@ -910,9 +994,49 @@ function renderRun(el){
   on("#aCopy",()=>{try{navigator.clipboard.writeText(joinUrl());toast("학생 접속 주소를 복사했어요")}catch(e){toast(joinUrl())}});
   on("#aOut",()=>{store.del("bell-admin-ok");location.hash=""});
   on("#aNew",()=>{if(!confirm("지금 대회를 끝내고 새 대회를 준비할까요? (진행 기록은 사라져요)"))return;A={cfg:A.cfg,deck:A.deck,warn:A.warn,phase:"setup"};saveA();if(L.unsubRes)L.unsubRes();renderAdmin()});
+  el.querySelectorAll("[data-cf]").forEach(b=>b.addEventListener("click",()=>{const g=+b.dataset.cf;L.filt=L.filt===g?null:g;renderAdmin(true)}));
+  on("#aFiltOff",e=>{e.preventDefault();L.filt=null;renderAdmin(true)});
+  on("#aCls",editClasses);
+  el.querySelectorAll("[data-ed]").forEach(b=>b.addEventListener("click",()=>editPlayer(b.dataset.ed)));
   el.querySelectorAll("[data-ex]").forEach(b=>b.addEventListener("click",()=>{const d=b.dataset.ex;const s=new Set(A.excl||[]);s.has(d)?s.delete(d):s.add(d);A.excl=[...s];saveA();renderAdmin(true)}));
   el.querySelectorAll(".sa[data-n]").forEach(b=>b.addEventListener("click",()=>{const i=A.cur;A.ovr=A.ovr||{};A.ovr[i]=A.ovr[i]||{};A.ovr[i][b.dataset.n]=b.dataset.ok!=="1";saveA();renderAdmin(true)}));
   adminTick();
+}
+
+function modal(html,onSave){
+  const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card">${html}<div class="big2"><button class="btn" id="mOk" style="font-size:20px">저장</button><button class="btn sub" id="mNo">취소</button></div></div>`;
+  document.body.appendChild(m);const close=()=>m.remove();
+  m.querySelector("#mNo").addEventListener("click",close);m.addEventListener("click",e=>{if(e.target===m)close()});
+  m.querySelector("#mOk").addEventListener("click",async()=>{if(await onSave(m)!==false)close()});
+  const f=m.querySelector("input");if(f)setTimeout(()=>f.focus(),50);return m;
+}
+function editPlayer(d){
+  const p=L.players.get(d);if(!p)return;const ds=deptsOf(A.cfg);
+  modal(`<h2>✏️ 이름·반 고치기</h2>
+    <div><label>이름</label><input id="mN" maxlength="10" value="${esc(p.n)}"></div>
+    <div><label>반</label><select id="mG">${ds.map((g,gi)=>`<option value="${gi}" ${gi===p.g?"selected":""}>${esc(g)}</option>`).join("")}</select></div>
+    <p class="note">저장하면 학생 폰·큰 화면에도 바로 바뀌어요</p>`,async m=>{
+    const n=m.querySelector("#mN").value.trim().slice(0,10);const g=+m.querySelector("#mG").value;
+    if(!n){m.querySelector("#mN").focus();return false}
+    A.edits=A.edits||{};A.edits[d]={n,g,t:Date.now()};p.n=n;p.g=g;saveA();renderAdmin(true);
+    const ok=await ctl({k:"ed",r:A.rid,d,n,g});if(ok)toast(`「${n} · ${ds[g]}」(으)로 고쳤어요`);
+  });
+}
+function editClasses(){
+  const ds=deptsOf(A.cfg);
+  const rowsHtml=list=>list.map(d=>`<div class="drow"><input value="${esc(d)}" maxlength="12" placeholder="예: 중1-1반"></div>`).join("");
+  const m=modal(`<h2>✏️ 반 이름 고치기</h2><p class="note">이름만 바꾸면 그 반 학생들은 그대로 옮겨져요. 반을 지우려면 그 반 학생을 먼저 다른 반으로 옮기세요.</p>
+    <div id="mCls">${rowsHtml(ds)}</div><button class="mini" id="mAdd" style="align-self:flex-start">➕ 반 추가</button>`,async m=>{
+    const vals=[...m.querySelectorAll("#mCls input")].map(i=>i.value.trim());
+    const used=new Set([...L.players.values()].map(p=>p.g));
+    for(let k=0;k<vals.length;k++)if(!vals[k]&&used.has(k)){toast(`${k+1}번째 반에 학생이 있어서 비울 수 없어요`);return false}
+    while(vals.length&&!vals[vals.length-1])vals.pop();
+    const fixed=vals.map((v,k)=>v||`반${k+1}`);
+    if(!fixed.length)return false;
+    if(A.cfg.cmode==="grade")A.cfg.lbl=fixed;else A.cfg.depts=fixed.join(", ");saveA();renderAdmin(true);
+    const ok=await ctl({k:"dp",r:A.rid,depts:fixed});if(ok)toast("반 이름을 고쳤어요");
+  });
+  m.querySelector("#mAdd").addEventListener("click",()=>{if(m.querySelectorAll("#mCls input").length>=60)return;m.querySelector("#mCls").insertAdjacentHTML("beforeend",rowsHtml([""]));const ins=m.querySelectorAll("#mCls input");ins[ins.length-1].focus()});
 }
 
 /* ======================= 큰 화면 ======================= */
@@ -931,6 +1055,8 @@ function onBoardCtl(x,t){
   else if(x.k==="cl"){if(B.q&&x.i===B.q.i)B.closed=true}
   else if(x.k==="rv"){if(B.q&&x.i===B.q.i){B.rv=x;B.closed=true;B.view="rv"}}
   else if(x.k==="rk"){B.rk=x;B.view="rk"}
+  else if(x.k==="ed"){const j=B.joins.get(x.d);if(j){j.n=String(x.n||j.n).slice(0,10);j.g=+x.g||0}}
+  else if(x.k==="dp"){if(Array.isArray(x.depts)&&x.depts.length)B.depts=x.depts.slice(0,60)}
   else if(x.k==="rev"){B.view=B.view==="rv"?"rv":B.view;B.revived=Date.now()}
   else if(x.k==="end"){B.end=x;B.view="end";B.endFresh=Date.now()-t<60000}
   bSoon();
@@ -966,13 +1092,17 @@ function renderBoard(){
   if(B.view==="end"){
     const E=B.end;const t=E.top||[];
     const pod=(r,k)=>r?`<div class="pod p${k+1}"><span class="nm">${esc(r[0])}</span><span class="dp">${dname(r[1])}</span><div class="st">${k+1}<small>${r[2]}점</small></div></div>`:`<div class="pod p${k+1}"></div>`;
-    const dep=(E.dep||[]).map(d=>`<div><p class="bex" style="text-align:left;font-weight:900;color:var(--gold)">${dname(d.g)} 1등 · ${esc(d.top[0]?d.top[0][0]:"-")} (${d.top[0]?d.top[0][1]:0}점) · 평균 ${d.avg}점 · ${d.cnt}명</p></div>`).join("");
+    const eMany=(E.dep||[]).length>3;
+    const dep=eMany?`<p class="bex" style="font-weight:900;color:var(--gold)">🏫 반 평균 1등: ${(E.dep||[]).slice().sort((x,y)=>y.avg-x.avg).slice(0,3).map((d,k)=>`${["🥇","🥈","🥉"][k]} ${dname(d.g)} ${d.avg}점`).join(" &nbsp; ")}</p>`:(E.dep||[]).map(d=>`<div><p class="bex" style="text-align:left;font-weight:900;color:var(--gold)">${dname(d.g)} 1등 · ${esc(d.top[0]?d.top[0][0]:"-")} (${d.top[0]?d.top[0][1]:0}점) · 평균 ${d.avg}점 · ${d.cnt}명</p></div>`).join("");
     el.innerHTML=`<div class="bwrap">${head}<p class="btitle" style="text-align:center">👑 오늘의 퀴즈왕</p><div class="podium">${pod(t[1],1)}${pod(t[0],0)}${pod(t[2],2)}</div>${dep}${bFoot()}</div>`;
     if(B.endFresh)confetti();return;
   }
   if(B.view==="rk"){
     const R=B.rk;
-    const cols=(R.dep||[]).map(d=>`<div><h2 style="color:var(--gold);font-size:4vh;margin-bottom:1.4vh">${dname(d.g)} <small style="font:900 2.4vh 'Noto Sans KR';color:#c9c6ff">평균 ${d.avg}점 · ${d.cnt}명</small></h2><div class="brank">${d.top.slice(0,5).map((r,k)=>`<div class="${B.elim&&r[2]===0?"dead":""}"><b>${k+1}</b><span>${esc(r[0])}</span><span class="s">${r[1]}</span></div>`).join("")}</div></div>`).join("");
+    const many=(R.dep||[]).length>3;
+    const byAvg=(R.dep||[]).slice().sort((x,y)=>y.avg-x.avg);
+    const manyCol=`<div><h2 style="font-size:4vh;margin-bottom:1.4vh">🏫 반별 평균 순위</h2><div class="brank" style="gap:.8vh">${byAvg.slice(0,10).map((d,k)=>`<div style="padding:.6vh 1.2vw;font-size:2.8vh"><b style="font-size:3.4vh">${k+1}</b><span>${dname(d.g)}<em>${esc(d.top[0]?d.top[0][0]:"")} ${d.cnt}명</em></span><span class="s" style="font-size:3.2vh">${d.avg}</span></div>`).join("")}</div></div>`;
+    const cols=many?manyCol:(R.dep||[]).map(d=>`<div><h2 style="color:var(--gold);font-size:4vh;margin-bottom:1.4vh">${dname(d.g)} <small style="font:900 2.4vh 'Noto Sans KR';color:#c9c6ff">평균 ${d.avg}점 · ${d.cnt}명</small></h2><div class="brank">${d.top.slice(0,5).map((r,k)=>`<div class="${B.elim&&r[2]===0?"dead":""}"><b>${k+1}</b><span>${esc(r[0])}</span><span class="s">${r[1]}</span></div>`).join("")}</div></div>`).join("");
     el.innerHTML=`<div class="bwrap">${head}<p class="btitle">📊 현재 순위</p><div class="bsplit"><div><h2 style="font-size:4vh;margin-bottom:1.4vh">전체 TOP 10</h2><div class="brank">${rankRows(R.top,10)}</div></div><div class="bcols" style="grid-template-columns:1fr">${cols}</div></div>${bFoot()}</div>`;
     return;
   }
