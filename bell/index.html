@@ -225,6 +225,8 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .bcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(30vw,1fr));gap:3vw;flex:1}
 .bclose{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,21,58,.72);font:400 22vh "Black Han Sans",sans-serif;color:var(--gold);z-index:9}
 .bclose.on{display:flex}
+.bclose{pointer-events:none}
+.bfoot{position:relative;z-index:12}
 .podium{display:flex;align-items:flex-end;justify-content:center;gap:3vw;flex:1;padding-top:4vh}
 .pod{display:flex;flex-direction:column;align-items:center;gap:1vh;width:24vw}
 .pod .nm{font:400 6vh/1.1 "Black Han Sans",sans-serif;text-align:center;word-break:keep-all}
