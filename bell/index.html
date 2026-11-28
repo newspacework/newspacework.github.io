@@ -276,11 +276,16 @@ const ADMIN_PIN="7777";              /* 진행자 PIN — 바꾸려면 이 숫�
 const DEFAULT_TITLE="참빛 중고등부 성경 골든벨";
 const DEFAULT_DEPTS=["중등부","고등부"];
 /* 부서·학년·반 → 반 이름 목록 (예: 중등부 1학년 1반 → "중1-1반") */
-const DEF_CM={deps:DEFAULT_DEPTS,grades:3,rooms:3};
+const DEF_RG=[[2,2,2],[2,3,2]];   /* 부서별·학년별 반 수 (중1~3: 2반씩, 고2만 3반) */
+const DEF_CM={deps:DEFAULT_DEPTS,grades:3,rm:DEF_RG};
 const preOf=d=>{const t=String(d).replace(/등부$|부$/,"");return t.slice(0,1)||String(d).slice(0,1)};
-function classLabels(cm){const out=[];for(const d of cm.deps)for(let g=1;g<=cm.grades;g++)for(let r=1;r<=cm.rooms;r++)out.push(cm.rooms>1?`${preOf(d)}${g}-${r}반`:`${preOf(d)}${g}`);return out}
-const clsIdx=(cm,di,g,r)=>(di*cm.grades+(g-1))*cm.rooms+(r-1);
-function validCm(c){if(!c||!Array.isArray(c.deps)||!c.deps.length)return null;const grades=Math.max(1,Math.min(6,+c.grades||1)),rooms=Math.max(1,Math.min(15,+c.rooms||1));return {deps:c.deps.slice(0,4).map(String),grades,rooms}}
+function cmEntries(cm){const out=[];cm.deps.forEach((d,di)=>{for(let g=1;g<=cm.grades;g++){const n=cm.rm[di][g-1];for(let r=1;r<=n;r++)out.push({di,g,r,label:n>1?`${preOf(d)}${g}-${r}반`:`${preOf(d)}${g}`})}});return out}
+const classLabels=cm=>cmEntries(cm).map(e=>e.label);
+const clsIdx=(cm,di,g,r)=>cmEntries(cm).findIndex(e=>e.di===di&&e.g===g&&e.r===r);
+const roomsOf=(cm,di,g)=>cm.rm[di][g-1];
+function validCm(c){if(!c||!Array.isArray(c.deps)||!c.deps.length)return null;const deps=c.deps.slice(0,4).map(String);const grades=Math.max(1,Math.min(6,+c.grades||1));
+  const rm=deps.map((_,di)=>Array.from({length:grades},(_,g)=>{const v=(Array.isArray(c.rm)&&Array.isArray(c.rm[di])&&c.rm[di][g]!=null)?c.rm[di][g]:(c.rooms||2);return Math.max(1,Math.min(15,+v||1))}));
+  return {deps,grades,rm}}
 /* 실시간 연결 채널 (ntfy.sh). 이 게임 전용 채널이라 다른 게임과 섞이지 않아요 */
 const NTFY=(()=>{const q=new URLSearchParams(location.search).get("ntfy");return q&&/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(q)?q:"https://ntfy.sh"})();
 const BASE=NTFY+"/nsw-goldenbell-k4v8q2";
@@ -502,12 +507,13 @@ function drawPick(){
     box.querySelectorAll("[data-d]").forEach(b=>b.addEventListener("click",()=>{pickedDept=b.dataset.d;drawPick()}));return;
   }
   /* 저장된 반 이름에서 부서·학년·반 되살리기 */
-  if(jsel.di==null&&pickedDept){const k=ds.indexOf(pickedDept);if(k>=0){const per=cm.grades*cm.rooms;jsel={di:Math.floor(k/per),gr:Math.floor(k%per/cm.rooms)+1,rm:k%cm.rooms+1}}}
-  if(cm.rooms===1&&jsel.gr)jsel.rm=1;
+  if(jsel.di==null&&pickedDept){const k=ds.indexOf(pickedDept);const e=cmEntries(cm)[k];if(e)jsel={di:e.di,gr:e.g,rm:e.r}}
+  const nR=jsel.di!=null&&jsel.gr?roomsOf(cm,jsel.di,jsel.gr):0;
+  if(nR===1)jsel.rm=1;else if(jsel.rm>nR)delete jsel.rm;
   const row=(lab,key,items)=>`<div style="margin-top:8px"><label>${lab}</label><div class="dept ${items.length>3?"many":""}">${items.map(([v,t])=>`<button class="chip ${jsel[key]===v?"on":""}" data-k="${key}" data-v="${v}">${esc(t)}</button>`).join("")}</div></div>`;
   let h=row("① 부서","di",cm.deps.map((d,i)=>[i,d]));
   h+=row("② 학년","gr",Array.from({length:cm.grades},(_,i)=>[i+1,`${i+1}학년`]));
-  if(cm.rooms>1)h+=row("③ 반","rm",Array.from({length:cm.rooms},(_,i)=>[i+1,`${i+1}반`]));
+  if(nR>1)h+=row("③ 반","rm",Array.from({length:nR},(_,i)=>[i+1,`${i+1}반`]));
   const ready=jsel.di!=null&&jsel.gr&&jsel.rm;
   pickedDept=ready?ds[clsIdx(cm,jsel.di,jsel.gr,jsel.rm)]:null;
   h+=`<p class="note" style="margin-top:8px;font-size:15px">${pickedDept?`👉 <b style="color:var(--ink)">${esc(pickedDept)}</b>`:"부서·학년·반을 차례로 눌러 주세요"}</p>`;
@@ -642,7 +648,7 @@ function answer(a){
 
 /* ======================= 진행자 ======================= */
 const AKEY="bell-admin";
-const DEF_CFG={title:DEFAULT_TITLE,cmode:"grade",cdeps:DEFAULT_DEPTS.join(", "),grades:3,rooms:3,depts:"중1-1반, 중2-1반, 중3-1반, 고1-1반, 고2-1반, 고3-1반",range:"전체",total:20,mcOn:true,oxOn:true,oxN:4,saOn:true,saN:3,gkOn:false,gkN:2,nsOn:true,nsN:2,myOn:false,myN:3,custom:"",
+const DEF_CFG={title:DEFAULT_TITLE,cmode:"grade",cdeps:DEFAULT_DEPTS.join(", "),grades:3,rg:DEF_RG,depts:"중1-1반, 중2-1반, 중3-1반, 고1-1반, 고2-1반, 고3-1반",range:"전체",total:20,mcOn:true,oxOn:true,oxN:4,saOn:true,saN:3,gkOn:false,gkN:2,nsOn:true,nsN:2,myOn:false,myN:3,custom:"",
   secMC:20,secOX:12,secSA:30,speed:true,elim:false,last2:true,fill:true,autoClose:true};
 let A=null;            /* 저장되는 진행 상태 */
 let L={players:new Map(),ans:new Map(),srv:{q:{},cl:{},rv:{}},resConn:false,ctlConn:false,unsubRes:null,closeT:null,tick:null};
@@ -662,7 +668,7 @@ function initAdmin(){
   renderAdmin();
   L.tick=setInterval(adminTick,250);
 }
-const cmOf=cfg=>cfg.cmode==="grade"?validCm({deps:String(cfg.cdeps||"").split(/[,，]/).map(s=>s.trim()).filter(Boolean),grades:cfg.grades,rooms:cfg.rooms})||DEF_CM:null;
+const cmOf=cfg=>cfg.cmode==="grade"?validCm({deps:String(cfg.cdeps||"").split(/[,，]/).map(s=>s.trim()).filter(Boolean),grades:cfg.grades,rm:cfg.rg})||DEF_CM:null;
 const deptsOf=cfg=>{if(Array.isArray(cfg.lbl)&&cfg.lbl.length)return cfg.lbl.slice(0,60);const cm=cmOf(cfg);if(cm)return classLabels(cm).slice(0,60);
   return String(cfg.depts||"").split(/[,，]/).map(s=>s.trim()).filter(Boolean).slice(0,60)};
 function startListening(){
@@ -823,7 +829,8 @@ function renderSetup(el){
     <div id="cmGrade" style="display:${C.cmode==="grade"?"flex":"none"};flex-direction:column;gap:10px">
       <div><label for="cDeps">부서 (쉼표로 구분)</label><input id="cDeps" maxlength="30" value="${esc(C.cdeps)}" placeholder="중등부, 고등부"></div>
       <div class="kv"><span>학년 수</span><span class="row" style="justify-content:flex-start">${numIn("cGrades",C.grades,1,6)}<span class="unit">학년</span></span>
-        <span>학년마다 반 수</span><span class="row" style="justify-content:flex-start">${numIn("cRooms",C.rooms,1,15)}<span class="unit">반 (반 구분 없으면 1)</span></span></div>
+      </div>
+      <div><label>학년별 반 수 <span class="note">(반 구분 없으면 1)</span></label><div id="cRg"></div></div>
     </div>
     <div id="cmList" style="display:${C.cmode!=="grade"?"block":"none"}"><label>반 이름 — 칸마다 하나씩</label><div id="cDeptList"></div>
       <div class="row" style="margin-top:8px;justify-content:flex-start"><button class="mini" id="cDeptAdd" style="flex:none">➕ 반 추가</button></div>
@@ -886,10 +893,16 @@ function renderSetup(el){
     $("#cGrid").querySelectorAll("[data-bk]").forEach(bt=>bt.addEventListener("click",()=>{const cur=new Set(parseRange($("#cRange").value).books);const x=bt.dataset.bk;cur.has(x)?cur.delete(x):cur.add(x);setRange(cur)}));
     $("#cGrid").querySelectorAll("[data-sec]").forEach(bt=>bt.addEventListener("click",()=>{const [a,b]=bt.dataset.sec.split("|");const bs=span(a,b);const cur=new Set(parseRange($("#cRange").value).books);const all=bs.every(x=>cur.has(x));bs.forEach(x=>all?cur.delete(x):cur.add(x));setRange(cur)}));
   };
+  const drawRg=()=>{const c=A.cfg;const deps=String($("#cDeps").value||"").split(/[,，]/).map(x=>x.trim()).filter(Boolean).slice(0,4);const G=Math.max(1,Math.min(6,+$("#cGrades").value||1));
+    const cell=(di,g)=>{const v=(c.rg&&c.rg[di]&&c.rg[di][g])||2;return `<input class="num" style="width:64px!important" type="number" inputmode="numeric" min="1" max="15" data-rg="${di},${g}" value="${v}">`};
+    $("#cRg").innerHTML=deps.length?`<table class="ptable" style="margin-top:6px"><thead><tr><th></th>${Array.from({length:G},(_,g)=>`<th style="text-align:center">${g+1}학년</th>`).join("")}</tr></thead><tbody>${deps.map((d,di)=>`<tr><td><b>${esc(d)}</b></td>${Array.from({length:G},(_,g)=>`<td style="text-align:center">${cell(di,g)}</td>`).join("")}</tr>`).join("")}</tbody></table>`:'<p class="warn">부서를 적어 주세요</p>';
+    $("#cRg").querySelectorAll("input").forEach(i=>i.addEventListener("input",()=>upd()));};
   const C2=()=>A.cfg;
   const upd=()=>{const c=C2();
     c.title=$("#cTitle").value.trim()||DEFAULT_TITLE;c.depts=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value.trim()).filter(Boolean).join(", ")||DEFAULT_DEPTS.join(", ");
-    c.cdeps=$("#cDeps").value;c.grades=Math.max(1,Math.min(6,+$("#cGrades").value||1));c.rooms=Math.max(1,Math.min(15,+$("#cRooms").value||1));delete c.lbl;c.range=$("#cRange").value;c.fill=$("#cFill").checked;
+    c.cdeps=$("#cDeps").value;c.grades=Math.max(1,Math.min(6,+$("#cGrades").value||1));
+    {const rg=(c.rg||[]).map(r=>r.slice());document.querySelectorAll("#cRg [data-rg]").forEach(i=>{const [di,g]=i.dataset.rg.split(",").map(Number);rg[di]=rg[di]||[];rg[di][g]=Math.max(1,Math.min(15,+i.value||1))});c.rg=rg}
+    delete c.lbl;c.range=$("#cRange").value;c.fill=$("#cFill").checked;
     c.total=Math.max(1,Math.min(100,+$("#cTotal").value||1));
     c.mcOn=$("#cMc").checked;c.oxOn=$("#cOx").checked;c.saOn=$("#cSa").checked;c.gkOn=$("#cGk").checked;c.nsOn=$("#cNs").checked;c.myOn=$("#cMy").checked;
     c.oxN=Math.max(0,+$("#cOxN").value||0);c.saN=Math.max(0,+$("#cSaN").value||0);c.gkN=Math.max(0,+$("#cGkN").value||0);c.nsN=Math.max(0,+$("#cNsN").value||0);c.myN=Math.max(0,+$("#cMyN").value||0);
@@ -933,7 +946,8 @@ function renderSetup(el){
   el.querySelectorAll("[data-cm]").forEach(b=>b.addEventListener("click",()=>{A.cfg.cmode=b.dataset.cm;el.querySelectorAll("[data-cm]").forEach(x=>x.classList.toggle("on",x===b));
     $("#cmGrade").style.display=A.cfg.cmode==="grade"?"flex":"none";$("#cmList").style.display=A.cfg.cmode==="grade"?"none":"block";upd()}));
   $("#cDeptAdd").addEventListener("click",()=>{const cur=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value);if(cur.length>=60){toast("반은 60개까지예요");return}cur.push("");drawDeptList(cur);const ins=document.querySelectorAll("#cDeptList input");ins[ins.length-1].focus()});
-  info();drawDeck();
+  ["#cDeps","#cGrades"].forEach(id=>$(id).addEventListener("input",()=>{drawRg();upd()}));
+  drawRg();info();drawDeck();
 }
 function drawDeck(){
   const box=$("#cDeck");if(!box)return;
