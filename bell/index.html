@@ -104,6 +104,15 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .warn{color:var(--no);font-weight:900;font-size:14px;margin:0}
 .booklist{font-size:14px;line-height:1.8}
 .booklist span{display:inline-block;background:#fff3c4;border:2px solid var(--line);border-radius:8px;padding:0 7px;margin:2px 3px 2px 0;font-weight:700}
+.bgrid{display:flex;flex-direction:column;gap:10px}
+.bgrid .tst{font:400 22px "Black Han Sans",sans-serif;margin:4px 0 0;display:flex;align-items:center;gap:8px}
+.bgrid .sec2{border:2px solid #e6dfc5;border-radius:12px;padding:8px;background:#fffdf5}
+.bgrid .sh{appearance:none;border:0;background:none;font:900 14px "Noto Sans KR",sans-serif;color:var(--mut);cursor:pointer;padding:0 0 6px;display:flex;gap:6px;align-items:center}
+.bgrid .sh.on{color:var(--ink)}
+.bgrid .bks{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:6px}
+.bk{appearance:none;border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:6px 4px;font:900 14px "Noto Sans KR",sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.25;word-break:keep-all}
+.bk small{font-size:11px;font-weight:700;color:var(--mut)}
+.bk.on{background:var(--ink);color:#fff}.bk.on small{color:var(--gold)}
 .booklist span.zero{background:#eee;color:#999;border-color:#bbb}
 .deck{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto;padding-right:4px}
 .dq{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:start;background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px}
@@ -823,9 +832,10 @@ function renderSetup(el){
   </div>
   <div class="card sec">
     <h2>2. 성경 범위</h2>
-    <div><label for="cRange">책 이름을 쓰세요 (쉼표로 여러 권)</label><input id="cRange" value="${esc(C.range)}" placeholder="예: 마태복음, 로마서 / 창세기~신명기 / 신약"></div>
-    <div class="chips">${["전체","구약","신약","모세오경","복음서","바울서신","창세기","마태복음, 로마서"].map(t=>`<button class="chip sm" data-r="${esc(t)}">${esc(t)}</button>`).join("")}</div>
+    <div><label for="cRange">아래에서 책을 눌러 고르거나, 직접 쓰세요 (예: 마태복음, 로마서 / 창세기~신명기)</label><input id="cRange" value="${esc(C.range)}" placeholder="예: 마태복음, 로마서 / 창세기~신명기 / 신약"></div>
+    <div class="chips">${["전체","구약","신약"].map(t=>`<button class="chip sm" data-r="${esc(t)}">${esc(t)}</button>`).join("")}<button class="chip sm" data-r="">모두 해제</button></div>
     <div class="booklist" id="cBooks"></div>
+    <div class="bgrid" id="cGrid"></div>
     <label class="tog"><input type="checkbox" id="cFill" ${C.fill?"checked":""}>범위 안 문제가 모자라면 다른 성경 책에서 채우기</label>
   </div>
   <div class="card sec">
@@ -860,6 +870,22 @@ function renderSetup(el){
   </div>
   <button class="btn" id="cBuild">🎲 문제 뽑기</button>
   <div id="cDeck"></div>`;
+  const SECTIONS=[["📜 구약",[["율법서","창세기","신명기"],["역사서","여호수아","에스더"],["시가서","욥기","아가"],["대선지서","이사야","다니엘"],["소선지서","호세아","말라기"]]],
+    ["✝️ 신약",[["복음서","마태복음","요한복음"],["역사서","사도행전","사도행전"],["바울서신","로마서","빌레몬서"],["일반서신","히브리서","유다서"],["예언서","요한계시록","요한계시록"]]]];
+  const span=(a,b)=>BOOKS.slice(BOOK_IDX.get(a),BOOK_IDX.get(b)+1);
+  const cnt=b=>ITEMS.filter(it=>it.cat===b).length;
+  const compact=set=>{const list=BOOKS.filter(b=>set.has(b));if(!list.length)return "";if(list.length===66)return "전체";
+    for(const g of ["구약","신약","모세오경","역사서","시가서","대선지서","소선지서","선지서","복음서","바울서신","일반서신"]){const [x,y]=window.BELL_GROUPS[g];const gl=span(x,y);if(gl.length===list.length&&gl.every(b=>set.has(b)))return g}
+    /* 연속된 3권 이상은 "A~B"로 줄여 쓰기 */
+    const out=[];let i=0;while(i<BOOKS.length){if(!set.has(BOOKS[i])){i++;continue}let j=i;while(j+1<BOOKS.length&&set.has(BOOKS[j+1]))j++;out.push(j-i>=2?`${BOOKS[i]}~${BOOKS[j]}`:BOOKS.slice(i,j+1).join(", "));i=j+1}
+    return out.join(", ")};
+  const setRange=set=>{$("#cRange").value=compact(set);upd()};
+  window.__drawGrid=sel=>{
+    $("#cGrid").innerHTML=SECTIONS.map(([tt,secs])=>`<p class="tst">${tt}</p>${secs.map(([nm,a,b])=>{const bs=span(a,b);const all=bs.every(x=>sel.has(x));
+      return `<div class="sec2"><button class="sh ${all?"on":""}" data-sec="${a}|${b}">${all?"☑":"☐"} ${nm} <span style="font-weight:700">(${bs.length}권)</span></button><div class="bks">${bs.map(x=>`<button class="bk ${sel.has(x)?"on":""}" data-bk="${esc(x)}">${esc(x)}<small>${cnt(x)}문제</small></button>`).join("")}</div></div>`}).join("")}`).join("");
+    $("#cGrid").querySelectorAll("[data-bk]").forEach(bt=>bt.addEventListener("click",()=>{const cur=new Set(parseRange($("#cRange").value).books);const x=bt.dataset.bk;cur.has(x)?cur.delete(x):cur.add(x);setRange(cur)}));
+    $("#cGrid").querySelectorAll("[data-sec]").forEach(bt=>bt.addEventListener("click",()=>{const [a,b]=bt.dataset.sec.split("|");const bs=span(a,b);const cur=new Set(parseRange($("#cRange").value).books);const all=bs.every(x=>cur.has(x));bs.forEach(x=>all?cur.delete(x):cur.add(x));setRange(cur)}));
+  };
   const C2=()=>A.cfg;
   const upd=()=>{const c=C2();
     c.title=$("#cTitle").value.trim()||DEFAULT_TITLE;c.depts=[...document.querySelectorAll("#cDeptList input")].map(i=>i.value.trim()).filter(Boolean).join(", ")||DEFAULT_DEPTS.join(", ");
@@ -874,9 +900,10 @@ function renderSetup(el){
   const info=()=>{const c=C2();
     const R=parseRange(c.range);const P=poolsFor(R.books);
     const counts=R.books.map(b=>{const n=ITEMS.filter(it=>it.cat===b).length;return `<span class="${n?"":"zero"}">${esc(b)} ${n}</span>`}).join("");
-    $("#cBooks").innerHTML=(R.books.length?`<b>${R.books.length}권 선택</b> · 문제 ${P.all.length}개 (4지선다 ${P.mc.length} · O/X ${P.ox.length}+자동 · 주관식 가능 ${P.sa.length})<br>${R.books.length<=20?counts:""}`:'<span class="warn">책을 찾지 못했어요</span>')+
+    $("#cBooks").innerHTML=(R.books.length?`<b>${R.books.length}권 선택</b> · 문제 ${P.all.length}개 (4지선다 ${P.mc.length} · O/X ${P.ox.length}+자동 · 주관식 가능 ${P.sa.length})`:'<span class="warn">책을 하나 이상 골라 주세요</span>')+
       (R.unknown.length?`<p class="warn">알아보지 못한 말: ${R.unknown.map(esc).join(", ")}</p>`:"");
     {const L2=deptsOf(c);$("#cClsPrev").innerHTML=`🏫 반 ${L2.length}개: ${L2.slice(0,8).map(esc).join(", ")}${L2.length>8?` … ${esc(L2[L2.length-1])}`:""}${L2.length>=60?' <span class="warn">(60개까지만)</span>':""}`;}
+    window.__drawGrid(new Set(R.books));
     const K=composition(c);
     const parts=[];if(K.mc)parts.push(`4지선다 <b>${K.mc}</b>`);if(K.ox)parts.push(`O/X <b>${K.ox}</b>`);if(K.sa)parts.push(`주관식 <b>${K.sa}</b>`);
     const sp=[];if(K.gk)sp.push(`상식 <b>${K.gk}</b>`);if(K.ns)sp.push(`넌센스 <b>${K.ns}</b>`);if(K.my)sp.push(`직접 <b>${K.my}</b>`);
