@@ -466,9 +466,18 @@ function buildDeck(cfg){
   specials.forEach((s,k)=>{const pos=Math.min(deck.length,Math.round((k+1)*(bible.length+specials.length)/(specials.length+1)));deck.splice(pos,0,s)});
   /* 마지막 문제는 성경 문제로 */
   if(deck.length>1&&(deck[deck.length-1].ns||deck[deck.length-1].c==="상식")){const j=deck.map(q=>!q.ns&&q.c!=="상식").lastIndexOf(true);if(j>=0)deck.push(deck.splice(j,1)[0])}
+  /* 모자라면 자동으로 채우기: 범위 안 성경 4지선다 → 다른 성경 책 → 넌센스 → 상식 */
+  const C2=composition(cfg);const want=C2.bible+C2.gk+C2.ns+C2.my;const info=[];
+  let need=want-deck.length;
+  if(need>0){
+    const fills=[["범위 안 성경 4지선다",()=>pickType(P,"mc",need,used)],["다른 성경 책 4지선다",()=>pickType(ALL,"mc",need,used)],["성경 O/X",()=>pickOX(ALL,need,used)],
+      ["넌센스",()=>pickType(poolsFor(["넌센스"]),"mc",need,used).map(q=>({...q,ns:true}))],["상식",()=>pickType(poolsFor(["상식"]),"mc",need,used)]];
+    for(const [nm,fn] of fills){if(need<=0)break;const add=fn();if(!add.length)continue;
+      add.forEach(q=>{const pos=deck.length>1?1+rnd(deck.length-1):deck.length;deck.splice(pos,0,q)});need-=add.length;info.push(`${nm} ${add.length}문제`)}
+  }
+  const filled=info.length?[`모자란 문제를 자동으로 채웠어요: ${info.join(", ")}`]:[];
   deck.forEach(q=>q.uid=newId());
-  const C2=composition(cfg);
-  return {deck,warn,want:C2.bible+C2.gk+C2.ns+C2.my};
+  return {deck,warn:need>0?warn:[],info:filled,want};
 }
 /* 한 문제 바꾸기 (같은 형식·같은 분류) */
 function swapOne(deck,i,cfg){
@@ -927,6 +936,7 @@ function renderSetup(el){
     if(K.mc+K.ox+K.sa>P.mc.length+P.ox.length)w+=`<br>⚠️ 범위 안 문제(${P.mc.length+P.ox.length}개)보다 많이 뽑아요`;
     if(w)w+=c.fill?" → 다른 책에서 채워요":" → 모자란 만큼 빠져요";
     const myN=parseCustom(c.custom).length;$("#cMyCnt").textContent=`인식한 문제 ${myN}개`;
+    if(c.myOn&&myN>0&&c.myN>myN){c.myN=myN;$("#cMyN").value=myN;saveA()}
     $("#cMyBox").style.display=c.myOn?"block":"none";
     $("#cCompose").innerHTML=`📖 성경 ${K.bible}문제: ${parts.join(" · ")||"-"}${sp.length?`<br>➕ ${sp.join(" · ")}`:""}<br>= 총 <b>${K.bible+K.gk+K.ns+K.my}</b>문제${w}`;
   };
@@ -937,7 +947,7 @@ function renderSetup(el){
     $("#cOxN").value=Math.round(t*.2);$("#cSaN").value=Math.round(t*.15);$("#cNsN").value=Math.max(1,Math.round(t*.1));$("#cGkN").value=Math.max(1,Math.round(t*.1));$("#cMyN").value=Math.max(1,Math.round(t*.1));el.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",x===b));upd()}));
   $("#cTotal").addEventListener("input",()=>el.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",+x.dataset.t===+$("#cTotal").value)));
   $("#aOut").addEventListener("click",()=>{store.del("bell-admin-ok");location.hash="";});
-  $("#cBuild").addEventListener("click",()=>{upd();const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn;A.want=r.want;saveA();drawDeck();$("#cDeck").scrollIntoView({behavior:"smooth"})});
+  $("#cBuild").addEventListener("click",()=>{upd();const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn;A.info=r.info;A.want=r.want;saveA();drawDeck();$("#cDeck").scrollIntoView({behavior:"smooth"})});
   const drawDeptList=list=>{
     $("#cDeptList").innerHTML=list.map((d,k)=>`<div class="drow"><input value="${esc(d)}" maxlength="12" placeholder="예: 중1-1반"><button class="mini" data-dx="${k}">✕</button></div>`).join("");
     $("#cDeptList").querySelectorAll("input").forEach(i=>i.addEventListener("input",upd));
@@ -968,6 +978,7 @@ function drawDeck(){
   if(!A.deck.length){box.innerHTML="";return}
   box.innerHTML=`<div class="card sec">
     <div class="row" style="justify-content:space-between"><h2 style="flex:none">5. 뽑힌 문제 ${A.deck.length}개</h2><button class="mini" id="dReroll" style="flex:none">🎲 전부 다시 뽑기</button></div>
+    ${(A.info||[]).map(w=>`<p class="note" style="color:var(--ok);font-weight:900">✅ ${esc(w)}</p>`).join("")}
     ${(A.warn||[]).map(w=>`<p class="warn">⚠️ ${esc(w)}</p>`).join("")}
     ${(A.want||0)>A.deck.length?`<div class="compose" style="background:#fff3c4;color:var(--ink);border:3px solid var(--gold2)"><b style="color:var(--no)">⚠️ ${A.want-A.deck.length}문제가 모자라요</b> (목표 ${A.want}문제 · 지금 ${A.deck.length}문제)<br>무엇으로 채울까요?
       <div class="chips" style="margin-top:8px"><button class="chip" data-fill="mc">📖 성경 4지선다로</button><button class="chip" data-fill="ns">😆 넌센스로</button><button class="chip" data-fill="gk">🌏 상식으로</button></div></div>`:""}
@@ -977,7 +988,7 @@ function drawDeck(){
   </div>`;
   box.querySelectorAll("[data-sw]").forEach(b=>b.addEventListener("click",()=>{const i=+b.dataset.sw;const n=swapOne(A.deck,i,A.cfg);if(!n){toast("바꿀 문제가 없어요");return}A.deck[i]=n;saveA();drawDeck()}));
   box.querySelectorAll("[data-fill]").forEach(b=>b.addEventListener("click",()=>fillShort(b.dataset.fill)));
-  $("#dReroll").addEventListener("click",()=>{const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn;A.want=r.want;saveA();drawDeck()});
+  $("#dReroll").addEventListener("click",()=>{const r=buildDeck(A.cfg);A.deck=r.deck;A.warn=r.warn;A.info=r.info;A.want=r.want;saveA();drawDeck()});
   $("#dOpen").addEventListener("click",openContest);
 }
 function renderRun(el){
