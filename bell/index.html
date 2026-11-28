@@ -155,7 +155,10 @@ input:focus,textarea:focus{outline:3px solid var(--gold);outline-offset:2px}
 .t10.dead{opacity:.5}
 .subm{display:flex;flex-direction:column;gap:8px;background:#faf7ea;border-radius:12px;padding:10px}
 .subm b{font-size:14px}.subm b.wait{color:#b45309}.subm b.no{color:var(--no)}.subm b.okb{color:var(--ok)}
-.sbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;max-height:30vh;overflow:auto}
+.sgrp{background:#fff;border:2px solid #e6dfc5;border-radius:10px;padding:6px 8px}
+.sgh{display:flex;justify-content:space-between;align-items:baseline;font-size:14px}.sgh b{font:400 17px "Black Han Sans",sans-serif}.sgh span{font-weight:900;color:var(--mut);font-size:13px}
+.sbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.subm{max-height:55vh;overflow:auto}
 .sb{border-radius:8px;padding:3px 8px;font-size:13px;font-weight:900;border:2px solid}
 .sb em{font-style:normal;font-weight:700;font-size:11px;margin-left:3px;opacity:.7}
 .sb.ok{border-color:var(--ok);background:#dcfce7}.sb.no{border-color:var(--no);background:#ffe4e6}.sb.wait{border-color:#f59e0b;background:#fff7e0}
@@ -997,14 +1000,17 @@ function fillShort(kind){
 }
 /* 이 문제 제출 현황: 미제출은 마감되면 오답 */
 function submList(i,q,st,act,m){
-  const ds=deptsOf(A.cfg);const nm=d=>{const p=L.players.get(d);return p?`${esc(p.n)}<em>${esc(ds[p.g]||"")}</em>`:"?"};
-  const open=st==="live";
-  const not=act.filter(d=>!m.has(d)),done=act.filter(d=>m.has(d));
-  const doneChip=d=>{let c="ok",ic="✅";if(st==="revealed"){const v=validAns(i,d);const good=v&&isCorrect(q,i,v.a);c=good?"ok":"no";ic=good?"⭕":"❌"}return `<span class="sb ${c}">${ic} ${nm(d)}</span>`};
-  return `<div class="subm">
-    ${not.length?`<div><b class="${open?"wait":"no"}">${open?"⏳ 아직 안 냄":"❌ 미제출 = 오답"} ${not.length}명</b><div class="sbs">${not.map(d=>`<span class="sb ${open?"wait":"no"}">${open?"⏳":"❌"} ${nm(d)}</span>`).join("")}</div></div>`:(act.length?`<div><b class="okb">🎉 모두 제출했어요</b></div>`:"")}
-    ${done.length?`<div><b class="okb">✅ 제출 ${done.length}명</b>${st==="revealed"?' <span class="note">(⭕ 정답 · ❌ 오답)</span>':""}<div class="sbs">${done.map(doneChip).join("")}</div></div>`:""}
-  </div>`;
+  const ds=deptsOf(A.cfg);const open=st==="live",rv=st==="revealed";
+  const not=act.filter(d=>!m.has(d)).length,done=act.length-not;
+  const stat=d=>{if(!m.has(d))return open?["wait","⏳"]:["no","❌ 미제출"];if(!rv)return ["ok","✅"];const v=validAns(i,d);return v&&isCorrect(q,i,v.a)?["ok","⭕"]:["no","❌"]};
+  const groups=ds.map((g,gi)=>({g,ids:act.filter(d=>(L.players.get(d)||{}).g===gi)})).filter(x=>x.ids.length);
+  const rows=groups.map(({g,ids})=>{const sub=ids.filter(d=>m.has(d)).length;const okN=rv?ids.filter(d=>{const v=validAns(i,d);return v&&isCorrect(q,i,v.a)}).length:0;
+    const chips=ids.slice().sort((a,b)=>m.has(a)-m.has(b)).map(d=>{const [c,ic]=stat(d);return `<span class="sb ${c}">${ic} ${esc((L.players.get(d)||{}).n||"?")}</span>`}).join("");
+    return `<div class="sgrp"><div class="sgh"><b>${esc(g)}</b><span>${rv?`⭕ ${okN} / ${ids.length}명`:`제출 ${sub} / ${ids.length}명`}${sub===ids.length?" 🎉":""}</span></div><div class="sbs">${chips}</div></div>`}).join("");
+  const head=open?(not?`<b class="wait">⏳ 아직 안 냄 ${not}명</b> · <b class="okb">✅ 제출 ${done}명</b>`:`<b class="okb">🎉 모두 제출했어요</b>`)
+    :rv?`<b class="okb">⭕ 정답</b> · <b class="no">❌ 오답</b>${not?` · <b class="no">미제출 ${not}명은 오답</b>`:""}`
+    :(not?`<b class="no">❌ 미제출 ${not}명 = 오답</b> · <b class="okb">✅ 제출 ${done}명</b>`:`<b class="okb">🎉 모두 제출했어요</b>`);
+  return `<div class="subm"><div>${head}</div>${rows}</div>`;
 }
 function flash(i){const r=document.querySelector(`.dq[data-i="${i}"]`);if(!r)return;r.style.background="#fff3c4";r.scrollIntoView({block:"nearest"});setTimeout(()=>{r.style.background=""},600)}
 function drawDeck(){
